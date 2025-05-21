@@ -1,1 +1,0 @@
-# Valentin-v-Todorov.github.io

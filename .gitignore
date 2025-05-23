@@ -1,0 +1,10 @@
+.*
+!.gitignore
+
+*.tfstate*
+.terraform/
+.terraform.lock.hcl
+*.idea
+.vscode
+test/local
+*.tfvars

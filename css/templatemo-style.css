@@ -179,13 +179,13 @@ h1,h2,h3,h4,h5
         text-align: center;
 	}
 #home h1
-    {
-        border: 2px solid #D43F52;
-        color: #D43F52;
-        display: inline-block;
-        letter-spacing: 6px;
-        padding: 25px 35px;
-        margin: 30px 0;
+    /*{*/
+    /*    border: 2px solid #D43F52;*/
+    /*    color: #D43F52;*/
+    /*    display: inline-block;*/
+    /*    letter-spacing: 6px;*/
+    /*    padding: 25px 35px;*/
+    /*    margin: 30px 0;*/
     }
 #home h2
     {
@@ -225,7 +225,7 @@ h1,h2,h3,h4,h5
     {
       margin-top: 30px;
     }
-	
+
 #work .media .fa
     {
         border: 2px solid #ffffff;
@@ -331,7 +331,7 @@ h1,h2,h3,h4,h5
     {
       padding-bottom: 18px;
     }
-	
+
 #contact .contact-title
     {
 		font-size: 24px;

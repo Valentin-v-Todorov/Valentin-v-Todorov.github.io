@@ -56,54 +56,6 @@
 				51%, 100% { border-color: transparent; }
 			}
 
-			/* MIND-BLOWING ANIMATIONS START HERE */
-
-			/* Animated Background Particles */
-			.particle-container {
-				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				pointer-events: none;
-				z-index: 1;
-				overflow: hidden;
-			}
-
-			.particle {
-				position: absolute;
-				background: rgba(255, 255, 255, 0.1);
-				border-radius: 50%;
-				animation: float 15s infinite linear;
-			}
-
-			.particle:nth-child(odd) {
-				background: rgba(212, 63, 82, 0.2);
-				animation-duration: 20s;
-			}
-
-			.particle:nth-child(3n) {
-				background: rgba(102, 126, 234, 0.15);
-				animation-duration: 25s;
-			}
-
-			@keyframes float {
-				0% {
-					transform: translateY(100vh) translateX(0) rotate(0deg);
-					opacity: 0;
-				}
-				10% {
-					opacity: 1;
-				}
-				90% {
-					opacity: 1;
-				}
-				100% {
-					transform: translateY(-100px) translateX(100px) rotate(360deg);
-					opacity: 0;
-				}
-			}
-
 			/* Parallax Hero Section */
 			#home {
 				position: relative;
@@ -223,55 +175,6 @@
 				100% { transform: translateX(100%); }
 			}
 
-			/* Floating Geometric Elements */
-			.floating-element {
-				position: fixed;
-				pointer-events: none;
-				z-index: 1;
-				opacity: 0.1;
-			}
-
-			.floating-element.triangle {
-				width: 0;
-				height: 0;
-				border-left: 20px solid transparent;
-				border-right: 20px solid transparent;
-				border-bottom: 30px solid #D43F52;
-				animation: floatTriangle 20s infinite linear;
-			}
-
-			.floating-element.circle {
-				width: 30px;
-				height: 30px;
-				border-radius: 50%;
-				background: rgba(102, 126, 234, 0.3);
-				animation: floatCircle 25s infinite linear;
-			}
-
-			.floating-element.square {
-				width: 25px;
-				height: 25px;
-				background: rgba(118, 75, 162, 0.3);
-				transform: rotate(45deg);
-				animation: floatSquare 30s infinite linear;
-			}
-
-			@keyframes floatTriangle {
-				0% { transform: translateY(100vh) translateX(0) rotate(0deg); }
-				100% { transform: translateY(-100px) translateX(50px) rotate(360deg); }
-			}
-
-			@keyframes floatCircle {
-				0% { transform: translateY(100vh) translateX(0) scale(0.5); }
-				50% { transform: translateY(50vh) translateX(100px) scale(1.5); }
-				100% { transform: translateY(-100px) translateX(-50px) scale(0.5); }
-			}
-
-			@keyframes floatSquare {
-				0% { transform: translateY(100vh) translateX(0) rotate(45deg); }
-				100% { transform: translateY(-100px) translateX(-100px) rotate(405deg); }
-			}
-
 			/* Portfolio Hover Effects */
 			.portfolio-thumb {
 				position: relative;
@@ -295,8 +198,6 @@
 			.portfolio-thumb:hover .portfolio-overlay {
 				background: linear-gradient(135deg, rgba(212, 63, 82, 0.95), rgba(102, 126, 234, 0.95));
 			}
-
-			/* Text Reveal Animation - REMOVED */
 
 			/* Enhanced Navigation Dots */
 			#fp-nav {
@@ -331,11 +232,11 @@
 				transition: all 0.3s ease;
 			}
 
-			#fp-nav ul li:nth-child(1) a::before { content: '\f015'; } /* Home icon */
-			#fp-nav ul li:nth-child(2) a::before { content: '\f0ad'; } /* Work icon */
-			#fp-nav ul li:nth-child(3) a::before { content: '\f007'; } /* About icon */
-			#fp-nav ul li:nth-child(4) a::before { content: '\f0c7'; } /* Portfolio icon */
-			#fp-nav ul li:nth-child(5) a::before { content: '\f095'; } /* Contact icon */
+			#fp-nav ul li:nth-child(1) a::before { content: '\f015'; }
+			#fp-nav ul li:nth-child(2) a::before { content: '\f0ad'; }
+			#fp-nav ul li:nth-child(3) a::before { content: '\f007'; }
+			#fp-nav ul li:nth-child(4) a::before { content: '\f0c7'; }
+			#fp-nav ul li:nth-child(5) a::before { content: '\f095'; }
 
 			#fp-nav ul li a:hover {
 				background: rgba(212, 63, 82, 0.8);
@@ -357,13 +258,16 @@
 				transform: translateY(-50%);
 				background: rgba(0, 0, 0, 0.8);
 				color: white;
-				padding: 5px 10px;
-				border-radius: 5px;
+				padding: 8px 12px;
+				border-radius: 6px;
 				font-size: 12px;
 				white-space: nowrap;
 				opacity: 0;
 				pointer-events: none;
 				transition: opacity 0.3s ease;
+				font-family: 'Raleway', sans-serif;
+				font-weight: 500;
+				z-index: 9999;
 			}
 
 			#fp-nav ul li a:hover::after {
@@ -377,7 +281,6 @@
 			}
 
 			/* Better responsive layout for "What I Do" section */
-			/* Force 2 columns on all desktop screens for wider text blocks */
 			@media (min-width: 768px) {
 				.work-col-md {
 					width: 50%;
@@ -389,7 +292,6 @@
 				}
 			}
 
-			/* Mobile: full width */
 			@media (max-width: 767px) {
 				.work-col-md {
 					width: auto;
@@ -399,14 +301,12 @@
 				}
 			}
 
-			/* Ensure proper clearfix for the work section */
 			#work .row:after {
 				content: "";
 				display: table;
 				clear: both;
 			}
 
-			/* Keep original template section proportions */
 			.media {
 				margin-bottom: 30px;
 			}
@@ -415,7 +315,6 @@
 				padding-left: 15px;
 			}
 
-			/* Better spacing for improved readability */
 			#work .row {
 				margin-left: -15px;
 				margin-right: -15px;
@@ -464,7 +363,6 @@
 				scroll-behavior: smooth;
 			}
 
-			/* Custom smooth scroll for better control */
 			.smooth-scroll-behavior {
 				scroll-behavior: smooth;
 			}
@@ -472,16 +370,6 @@
 
 	</head>
 	<body>
-
-	<!-- Particle System Background -->
-	<div class="particle-container" id="particles"></div>
-
-	<!-- Floating Geometric Elements -->
-	<div class="floating-element triangle" style="top: 20%; left: 10%;"></div>
-	<div class="floating-element circle" style="top: 40%; left: 80%;"></div>
-	<div class="floating-element square" style="top: 60%; left: 5%;"></div>
-	<div class="floating-element triangle" style="top: 80%; left: 90%;"></div>
-	<div class="floating-element circle" style="top: 30%; left: 60%;"></div>
 
 	<div class="top-social-icons">
 		<a href="https://www.linkedin.com/in/valentin-todorov-49b065218/" target="_blank" title="LinkedIn">
@@ -755,7 +643,7 @@
 		<script src="js/custom.js"></script>
 
 		<script>
-			// 🚀 MIND-BLOWING ANIMATIONS SYSTEM 🚀
+			// 🚀 CLEAN AND FOCUSED ANIMATIONS! 🚀
 
 			// Typing effect implementation
 			const texts = [
@@ -778,19 +666,17 @@
 				const currentText = texts[textIndex];
 
 				if (isDeleting) {
-					// Deleting characters
 					typewriterElement.textContent = currentText.substring(0, charIndex - 1);
 					charIndex--;
 
 					if (charIndex === 0) {
 						isDeleting = false;
 						textIndex = (textIndex + 1) % texts.length;
-						setTimeout(typeWriter, 500); // Pause before starting to type next text
+						setTimeout(typeWriter, 500);
 						return;
 					}
 					setTimeout(typeWriter, deleteSpeed);
 				} else {
-					// Typing characters
 					typewriterElement.textContent = currentText.substring(0, charIndex + 1);
 					charIndex++;
 
@@ -802,27 +688,6 @@
 						return;
 					}
 					setTimeout(typeWriter, typeSpeed);
-				}
-			}
-
-			// 🌟 PARTICLE SYSTEM 🌟
-			function createParticleSystem() {
-				const particleContainer = document.getElementById('particles');
-				const particleCount = 50;
-
-				for (let i = 0; i < particleCount; i++) {
-					const particle = document.createElement('div');
-					particle.className = 'particle';
-
-					// Random size and position
-					const size = Math.random() * 4 + 2;
-					particle.style.width = size + 'px';
-					particle.style.height = size + 'px';
-					particle.style.left = Math.random() * 100 + '%';
-					particle.style.animationDelay = Math.random() * 15 + 's';
-					particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
-
-					particleContainer.appendChild(particle);
 				}
 			}
 
@@ -838,7 +703,6 @@
 						if (entry.isIntersecting) {
 							entry.target.classList.add('revealed');
 
-							// Animate progress bars
 							if (entry.target.querySelector('.progress-bar')) {
 								animateProgressBars(entry.target);
 							}
@@ -846,12 +710,10 @@
 					});
 				}, observerOptions);
 
-				// Observe all scroll reveal elements
 				document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right').forEach(el => {
 					observer.observe(el);
 				});
 
-				// Observe progress bar sections
 				document.querySelectorAll('#about .col-md-6:last-child').forEach(el => {
 					observer.observe(el);
 				});
@@ -871,51 +733,8 @@
 				});
 			}
 
-			// 🎨 PARALLAX HERO EFFECT 🎨
-			function initParallaxEffect() {
-				let ticking = false;
-
-				function updateParallax() {
-					const scrolled = window.pageYOffset;
-					const parallaxElements = document.querySelectorAll('.floating-element');
-
-					parallaxElements.forEach((element, index) => {
-						const speed = 0.5 + (index * 0.1);
-						const yPos = -(scrolled * speed);
-						element.style.transform = `translateY(${yPos}px)`;
-					});
-
-					ticking = false;
-				}
-
-				function requestTick() {
-					if (!ticking) {
-						requestAnimationFrame(updateParallax);
-						ticking = true;
-					}
-				}
-
-				window.addEventListener('scroll', requestTick);
-			}
-
-			// 🌈 DYNAMIC GRADIENT BACKGROUND 🌈
-			function initDynamicBackground() {
-				const heroSection = document.getElementById('home');
-				let scrollPosition = 0;
-
-				window.addEventListener('scroll', () => {
-					scrollPosition = window.pageYOffset;
-					const opacity = Math.max(0, 1 - scrollPosition / window.innerHeight);
-
-					if (heroSection) {
-						heroSection.style.transform = `translateY(${scrollPosition * 0.5}px)`;
-					}
-				});
-			}
-
 			// 🎪 ENHANCED HOVER EFFECTS 🎪
 			function initEnhancedHoverEffects() {
-				// Portfolio items 3D tilt effect
 				document.querySelectorAll('.portfolio-thumb').forEach(item => {
 					item.addEventListener('mousemove', (e) => {
 						const rect = item.getBoundingClientRect();
@@ -934,7 +753,6 @@
 					});
 				});
 
-				// Media cards magnetic effect
 				document.querySelectorAll('.media').forEach(card => {
 					card.addEventListener('mousemove', (e) => {
 						const rect = card.getBoundingClientRect();
@@ -979,7 +797,6 @@
 
 			// Enhanced scroll functionality that works with fullPage.js
 			document.addEventListener('DOMContentLoaded', function() {
-				// Handle both smoothScroll and slow-scroll classes
 				const scrollButtons = document.querySelectorAll('.smoothScroll, .slow-scroll');
 
 				scrollButtons.forEach(button => {
@@ -988,14 +805,11 @@
 
 						const targetHref = this.getAttribute('href');
 
-						// If it's targeting portfolio section
 						if (targetHref === '#portfolio') {
-							// Try fullPage.js first
 							setTimeout(() => {
 								if (window.$.fn.fullpage && window.$.fn.fullpage.moveTo) {
-									window.$.fn.fullpage.moveTo(4); // Portfolio is the 4th section
+									window.$.fn.fullpage.moveTo(4);
 								} else {
-									// Fallback to regular smooth scroll
 									const targetElement = document.querySelector('#portfolio');
 									if (targetElement) {
 										targetElement.scrollIntoView({
@@ -1009,7 +823,7 @@
 					});
 				});
 
-				// Add tooltips to navigation dots and fix navigation
+				// Setup navigation tooltips and fix home button
 				setTimeout(() => {
 					const navItems = document.querySelectorAll('#fp-nav ul li a');
 					const tooltips = ['Home', 'What I Do', 'About Me', 'Portfolio', 'Contact'];
@@ -1019,48 +833,40 @@
 							item.setAttribute('data-tooltip', tooltips[index]);
 						}
 
-						// Fix navigation functionality
 						item.addEventListener('click', function(e) {
 							e.preventDefault();
 							if (window.$.fn.fullpage && window.$.fn.fullpage.moveTo) {
-								// Use 1-based indexing for fullPage.js
-								window.$.fn.fullpage.moveTo(index + 1);
+								// Special handling for Home button - scroll to absolute top
+								if (index === 0) {
+									window.$.fn.fullpage.moveTo(1);
+									// Additional scroll to absolute top for home
+									setTimeout(() => {
+										window.scrollTo({ top: 0, behavior: 'smooth' });
+									}, 100);
+								} else {
+									window.$.fn.fullpage.moveTo(index + 1);
+								}
 							}
 						});
 					});
 				}, 1000);
 			});
 
-			// 🚀 INITIALIZE ALL ANIMATIONS 🚀
+			// 🚀 INITIALIZE CLEAN ANIMATION SYSTEM 🚀
 			document.addEventListener('DOMContentLoaded', function() {
 				// Start typing effect
 				setTimeout(typeWriter, 1000);
 
-				// Initialize all animation systems
-				createParticleSystem();
+				// Initialize essential animation systems
 				initScrollAnimations();
-				initParallaxEffect();
-				initDynamicBackground();
 				initEnhancedHoverEffects();
 				initStaggeredAnimations();
 
-				// Add loading complete class for additional effects
+				// Add loading complete class
 				setTimeout(() => {
 					document.body.classList.add('animations-loaded');
 				}, 500);
 			});
-
-			// 🎯 PERFORMANCE OPTIMIZATION 🎯
-			let rafId;
-			function optimizedScroll() {
-				if (rafId) return;
-				rafId = requestAnimationFrame(() => {
-					// Scroll-based animations here
-					rafId = null;
-				});
-			}
-
-			window.addEventListener('scroll', optimizedScroll, { passive: true });
 		</script>
 
 	</body>

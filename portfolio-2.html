@@ -55,7 +55,8 @@
 				background: #ff6b6b;
 				color: white;
 				text-decoration: none;
-				transform: translateY(-2px);
+				transform: translateY(-2px) scale(1.05);
+				box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
 			}
 			.project-header {
 				padding: 120px 0 60px 0;
@@ -77,40 +78,340 @@
 				font-weight: bold;
 				transition: all 0.3s ease;
 				box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+				animation: float 3s ease-in-out infinite;
 			}
 			.back-btn:hover {
 				background: #ff5252;
 				color: white;
 				text-decoration: none;
-				transform: translateY(-2px);
+				transform: translateY(-2px) scale(1.05);
 				box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+				animation: none;
 			}
+
+			/* 🎨 ENHANCED ANIMATIONS & EFFECTS 🎨 */
+
+			/* Scroll-triggered animations */
+			.scroll-reveal {
+				opacity: 0;
+				transform: translateY(60px);
+				transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+			}
+			.scroll-reveal.revealed {
+				opacity: 1;
+				transform: translateY(0);
+			}
+
+			.scroll-reveal-left {
+				opacity: 0;
+				transform: translateX(-60px);
+				transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+			}
+			.scroll-reveal-left.revealed {
+				opacity: 1;
+				transform: translateX(0);
+			}
+
+			.scroll-reveal-right {
+				opacity: 0;
+				transform: translateX(60px);
+				transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+			}
+			.scroll-reveal-right.revealed {
+				opacity: 1;
+				transform: translateX(0);
+			}
+
+			/* Enhanced experience sections with professional animations */
 			.experience-section {
 				background: #3a3a3a;
 				padding: 30px;
-				border-radius: 10px;
+				border-radius: 15px;
 				margin: 30px 0;
+				transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				position: relative;
+				overflow: hidden;
+				border: 1px solid rgba(255, 107, 107, 0.1);
+				transform: translateY(20px);
+				opacity: 0;
 			}
-			.tech-tag {
+			.experience-section.animate {
+				transform: translateY(0);
+				opacity: 1;
+			}
+			.experience-section::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), transparent);
+				opacity: 0;
+				transition: opacity 0.4s ease;
+				z-index: 1;
+			}
+			.experience-section:hover {
+				transform: translateY(-8px);
+				box-shadow: 0 20px 40px rgba(255, 107, 107, 0.15);
+				border-color: rgba(255, 107, 107, 0.3);
+			}
+			.experience-section:hover::before {
+				opacity: 1;
+			}
+			.experience-section h2, .experience-section h3, .experience-section h4, .experience-section p, .experience-section ul {
+				position: relative;
+				z-index: 2;
+			}
+
+			/* Professional role icons with enhanced effects */
+			.experience-section .fa {
+				transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 				display: inline-block;
-				background: #ff6b6b;
-				color: white;
-				padding: 8px 16px;
-				margin: 5px;
-				border-radius: 20px;
-				font-size: 14px;
+				margin-right: 10px;
+				color: #ff6b6b;
 			}
+			.experience-section:hover .fa {
+				transform: scale(1.2) rotate(10deg);
+				color: #ff5252;
+				text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+			}
+
+			/* Enhanced achievement list with modern animations */
 			.achievement-list {
 				list-style: none;
 				padding: 0;
 			}
 			.achievement-list li {
-				padding: 10px 0;
+				padding: 15px 0;
 				border-bottom: 1px solid #444;
+				transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				position: relative;
+				overflow: hidden;
+				opacity: 0;
+				transform: translateX(-20px);
+			}
+			.achievement-list li.animate {
+				opacity: 1;
+				transform: translateX(0);
+			}
+			.achievement-list li::after {
+				content: '';
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				width: 0;
+				height: 2px;
+				background: linear-gradient(90deg, #ff6b6b, #ff5252);
+				transition: width 0.4s ease;
+			}
+			.achievement-list li:hover {
+				padding-left: 20px;
+				background: rgba(255, 107, 107, 0.05);
+				border-radius: 8px;
+			}
+			.achievement-list li:hover::after {
+				width: 100%;
 			}
 			.achievement-list li:before {
 				content: "🚀";
-				margin-right: 10px;
+				margin-right: 15px;
+				transition: all 0.3s ease;
+				display: inline-block;
+				font-size: 16px;
+			}
+			.achievement-list li:hover:before {
+				transform: scale(1.3) rotate(20deg);
+				filter: brightness(1.2);
+			}
+
+			/* Enhanced tech tags with professional animations */
+			.tech-tag {
+				display: inline-block;
+				background: linear-gradient(135deg, #ff6b6b, #ff5252);
+				color: white;
+				padding: 8px 16px;
+				margin: 5px;
+				border-radius: 20px;
+				font-size: 14px;
+				transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				cursor: pointer;
+				position: relative;
+				overflow: hidden;
+				opacity: 0;
+				transform: scale(0.8);
+			}
+			.tech-tag.animate {
+				opacity: 1;
+				transform: scale(1);
+			}
+			.tech-tag::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: -100%;
+				width: 100%;
+				height: 100%;
+				background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+				transition: left 0.6s;
+			}
+			.tech-tag:hover {
+				transform: translateY(-3px) scale(1.05);
+				box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+				background: linear-gradient(135deg, #ff5252, #ff3030);
+			}
+			.tech-tag:hover::before {
+				left: 100%;
+			}
+
+			/* Professional timeline with enhanced animations */
+			.timeline {
+				background: #333;
+				padding: 25px;
+				border-radius: 12px;
+				border-left: 4px solid #ff6b6b;
+				margin: 20px 0;
+				transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				position: relative;
+				overflow: hidden;
+				opacity: 0;
+				transform: translateX(30px);
+			}
+			.timeline.animate {
+				opacity: 1;
+				transform: translateX(0);
+			}
+			.timeline::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 4px;
+				height: 0;
+				background: linear-gradient(180deg, #ff6b6b, #ff5252);
+				transition: height 0.8s ease;
+				z-index: 1;
+			}
+			.timeline.animate::before {
+				height: 100%;
+			}
+			.timeline:hover {
+				transform: translateX(10px);
+				box-shadow: 0 10px 25px rgba(255, 107, 107, 0.2);
+				background: #383838;
+			}
+
+			/* Enhanced blog date styling */
+			.blog-date {
+				color: #ff6b6b;
+				font-size: 14px;
+				margin-bottom: 10px;
+				font-weight: 500;
+				opacity: 0;
+				transform: translateY(10px);
+				transition: all 0.3s ease;
+			}
+			.blog-date.animate {
+				opacity: 1;
+				transform: translateY(0);
+			}
+
+			/* Header animations */
+			.project-header h1 {
+				opacity: 0;
+				transform: translateY(30px);
+				animation: slideInFromTop 0.8s ease forwards;
+				animation-delay: 0.2s;
+			}
+			.project-header h3 {
+				opacity: 0;
+				transform: translateY(30px);
+				animation: slideInFromTop 0.8s ease forwards;
+				animation-delay: 0.4s;
+			}
+			.project-header .lead {
+				opacity: 0;
+				transform: translateY(30px);
+				animation: slideInFromTop 0.8s ease forwards;
+				animation-delay: 0.6s;
+			}
+
+			@keyframes slideInFromTop {
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			/* Floating animation for back button */
+			@keyframes float {
+				0%, 100% { transform: translateY(0); }
+				50% { transform: translateY(-5px); }
+			}
+
+			/* Professional skill progression animations */
+			.skill-progress {
+				opacity: 0;
+				transform: translateY(20px);
+				transition: all 0.5s ease;
+			}
+			.skill-progress.animate {
+				opacity: 1;
+				transform: translateY(0);
+			}
+
+			/* Enhanced text highlight effect */
+			.highlight-text {
+				background: linear-gradient(120deg, transparent 0%, transparent 50%, #ff6b6b 50%);
+				background-size: 240% 100%;
+				background-repeat: no-repeat;
+				transition: background-position 0.6s ease;
+				cursor: pointer;
+			}
+			.highlight-text:hover {
+				background-position: 100% 0;
+				color: white;
+			}
+
+			/* Staggered content animation */
+			.content-stagger {
+				opacity: 0;
+				transform: translateY(30px);
+				transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+			}
+			.content-stagger.animate {
+				opacity: 1;
+				transform: translateY(0);
+			}
+
+			/* Professional card hover effects */
+			.professional-card {
+				transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				cursor: pointer;
+			}
+			.professional-card:hover {
+				transform: perspective(1000px) rotateX(5deg) rotateY(5deg) translateZ(20px);
+			}
+
+			/* Quote section enhancement */
+			.professional-quote {
+				background: linear-gradient(135deg, #333, #2a2a2a);
+				border-left: 5px solid #ff6b6b;
+				padding: 30px;
+				border-radius: 15px;
+				font-style: italic;
+				position: relative;
+				overflow: hidden;
+				margin: 30px 0;
+			}
+			.professional-quote::before {
+				content: '"';
+				position: absolute;
+				top: -10px;
+				left: 20px;
+				font-size: 80px;
+				color: rgba(255, 107, 107, 0.2);
+				font-family: Georgia, serif;
 			}
 		</style>
 	</head>
@@ -145,8 +446,8 @@
 			<div class="container">
 				<div class="row">
 					<div class="col-md-8">
-						<div class="experience-section">
-							<h2><i class="fa fa-briefcase"></i> Current Role: Cloud Platform Engineer / DevOps at FLYR</h2>
+						<div class="experience-section scroll-reveal-left content-stagger">
+							<h2><i class="fa fa-briefcase"></i> <span class="highlight-text">Current Role: Cloud Platform Engineer / DevOps at FLYR</span></h2>
 							<div class="blog-date"><i class="fa fa-calendar"></i> Apr 2024 - Present · 1 yr 2 mos | Remote</div>
 							<h4>Cloud Infrastructure & DevOps Leadership</h4>
 							<p>As a Cloud Platform Engineer / DevOps at FLYR, I design and maintain cloud infrastructure on Google Cloud Platform (GCP). I collaborate with development and data teams to implement and optimize cloud-native solutions using mainly Terraform, Kubernetes, CircleCI, GitHub Actions, and ArgoCD.</p>
@@ -173,8 +474,8 @@
 							</div>
 						</div>
 
-						<div class="experience-section">
-							<h2><i class="fa fa-server"></i> Site Reliability Engineer at CTW</h2>
+						<div class="experience-section scroll-reveal-right content-stagger">
+							<h2><i class="fa fa-server"></i> <span class="highlight-text">Site Reliability Engineer at CTW</span></h2>
 							<div class="blog-date"><i class="fa fa-calendar"></i> Jul 2023 - Apr 2024 · 10 mos | Sofia, Bulgaria · Remote</div>
 							<h4>Systems Reliability & Automation</h4>
 							<p>As a Site Reliability Engineer (SRE) at CTW, I worked closely with a small team to ensure our systems run smoothly and perform at their best. I used Zabbix to set up monitoring systems that keep an eye on everything, so we can catch and fix any problems before they become big issues.</p>
@@ -199,8 +500,8 @@
 							</div>
 						</div>
 
-						<div class="experience-section">
-							<h2><i class="fa fa-cogs"></i> Web Integration and IT Support Engineer at eMerchantPay</h2>
+						<div class="experience-section scroll-reveal-left content-stagger">
+							<h2><i class="fa fa-cogs"></i> <span class="highlight-text">Web Integration and IT Support Engineer at eMerchantPay</span></h2>
 							<div class="blog-date"><i class="fa fa-calendar"></i> Apr 2023 - Jul 2023 · 4 mos | Remote</div>
 							<h4>Payment Gateway Integration & Technical Support</h4>
 							<p>As a Tech Support Team Member at eMerchantPay, I ensured smooth merchant integration with our gateways. I collaborated with different teams, managed merchant expectations, and monitored transaction flows.</p>
@@ -224,8 +525,8 @@
 							</div>
 						</div>
 
-						<div class="experience-section">
-							<h2><i class="fa fa-support"></i> Technical Support Specialist at GoDaddy</h2>
+						<div class="experience-section scroll-reveal-right content-stagger">
+							<h2><i class="fa fa-support"></i> <span class="highlight-text">Technical Support Specialist at GoDaddy</span></h2>
 							<div class="blog-date"><i class="fa fa-calendar"></i> Jan 2021 - Apr 2023 · 2 yrs 4 mos</div>
 							<h4>First-Line Technical Support & Customer Success</h4>
 							<p>As a Technical Support Specialist at GoDaddy, I was the first line of support responsible for providing exceptional customer service by responding to client inquiries and troubleshooting a wide range of server and hosting issues.</p>
@@ -250,8 +551,8 @@
 							</div>
 						</div>
 
-						<div class="experience-section">
-							<h2><i class="fa fa-plane"></i> Flight Attendant at Wizz Air</h2>
+						<div class="experience-section scroll-reveal-left content-stagger">
+							<h2><i class="fa fa-plane"></i> <span class="highlight-text">Flight Attendant at Wizz Air</span></h2>
 							<div class="blog-date"><i class="fa fa-calendar"></i> 2018 - Jan 2021 · 3 yrs 1 mo | Planet Earth</div>
 							<h4>Safety, Customer Service & Sales</h4>
 							<p>My job as a flight attendant was entirely related to passenger safety and onboard sales. Developed stable knowledge in first aid, customer service, teamwork, sales, problem-solving, and working under pressure.</p>
@@ -274,8 +575,8 @@
 							</div>
 						</div>
 
-						<div class="experience-section">
-							<h2><i class="fa fa-users"></i> Previous Sales & Leadership Experience</h2>
+						<div class="experience-section scroll-reveal-right content-stagger">
+							<h2><i class="fa fa-users"></i> <span class="highlight-text">Previous Sales & Leadership Experience</span></h2>
 							<div class="blog-date"><i class="fa fa-calendar"></i> 2012 - 2018 · 6+ years</div>
 							<h4>Sales Excellence & Team Leadership</h4>
 
@@ -304,7 +605,7 @@
 					</div>
 
 					<div class="col-md-4">
-						<div class="experience-section">
+						<div class="experience-section scroll-reveal-right professional-card">
 							<h4><i class="fa fa-chart-line"></i> Career Progression</h4>
 							<div class="timeline">
 								<h5>2024 - Present</h5>
@@ -328,19 +629,19 @@
 							</div>
 						</div>
 
-						<div class="experience-section">
+						<div class="experience-section scroll-reveal-right professional-card">
 							<h4><i class="fa fa-trophy"></i> Key Achievements</h4>
 							<ul style="font-size: 14px; line-height: 1.6;">
-								<li>🚀 Successful career transition from sales to DevOps</li>
-								<li>📈 150-300% sales target achievement at GoDaddy</li>
-								<li>☁️ Led cloud infrastructure projects at FLYR</li>
-								<li>🛠️ Implemented automation solutions reducing manual work</li>
-								<li>👥 Managed teams and mentored colleagues</li>
-								<li>🔧 Mastered multiple technology stacks quickly</li>
+								<li class="skill-progress">🚀 Successful career transition from sales to DevOps</li>
+								<li class="skill-progress">📈 150-300% sales target achievement at GoDaddy</li>
+								<li class="skill-progress">☁️ Led cloud infrastructure projects at FLYR</li>
+								<li class="skill-progress">🛠️ Implemented automation solutions reducing manual work</li>
+								<li class="skill-progress">👥 Managed teams and mentored colleagues</li>
+								<li class="skill-progress">🔧 Mastered multiple technology stacks quickly</li>
 							</ul>
 						</div>
 
-						<div class="experience-section">
+						<div class="experience-section scroll-reveal-right professional-card">
 							<h4><i class="fa fa-lightbulb-o"></i> Skills Evolution</h4>
 							<p><strong>Sales Foundation:</strong> Customer service, communication, problem-solving</p>
 							<br>
@@ -349,7 +650,7 @@
 							<p><strong>DevOps Mastery:</strong> Cloud platforms, automation, infrastructure as code</p>
 						</div>
 
-						<div class="experience-section">
+						<div class="professional-quote scroll-reveal-right">
 							<h4><i class="fa fa-quote-left"></i> Professional Philosophy</h4>
 							<p>"Every role has taught me valuable lessons. From sales, I learned customer empathy. From technical support, I gained problem-solving skills. Now in DevOps, I combine both to build solutions that truly serve users."</p>
 						</div>
@@ -362,6 +663,365 @@
 		<script src="js/jquery.js"></script>
 		<!-- bootstrap -->
 		<script src="js/bootstrap.min.js"></script>
+
+		<script>
+			// 🚀 PROFESSIONAL EXPERIENCE ANIMATION SYSTEM 🚀
+
+			// Main scroll-triggered animations
+			function initScrollAnimations() {
+				const observerOptions = {
+					threshold: 0.1,
+					rootMargin: '0px 0px -50px 0px'
+				};
+
+				const observer = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							entry.target.classList.add('revealed');
+						}
+					});
+				}, observerOptions);
+
+				document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right').forEach(el => {
+					observer.observe(el);
+				});
+			}
+
+			// Experience sections staggered animation
+			function initExperienceAnimations() {
+				const experienceSections = document.querySelectorAll('.experience-section');
+
+				const experienceObserver = new IntersectionObserver((entries) => {
+					entries.forEach((entry, index) => {
+						if (entry.isIntersecting) {
+							setTimeout(() => {
+								entry.target.classList.add('animate');
+
+								// Animate achievement list items
+								const achievementItems = entry.target.querySelectorAll('.achievement-list li');
+								achievementItems.forEach((item, i) => {
+									setTimeout(() => {
+										item.classList.add('animate');
+									}, i * 100);
+								});
+
+								// Animate tech tags
+								const techTags = entry.target.querySelectorAll('.tech-tag');
+								techTags.forEach((tag, i) => {
+									setTimeout(() => {
+										tag.classList.add('animate');
+									}, i * 50 + 300);
+								});
+
+								// Animate blog dates
+								const blogDate = entry.target.querySelector('.blog-date');
+								if (blogDate) {
+									setTimeout(() => {
+										blogDate.classList.add('animate');
+									}, 200);
+								}
+							}, index * 150);
+						}
+					});
+				}, { threshold: 0.2 });
+
+				experienceSections.forEach(section => {
+					experienceObserver.observe(section);
+				});
+			}
+
+			// Timeline progression animation
+			function initTimelineAnimations() {
+				const timelineItems = document.querySelectorAll('.timeline');
+
+				const timelineObserver = new IntersectionObserver((entries) => {
+					entries.forEach((entry, index) => {
+						if (entry.isIntersecting) {
+							setTimeout(() => {
+								entry.target.classList.add('animate');
+							}, index * 200);
+						}
+					});
+				}, { threshold: 0.3 });
+
+				timelineItems.forEach(item => {
+					timelineObserver.observe(item);
+				});
+			}
+
+			// Content stagger animation system
+			function initContentStagger() {
+				const contentElements = document.querySelectorAll('.content-stagger');
+
+				const contentObserver = new IntersectionObserver((entries) => {
+					entries.forEach((entry, index) => {
+						if (entry.isIntersecting) {
+							setTimeout(() => {
+								entry.target.classList.add('animate');
+							}, index * 200);
+						}
+					});
+				}, { threshold: 0.1 });
+
+				contentElements.forEach(element => {
+					contentObserver.observe(element);
+				});
+			}
+
+			// Skills progression animation
+			function initSkillsAnimation() {
+				const skillItems = document.querySelectorAll('.skill-progress');
+
+				const skillsObserver = new IntersectionObserver((entries) => {
+					entries.forEach((entry, index) => {
+						if (entry.isIntersecting) {
+							setTimeout(() => {
+								entry.target.classList.add('animate');
+							}, index * 100);
+						}
+					});
+				}, { threshold: 0.5 });
+
+				skillItems.forEach(item => {
+					skillsObserver.observe(item);
+				});
+			}
+
+			// Enhanced 3D hover effects for professional cards
+			function initProfessional3DEffects() {
+				document.querySelectorAll('.professional-card').forEach(card => {
+					card.addEventListener('mousemove', (e) => {
+						const rect = card.getBoundingClientRect();
+						const x = e.clientX - rect.left;
+						const y = e.clientY - rect.top;
+						const centerX = rect.width / 2;
+						const centerY = rect.height / 2;
+						const deltaX = (x - centerX) / 15;
+						const deltaY = (y - centerY) / 15;
+
+						card.style.transform = `
+							perspective(1000px)
+							rotateX(${deltaY}deg)
+							rotateY(${deltaX}deg)
+							translateZ(10px)
+							scale(1.02)
+						`;
+					});
+
+					card.addEventListener('mouseleave', () => {
+						card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0) scale(1)';
+					});
+				});
+			}
+
+			// Experience section hover effects
+			function initExperienceHoverEffects() {
+				document.querySelectorAll('.experience-section').forEach(section => {
+					section.addEventListener('mouseenter', function() {
+						// Subtle glow effect
+						this.style.boxShadow = '0 20px 40px rgba(255, 107, 107, 0.15)';
+
+						// Animate icons
+						const icon = this.querySelector('.fa');
+						if (icon) {
+							icon.style.transform = 'scale(1.2) rotate(10deg)';
+							icon.style.textShadow = '0 0 10px rgba(255, 107, 107, 0.5)';
+						}
+					});
+
+					section.addEventListener('mouseleave', function() {
+						this.style.boxShadow = '';
+
+						const icon = this.querySelector('.fa');
+						if (icon) {
+							icon.style.transform = 'scale(1) rotate(0deg)';
+							icon.style.textShadow = '';
+						}
+					});
+				});
+			}
+
+			// Tech tag ripple effect on click
+			function initTechTagEffects() {
+				document.querySelectorAll('.tech-tag').forEach(tag => {
+					tag.addEventListener('click', function(e) {
+						// Create ripple effect
+						const ripple = document.createElement('span');
+						const rect = this.getBoundingClientRect();
+						const size = Math.max(rect.width, rect.height);
+						const x = e.clientX - rect.left - size / 2;
+						const y = e.clientY - rect.top - size / 2;
+
+						ripple.style.cssText = `
+							position: absolute;
+							border-radius: 50%;
+							background: rgba(255, 255, 255, 0.6);
+							transform: scale(0);
+							animation: ripple 0.6s linear;
+							width: ${size}px;
+							height: ${size}px;
+							left: ${x}px;
+							top: ${y}px;
+							pointer-events: none;
+						`;
+
+						this.appendChild(ripple);
+
+						setTimeout(() => {
+							ripple.remove();
+						}, 600);
+					});
+
+					// Enhanced hover effect
+					tag.addEventListener('mouseenter', function() {
+						this.style.transform = 'translateY(-3px) scale(1.05)';
+						this.style.boxShadow = '0 8px 20px rgba(255, 107, 107, 0.4)';
+					});
+
+					tag.addEventListener('mouseleave', function() {
+						this.style.transform = 'translateY(0) scale(1)';
+						this.style.boxShadow = '';
+					});
+				});
+
+				// Add ripple animation CSS
+				if (!document.querySelector('#ripple-styles')) {
+					const style = document.createElement('style');
+					style.id = 'ripple-styles';
+					style.textContent = `
+						@keyframes ripple {
+							to {
+								transform: scale(4);
+								opacity: 0;
+							}
+						}
+					`;
+					document.head.appendChild(style);
+				}
+			}
+
+			// Parallax scrolling effect for header
+			function initParallaxEffect() {
+				window.addEventListener('scroll', () => {
+					const scrolled = window.pageYOffset;
+					const header = document.querySelector('.project-header');
+					if (header) {
+						header.style.transform = `translateY(${scrolled * 0.3}px)`;
+					}
+				});
+			}
+
+			// Achievement list progressive reveal
+			function initAchievementAnimations() {
+				document.querySelectorAll('.achievement-list').forEach(list => {
+					const items = list.querySelectorAll('li');
+
+					const listObserver = new IntersectionObserver((entries) => {
+						entries.forEach(entry => {
+							if (entry.isIntersecting) {
+								const listItems = entry.target.querySelectorAll('li');
+								listItems.forEach((item, index) => {
+									setTimeout(() => {
+										item.style.opacity = '1';
+										item.style.transform = 'translateX(0)';
+									}, index * 100);
+								});
+							}
+						});
+					}, { threshold: 0.3 });
+
+					listObserver.observe(list);
+				});
+			}
+
+			// Professional quote animation
+			function initQuoteAnimation() {
+				const quotes = document.querySelectorAll('.professional-quote');
+
+				const quoteObserver = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							entry.target.style.opacity = '1';
+							entry.target.style.transform = 'translateY(0) scale(1)';
+						}
+					});
+				}, { threshold: 0.3 });
+
+				quotes.forEach(quote => {
+					quote.style.opacity = '0';
+					quote.style.transform = 'translateY(30px) scale(0.95)';
+					quote.style.transition = 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+					quoteObserver.observe(quote);
+				});
+			}
+
+			// Enhanced navigation effects
+			function initNavigationEffects() {
+				const navLinks = document.querySelectorAll('.nav-links a');
+				navLinks.forEach(link => {
+					link.addEventListener('mouseenter', function() {
+						this.style.transform = 'translateY(-2px) scale(1.05)';
+						this.style.boxShadow = '0 5px 15px rgba(255, 107, 107, 0.4)';
+					});
+					link.addEventListener('mouseleave', function() {
+						if (!this.classList.contains('active')) {
+							this.style.transform = 'translateY(0) scale(1)';
+							this.style.boxShadow = '';
+						}
+					});
+				});
+			}
+
+			// Smooth page loading animation
+			function initPageLoadAnimation() {
+				document.body.style.opacity = '0';
+				document.body.style.transition = 'opacity 0.5s ease';
+
+				setTimeout(() => {
+					document.body.style.opacity = '1';
+				}, 100);
+			}
+
+			// Initialize all animations when page loads
+			document.addEventListener('DOMContentLoaded', function() {
+				initPageLoadAnimation();
+
+				// Delay animation initialization for smooth loading
+				setTimeout(() => {
+					initScrollAnimations();
+					initExperienceAnimations();
+					initTimelineAnimations();
+					initContentStagger();
+					initSkillsAnimation();
+					initProfessional3DEffects();
+					initExperienceHoverEffects();
+					initTechTagEffects();
+					initParallaxEffect();
+					initAchievementAnimations();
+					initQuoteAnimation();
+					initNavigationEffects();
+
+					// Add loaded class for final touches
+					document.body.classList.add('animations-loaded');
+				}, 150);
+			});
+
+			// Add smooth scrolling for anchor links
+			document.addEventListener('DOMContentLoaded', function() {
+				document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+					anchor.addEventListener('click', function (e) {
+						e.preventDefault();
+						const target = document.querySelector(this.getAttribute('href'));
+						if (target) {
+							target.scrollIntoView({
+								behavior: 'smooth',
+								block: 'start'
+							});
+						}
+					});
+				});
+			});
+		</script>
 
 	</body>
 </html>

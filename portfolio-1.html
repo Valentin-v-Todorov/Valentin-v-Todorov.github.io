@@ -2,9 +2,9 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>DevOps Portfolio Website - Valentin Todorov</title>
-		<meta name="keywords" content="DevOps, Portfolio, GitHub Pages, CI/CD">
-		<meta name="description" content="DevOps Portfolio Website project showcasing GitHub Pages deployment with CI/CD automation">
+		<title>DevOps Projects - Valentin Todorov</title>
+		<meta name="keywords" content="DevOps, Projects, GitHub, CI/CD, Infrastructure, Automation">
+		<meta name="description" content="Collection of DevOps projects and automation solutions by Valentin Todorov">
         <meta name="author" content="Valentin Todorov">
 
 		<meta http-equiv="X-UA-Compatible" content="IE=Edge">
@@ -89,7 +89,7 @@
 				animation: none;
 			}
 
-			/* 🎨 ENHANCED ANIMATIONS & EFFECTS 🎨 */
+			/* 🎨 ENHANCED PROJECT CARDS ANIMATIONS & EFFECTS 🎨 */
 
 			/* Scroll-triggered animations */
 			.scroll-reveal {
@@ -122,56 +122,142 @@
 				transform: translateX(0);
 			}
 
-			/* Enhanced tech stack section */
-			.tech-stack {
+			/* Enhanced project cards with professional animations */
+			.project-card {
 				background: #3a3a3a;
+				border-radius: 20px;
 				padding: 30px;
-				border-radius: 15px;
-				margin: 30px 0;
+				margin-bottom: 30px;
 				transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 				position: relative;
 				overflow: hidden;
 				border: 1px solid rgba(255, 107, 107, 0.1);
+				cursor: pointer;
+				opacity: 0;
+				transform: translateY(30px) scale(0.95);
+				height: 100%;
 			}
-			.tech-stack::before {
+			.project-card.animate {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			.project-card::before {
 				content: '';
 				position: absolute;
 				top: 0;
 				left: 0;
 				right: 0;
 				bottom: 0;
-				background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), transparent);
+				background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), transparent);
 				opacity: 0;
 				transition: opacity 0.4s ease;
 				z-index: 1;
 			}
-			.tech-stack:hover {
-				transform: translateY(-5px);
-				box-shadow: 0 15px 35px rgba(255, 107, 107, 0.2);
+			.project-card:hover {
+				transform: translateY(-15px) scale(1.03);
+				box-shadow: 0 25px 50px rgba(255, 107, 107, 0.2);
 				border-color: rgba(255, 107, 107, 0.3);
 			}
-			.tech-stack:hover::before {
+			.project-card:hover::before {
 				opacity: 1;
 			}
-			.tech-stack h4 {
+			.project-card * {
 				position: relative;
 				z-index: 2;
 			}
 
-			/* Enhanced tech tags with hover effects */
+			/* Enhanced project icons with complex animations */
+			.project-icon {
+				font-size: 48px;
+				color: #ff6b6b;
+				margin-bottom: 20px;
+				transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				display: inline-block;
+				position: relative;
+			}
+			.project-icon::after {
+				content: '';
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 80px;
+				height: 80px;
+				background: radial-gradient(circle, rgba(255, 107, 107, 0.2), transparent);
+				border-radius: 50%;
+				opacity: 0;
+				transition: all 0.4s ease;
+			}
+			.project-card:hover .project-icon {
+				transform: scale(1.2) rotate(10deg);
+				color: #ff5252;
+				text-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+			}
+			.project-card:hover .project-icon::after {
+				opacity: 1;
+				transform: translate(-50%, -50%) scale(1.5);
+			}
+
+			/* Enhanced project title with gradient effect */
+			.project-title {
+				color: #ffffff;
+				margin-bottom: 15px;
+				font-size: 24px;
+				font-weight: 600;
+				transition: all 0.3s ease;
+				background: linear-gradient(120deg, #ffffff 0%, #ff6b6b 100%);
+				background-size: 200% 100%;
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+				opacity: 0;
+				transform: translateY(20px);
+			}
+			.project-title.animate {
+				opacity: 1;
+				transform: translateY(0);
+			}
+			.project-card:hover .project-title {
+				background-position: 100% 0;
+			}
+
+			/* Enhanced project description */
+			.project-description {
+				color: #cccccc;
+				line-height: 1.6;
+				margin-bottom: 20px;
+				opacity: 0;
+				transform: translateY(15px);
+				transition: all 0.6s ease;
+			}
+			.project-description.animate {
+				opacity: 1;
+				transform: translateY(0);
+			}
+			.project-card:hover .project-description {
+				color: #e0e0e0;
+			}
+
+			/* Enhanced tech tags with interactive effects */
 			.tech-tag {
 				display: inline-block;
 				background: linear-gradient(135deg, #ff6b6b, #ff5252);
 				color: white;
-				padding: 8px 16px;
-				margin: 5px;
+				padding: 6px 14px;
+				margin: 3px 3px 3px 0;
 				border-radius: 20px;
-				font-size: 14px;
+				font-size: 12px;
+				font-weight: 500;
 				transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 				cursor: pointer;
 				position: relative;
-				z-index: 2;
 				overflow: hidden;
+				opacity: 0;
+				transform: scale(0.8) rotate(-5deg);
+			}
+			.tech-tag.animate {
+				opacity: 1;
+				transform: scale(1) rotate(0deg);
 			}
 			.tech-tag::before {
 				content: '';
@@ -181,79 +267,54 @@
 				width: 100%;
 				height: 100%;
 				background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-				transition: left 0.5s;
+				transition: left 0.6s;
 			}
 			.tech-tag:hover {
-				transform: translateY(-2px) scale(1.05);
-				box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+				transform: translateY(-2px) scale(1.05) rotate(2deg);
+				box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
 				background: linear-gradient(135deg, #ff5252, #ff3030);
 			}
 			.tech-tag:hover::before {
 				left: 100%;
 			}
 
-			/* Enhanced project image with 3D effects */
-			.project-image {
-				max-width: 100%;
-				border-radius: 15px;
-				box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-				margin: 20px 0;
-				transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-				cursor: pointer;
+			/* Enhanced project links with modern button design */
+			.project-links {
+				margin-top: 20px;
+				opacity: 0;
+				transform: translateY(15px);
+				transition: all 0.7s ease;
 			}
-			.project-image:hover {
-				transform: translateY(-5px) rotateX(5deg) rotateY(5deg);
-				box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+			.project-links.animate {
+				opacity: 1;
+				transform: translateY(0);
 			}
-
-			/* Enhanced feature list */
-			.feature-list {
-				list-style: none;
-				padding: 0;
-			}
-			.feature-list li {
-				padding: 15px 0;
-				border-bottom: 1px solid #444;
-				transition: all 0.3s ease;
-				position: relative;
-				overflow: hidden;
-			}
-			.feature-list li::after {
-				content: '';
-				position: absolute;
-				bottom: 0;
-				left: 0;
-				width: 0;
-				height: 2px;
-				background: #ff6b6b;
-				transition: width 0.3s ease;
-			}
-			.feature-list li:hover {
-				padding-left: 10px;
-				background: rgba(255, 107, 107, 0.05);
-			}
-			.feature-list li:hover::after {
-				width: 100%;
-			}
-			.feature-list li:before {
-				content: "✓";
-				color: #ff6b6b;
-				font-weight: bold;
-				margin-right: 15px;
-				transition: all 0.3s ease;
+			.project-link {
 				display: inline-block;
-			}
-			.feature-list li:hover:before {
-				transform: scale(1.2) rotate(360deg);
-			}
-
-			/* Enhanced buttons */
-			.btn {
+				padding: 12px 24px;
+				margin: 5px 10px 5px 0;
+				border-radius: 25px;
+				text-decoration: none;
+				font-weight: 600;
 				transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 				position: relative;
 				overflow: hidden;
+				border: 2px solid transparent;
 			}
-			.btn::before {
+			.project-link.github {
+				background: linear-gradient(135deg, #333, #444);
+				color: white;
+				border-color: #555;
+			}
+			.project-link.demo {
+				background: linear-gradient(135deg, #667eea, #764ba2);
+				color: white;
+			}
+			.project-link.docs {
+				background: linear-gradient(135deg, #11998e, #38ef7d);
+				color: white;
+			}
+			.project-link::before {
 				content: '';
 				position: absolute;
 				top: 50%;
@@ -265,27 +326,88 @@
 				transform: translate(-50%, -50%);
 				transition: all 0.5s ease;
 			}
-			.btn:hover::before {
+			.project-link:hover {
+				transform: translateY(-3px) scale(1.05);
+				color: white;
+				text-decoration: none;
+				box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+			}
+			.project-link:hover::before {
 				width: 300px;
 				height: 300px;
 			}
-			.btn:hover {
-				transform: translateY(-3px);
-				box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+			.project-link i {
+				margin-right: 8px;
+				transition: transform 0.3s ease;
+			}
+			.project-link:hover i {
+				transform: scale(1.2) rotate(10deg);
 			}
 
-			/* Content sections stagger animation */
-			.content-section {
+			/* Enhanced sidebar sections with stable positioning */
+			.sidebar-section {
+				background: #3a3a3a;
+				padding: 25px;
+				border-radius: 15px;
+				margin: 30px 0;
+				transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				position: relative;
+				overflow: hidden;
+				border: 1px solid rgba(255, 107, 107, 0.1);
 				opacity: 0;
-				transform: translateY(30px);
-				transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				transform: translateX(30px);
+				/* Fix for disappearing content */
+				will-change: transform;
+				backface-visibility: hidden;
 			}
-			.content-section.animate {
+			.sidebar-section.animate {
 				opacity: 1;
-				transform: translateY(0);
+				transform: translateX(0);
+			}
+			.sidebar-section:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 15px 30px rgba(255, 107, 107, 0.15);
+				border-color: rgba(255, 107, 107, 0.3);
+			}
+			/* Ensure content stays visible during hover */
+			.sidebar-section * {
+				position: relative;
+				z-index: 2;
+				will-change: auto;
 			}
 
-			/* Header title animation */
+			/* Enhanced stats with counters */
+			.stat-item {
+				text-align: center;
+				padding: 20px;
+				margin: 10px 0;
+				background: rgba(255, 107, 107, 0.1);
+				border-radius: 12px;
+				transition: all 0.3s ease;
+				opacity: 0;
+				transform: scale(0.9);
+			}
+			.stat-item.animate {
+				opacity: 1;
+				transform: scale(1);
+			}
+			.stat-item:hover {
+				background: rgba(255, 107, 107, 0.2);
+				transform: scale(1.05);
+			}
+			.stat-number {
+				font-size: 28px;
+				font-weight: bold;
+				color: #ff6b6b;
+				display: block;
+			}
+			.stat-label {
+				font-size: 14px;
+				color: #cccccc;
+				margin-top: 5px;
+			}
+
+			/* Header animations */
 			.project-header h1 {
 				opacity: 0;
 				transform: translateY(30px);
@@ -318,16 +440,101 @@
 				50% { transform: translateY(-5px); }
 			}
 
-			/* Text highlight effect */
+			/* Content stagger animation system */
+			.content-stagger {
+				opacity: 0;
+				transform: translateY(40px);
+				transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+			}
+			.content-stagger.animate {
+				opacity: 1;
+				transform: translateY(0);
+			}
+
+			/* Enhanced text highlight effect */
 			.highlight-text {
 				background: linear-gradient(120deg, transparent 0%, transparent 50%, #ff6b6b 50%);
 				background-size: 240% 100%;
 				background-repeat: no-repeat;
 				transition: background-position 0.6s ease;
+				cursor: pointer;
 			}
 			.highlight-text:hover {
 				background-position: 100% 0;
 				color: white;
+			}
+
+			/* Project status badges */
+			.status-badge {
+				position: absolute;
+				top: 20px;
+				right: 20px;
+				padding: 6px 12px;
+				border-radius: 20px;
+				font-size: 12px;
+				font-weight: 600;
+				z-index: 3;
+			}
+			.status-badge.active {
+				background: linear-gradient(135deg, #11998e, #38ef7d);
+				color: white;
+			}
+			.status-badge.development {
+				background: linear-gradient(135deg, #667eea, #764ba2);
+				color: white;
+			}
+			.status-badge.planning {
+				background: linear-gradient(135deg, #f093fb, #f5576c);
+				color: white;
+			}
+
+			/* Enhanced project grid */
+			.projects-grid {
+				margin-top: 40px;
+			}
+			.projects-grid .row {
+				margin-bottom: 30px;
+			}
+
+			/* Responsive enhancements */
+			@media (max-width: 768px) {
+				.project-card {
+					padding: 20px;
+					margin-bottom: 20px;
+				}
+				.sidebar-section {
+					margin: 20px 0;
+					padding: 20px;
+					transform: none;
+					opacity: 1;
+				}
+				.project-link {
+					padding: 10px 20px;
+					margin: 5px 5px 5px 0;
+					font-size: 14px;
+				}
+			}
+
+			/* Ensure equal height for project cards */
+			.project-row {
+				display: flex;
+				flex-wrap: wrap;
+			}
+			.project-col {
+				display: flex;
+				flex-direction: column;
+			}
+
+			/* Loading shimmer effect */
+			.project-card.loading {
+				background: linear-gradient(90deg, #3a3a3a 25%, #4a4a4a 50%, #3a3a3a 75%);
+				background-size: 200% 100%;
+				animation: loading 1.5s infinite;
+			}
+
+			@keyframes loading {
+				0% { background-position: 200% 0; }
+				100% { background-position: -200% 0; }
 			}
 		</style>
 	</head>
@@ -352,9 +559,9 @@
 
 		<div class="project-header">
 			<div class="container">
-				<h1>DevOps Portfolio Website</h1>
-				<h3>GitHub Pages + CI/CD Automation</h3>
-				<p class="lead">A professional portfolio website demonstrating DevOps principles and modern web deployment practices</p>
+				<h1>DevOps Projects Collection</h1>
+				<h3>Automation, Infrastructure & Cloud Solutions</h3>
+				<p class="lead">A showcase of practical DevOps projects demonstrating real-world automation and infrastructure solutions</p>
 			</div>
 		</div>
 
@@ -362,77 +569,282 @@
 			<div class="container">
 				<div class="row">
 					<div class="col-md-8">
-						<div class="content-section scroll-reveal-left">
-							<h2 class="highlight-text">Project Overview</h2>
-							<p>This portfolio website serves as both a showcase of my DevOps skills and a practical demonstration of modern web deployment practices. Built using static HTML/CSS/JavaScript and deployed via GitHub Pages, it incorporates CI/CD automation and follows DevOps best practices.</p>
-						</div>
+						<div class="projects-grid">
 
-						<div class="content-section scroll-reveal-left">
-							<h3 class="highlight-text">Key Features</h3>
-							<ul class="feature-list">
-								<li>Responsive design optimized for all devices</li>
-								<li>Automated deployment via GitHub Pages</li>
-								<li>CI/CD pipeline with GitHub Actions</li>
-								<li>HTML/CSS validation and linting</li>
-								<li>Broken link checking automation</li>
-								<li>Custom domain configuration with HTTPS</li>
-								<li>Version control with Git</li>
-								<li>Performance optimization</li>
-							</ul>
-						</div>
+							<!-- Row 1 -->
+							<div class="row project-row">
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge active">Live</div>
+										<div class="project-icon">
+											<i class="fa fa-globe"></i>
+										</div>
+										<h3 class="project-title">DevOps Portfolio Website</h3>
+										<p class="project-description">A professional portfolio website built with CI/CD automation, GitHub Pages deployment, and comprehensive validation pipelines. Demonstrates modern web deployment practices.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">HTML5</div>
+											<div class="tech-tag">CSS3</div>
+											<div class="tech-tag">JavaScript</div>
+											<div class="tech-tag">GitHub Actions</div>
+											<div class="tech-tag">GitHub Pages</div>
+										</div>
+										<div class="project-links">
+											<a href="https://github.com/Valentin-v-Todorov/Valentin-v-Todorov.github.io" target="_blank" class="project-link github">
+												<i class="fa fa-github"></i> GitHub
+											</a>
+											<a href="https://valentin-v-todorov.github.io/" target="_blank" class="project-link demo">
+												<i class="fa fa-external-link"></i> Live Demo
+											</a>
+										</div>
+									</div>
+								</div>
 
-						<div class="content-section scroll-reveal-left">
-							<h3 class="highlight-text">Implementation Details</h3>
-							<p>The website follows a mobile-first approach using Bootstrap framework for responsive design. The deployment process is fully automated using GitHub Actions, which validates the code, checks for broken links, and deploys changes automatically to the live site.</p>
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge development">In Development</div>
+										<div class="project-icon">
+											<i class="fa fa-cogs"></i>
+										</div>
+										<h3 class="project-title">CI/CD Pipeline Automation</h3>
+										<p class="project-description">Comprehensive CI/CD pipeline templates and automation scripts for various technology stacks. Includes testing, security scanning, and multi-environment deployments.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">GitHub Actions</div>
+											<div class="tech-tag">Jenkins</div>
+											<div class="tech-tag">Docker</div>
+											<div class="tech-tag">YAML</div>
+											<div class="tech-tag">Bash</div>
+										</div>
+										<div class="project-links">
+											<a href="#" class="project-link github">
+												<i class="fa fa-github"></i> Coming Soon
+											</a>
+											<a href="#" class="project-link docs">
+												<i class="fa fa-file-text"></i> Docs
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
 
-							<p>The CI/CD pipeline includes multiple stages of testing and validation to ensure code quality and site reliability. This demonstrates practical application of DevOps principles in web development.</p>
-						</div>
+							<!-- Row 2 -->
+							<div class="row project-row">
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge development">In Development</div>
+										<div class="project-icon">
+											<i class="fa fa-cloud"></i>
+										</div>
+										<h3 class="project-title">Infrastructure as Code</h3>
+										<p class="project-description">Terraform modules and Ansible playbooks for deploying scalable cloud infrastructure. Includes multi-cloud support for GCP, AWS, and Azure environments.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">Terraform</div>
+											<div class="tech-tag">Ansible</div>
+											<div class="tech-tag">GCP</div>
+											<div class="tech-tag">AWS</div>
+											<div class="tech-tag">Azure</div>
+										</div>
+										<div class="project-links">
+											<a href="#" class="project-link github">
+												<i class="fa fa-github"></i> Coming Soon
+											</a>
+											<a href="#" class="project-link docs">
+												<i class="fa fa-file-text"></i> Docs
+											</a>
+										</div>
+									</div>
+								</div>
 
-						<div class="content-section scroll-reveal-left">
-							<h3 class="highlight-text">Challenges & Solutions</h3>
-							<p><strong>Challenge:</strong> Setting up GitHub Pages with custom domain and SSL</p>
-							<p><strong>Solution:</strong> Configured DNS records properly and enabled HTTPS enforcement through GitHub Pages settings</p>
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge planning">Planning</div>
+										<div class="project-icon">
+											<i class="fa fa-ship"></i>
+										</div>
+										<h3 class="project-title">Kubernetes Deployment Scripts</h3>
+										<p class="project-description">Production-ready Kubernetes deployment manifests and Helm charts for common applications. Includes monitoring, logging, and security best practices.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">Kubernetes</div>
+											<div class="tech-tag">Helm</div>
+											<div class="tech-tag">ArgoCD</div>
+											<div class="tech-tag">YAML</div>
+											<div class="tech-tag">Monitoring</div>
+										</div>
+										<div class="project-links">
+											<a href="#" class="project-link github">
+												<i class="fa fa-github"></i> Coming Soon
+											</a>
+											<a href="#" class="project-link docs">
+												<i class="fa fa-file-text"></i> Docs
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
 
-							<p><strong>Challenge:</strong> Jekyll processing conflicts with static HTML template</p>
-							<p><strong>Solution:</strong> Added .nojekyll file to bypass Jekyll processing and ensure proper rendering</p>
-						</div>
+							<!-- Row 3 -->
+							<div class="row project-row">
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge planning">Planning</div>
+										<div class="project-icon">
+											<i class="fa fa-dollar"></i>
+										</div>
+										<h3 class="project-title">Cloud Cost Optimization</h3>
+										<p class="project-description">Automated scripts and tools for monitoring and optimizing cloud costs across different providers. Includes alert systems and cost recommendation engines.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">Python</div>
+											<div class="tech-tag">GCP APIs</div>
+											<div class="tech-tag">Cost Analysis</div>
+											<div class="tech-tag">Automation</div>
+											<div class="tech-tag">Alerts</div>
+										</div>
+										<div class="project-links">
+											<a href="#" class="project-link github">
+												<i class="fa fa-github"></i> Coming Soon
+											</a>
+											<a href="#" class="project-link docs">
+												<i class="fa fa-file-text"></i> Docs
+											</a>
+										</div>
+									</div>
+								</div>
 
-						<div class="content-section scroll-reveal-left">
-							<h3 class="highlight-text">Links</h3>
-							<p>
-								<a href="https://valentin-v-todorov.github.io/" target="_blank" class="btn btn-primary">
-									<i class="fa fa-globe"></i> Live Website
-								</a>
-								<a href="https://github.com/Valentin-v-Todorov/Valentin-v-Todorov.github.io" target="_blank" class="btn btn-secondary">
-									<i class="fa fa-github"></i> GitHub Repository
-								</a>
-							</p>
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge planning">Planning</div>
+										<div class="project-icon">
+											<i class="fa fa-line-chart"></i>
+										</div>
+										<h3 class="project-title">Monitoring & Alerting Setup</h3>
+										<p class="project-description">Complete monitoring stack setup with Prometheus, Grafana, and custom alerting rules. Includes dashboards for infrastructure and application metrics.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">Prometheus</div>
+											<div class="tech-tag">Grafana</div>
+											<div class="tech-tag">AlertManager</div>
+											<div class="tech-tag">Docker</div>
+											<div class="tech-tag">YAML</div>
+										</div>
+										<div class="project-links">
+											<a href="#" class="project-link github">
+												<i class="fa fa-github"></i> Coming Soon
+											</a>
+											<a href="#" class="project-link demo">
+												<i class="fa fa-external-link"></i> Demo
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Row 4 -->
+							<div class="row project-row">
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge planning">Planning</div>
+										<div class="project-icon">
+											<i class="fa fa-shield"></i>
+										</div>
+										<h3 class="project-title">Security Automation Scripts</h3>
+										<p class="project-description">Automated security scanning and compliance checking tools. Includes vulnerability assessments, compliance reports, and security policy enforcement.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">Security</div>
+											<div class="tech-tag">Bash</div>
+											<div class="tech-tag">Python</div>
+											<div class="tech-tag">Compliance</div>
+											<div class="tech-tag">Automation</div>
+										</div>
+										<div class="project-links">
+											<a href="#" class="project-link github">
+												<i class="fa fa-github"></i> Coming Soon
+											</a>
+											<a href="#" class="project-link docs">
+												<i class="fa fa-file-text"></i> Docs
+											</a>
+										</div>
+									</div>
+								</div>
+
+								<div class="col-md-6 project-col">
+									<div class="project-card content-stagger">
+										<div class="status-badge planning">Planning</div>
+										<div class="project-icon">
+											<i class="fa fa-database"></i>
+										</div>
+										<h3 class="project-title">Backup & Disaster Recovery</h3>
+										<p class="project-description">Automated backup solutions and disaster recovery procedures for cloud and on-premise environments. Includes testing and verification scripts.</p>
+										<div class="tech-tags">
+											<div class="tech-tag">Backup</div>
+											<div class="tech-tag">Recovery</div>
+											<div class="tech-tag">Automation</div>
+											<div class="tech-tag">Cloud Storage</div>
+											<div class="tech-tag">Testing</div>
+										</div>
+										<div class="project-links">
+											<a href="#" class="project-link github">
+												<i class="fa fa-github"></i> Coming Soon
+											</a>
+											<a href="#" class="project-link docs">
+												<i class="fa fa-file-text"></i> Docs
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+
 						</div>
 					</div>
 
 					<div class="col-md-4">
-						<div class="tech-stack scroll-reveal-right">
-							<h4>Technology Stack</h4>
-							<div class="tech-tag">HTML5</div>
-							<div class="tech-tag">CSS3</div>
-							<div class="tech-tag">JavaScript</div>
-							<div class="tech-tag">Bootstrap</div>
-							<div class="tech-tag">GitHub Pages</div>
-							<div class="tech-tag">GitHub Actions</div>
-							<div class="tech-tag">Git</div>
-							<div class="tech-tag">Responsive Design</div>
+						<div class="sidebar-section">
+							<h4><i class="fa fa-chart-bar"></i> <span class="highlight-text">Project Statistics</span></h4>
+							<div class="stat-item">
+								<span class="stat-number" data-count="8">0</span>
+								<span class="stat-label">Total Projects</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-number" data-count="1">0</span>
+								<span class="stat-label">Live Projects</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-number" data-count="3">0</span>
+								<span class="stat-label">In Development</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-number" data-count="4">0</span>
+								<span class="stat-label">In Planning</span>
+							</div>
 						</div>
 
-						<img src="images/portfolio-img1.jpg" alt="Portfolio Website Screenshot" class="project-image scroll-reveal">
+						<div class="sidebar-section">
+							<h4><i class="fa fa-code"></i> <span class="highlight-text">Technologies Used</span></h4>
+							<div class="tech-tag">Terraform</div>
+							<div class="tech-tag">Ansible</div>
+							<div class="tech-tag">Kubernetes</div>
+							<div class="tech-tag">Docker</div>
+							<div class="tech-tag">GitHub Actions</div>
+							<div class="tech-tag">Jenkins</div>
+							<div class="tech-tag">Python</div>
+							<div class="tech-tag">Bash</div>
+							<div class="tech-tag">YAML</div>
+							<div class="tech-tag">GCP</div>
+							<div class="tech-tag">AWS</div>
+							<div class="tech-tag">Azure</div>
+							<div class="tech-tag">Prometheus</div>
+							<div class="tech-tag">Grafana</div>
+						</div>
 
-						<div class="tech-stack scroll-reveal-right">
-							<h4>DevOps Practices Used</h4>
-							<div class="tech-tag">CI/CD</div>
-							<div class="tech-tag">Version Control</div>
-							<div class="tech-tag">Automated Testing</div>
-							<div class="tech-tag">Infrastructure as Code</div>
-							<div class="tech-tag">Monitoring</div>
-							<div class="tech-tag">Documentation</div>
+						<div class="sidebar-section">
+							<h4><i class="fa fa-lightbulb-o"></i> <span class="highlight-text">Project Philosophy</span></h4>
+							<p>Every project follows DevOps best practices: Infrastructure as Code, automated testing, continuous integration, and comprehensive documentation.</p>
+							<p>Focus on practical, real-world solutions that can be adapted and used by other DevOps engineers.</p>
+						</div>
+
+						<div class="sidebar-section">
+							<h4><i class="fa fa-github"></i> <span class="highlight-text">Open Source</span></h4>
+							<p>All projects will be open source and available on GitHub with detailed documentation and setup instructions.</p>
+							<a href="https://github.com/Valentin-v-Todorov" target="_blank" style="color: #ff6b6b; text-decoration: none; font-weight: bold;">
+								<i class="fa fa-external-link"></i> Visit My GitHub
+							</a>
 						</div>
 					</div>
 				</div>
@@ -445,9 +857,9 @@
 		<script src="js/bootstrap.min.js"></script>
 
 		<script>
-			// 🚀 ENHANCED ANIMATION SYSTEM 🚀
+			// 🚀 ENHANCED PROJECTS ANIMATION SYSTEM 🚀
 
-			// Scroll-triggered animations
+			// Main scroll-triggered animations
 			function initScrollAnimations() {
 				const observerOptions = {
 					threshold: 0.1,
@@ -462,90 +874,137 @@
 					});
 				}, observerOptions);
 
-				// Observe all scroll reveal elements
 				document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right').forEach(el => {
 					observer.observe(el);
 				});
 			}
 
-			// Content sections stagger animation
-			function initContentAnimations() {
-				const contentSections = document.querySelectorAll('.content-section');
+			// Project cards staggered animation
+			function initProjectCardAnimations() {
+				const projectCards = document.querySelectorAll('.project-card');
+
+				const projectObserver = new IntersectionObserver((entries) => {
+					entries.forEach((entry, index) => {
+						if (entry.isIntersecting) {
+							setTimeout(() => {
+								entry.target.classList.add('animate');
+
+								// Animate card elements
+								const projectTitle = entry.target.querySelector('.project-title');
+								const projectDescription = entry.target.querySelector('.project-description');
+								const projectLinks = entry.target.querySelector('.project-links');
+								const techTags = entry.target.querySelectorAll('.tech-tag');
+
+								if (projectTitle) {
+									setTimeout(() => projectTitle.classList.add('animate'), 100);
+								}
+								if (projectDescription) {
+									setTimeout(() => projectDescription.classList.add('animate'), 200);
+								}
+								if (projectLinks) {
+									setTimeout(() => projectLinks.classList.add('animate'), 400);
+								}
+
+								// Animate tech tags
+								techTags.forEach((tag, i) => {
+									setTimeout(() => {
+										tag.classList.add('animate');
+									}, 300 + (i * 100));
+								});
+							}, index * 150);
+						}
+					});
+				}, { threshold: 0.2 });
+
+				projectCards.forEach(card => {
+					projectObserver.observe(card);
+				});
+			}
+
+			// Content stagger animation system
+			function initContentStagger() {
+				const contentElements = document.querySelectorAll('.content-stagger');
 
 				const contentObserver = new IntersectionObserver((entries) => {
 					entries.forEach((entry, index) => {
 						if (entry.isIntersecting) {
 							setTimeout(() => {
 								entry.target.classList.add('animate');
-							}, index * 200);
+							}, index * 100);
 						}
 					});
 				}, { threshold: 0.1 });
 
-				contentSections.forEach(section => {
-					contentObserver.observe(section);
+				contentElements.forEach(element => {
+					contentObserver.observe(element);
 				});
 			}
 
-			// Enhanced hover effects for tech tags
-			function initTechTagAnimations() {
-				document.querySelectorAll('.tech-tag').forEach((tag, index) => {
-					// Stagger the initial appearance
-					tag.style.animationDelay = `${index * 0.1}s`;
-					tag.style.opacity = '0';
-					tag.style.transform = 'translateY(20px)';
-					tag.style.animation = 'fadeInUp 0.6s ease forwards';
+			// Sidebar sections animation with proper stability
+			function initSidebarAnimations() {
+				const sidebarSections = document.querySelectorAll('.sidebar-section');
 
-					// Add shimmer effect on hover
-					tag.addEventListener('mouseenter', function() {
-						this.style.animation = 'shimmer 0.8s ease';
+				const sidebarObserver = new IntersectionObserver((entries) => {
+					entries.forEach((entry, index) => {
+						if (entry.isIntersecting) {
+							setTimeout(() => {
+								entry.target.classList.add('animate');
+
+								// Animate tech tags in sidebar
+								const techTags = entry.target.querySelectorAll('.tech-tag');
+								techTags.forEach((tag, i) => {
+									setTimeout(() => {
+										tag.classList.add('animate');
+									}, i * 50);
+								});
+
+								// Animate stat items
+								const statItems = entry.target.querySelectorAll('.stat-item');
+								statItems.forEach((item, i) => {
+									setTimeout(() => {
+										item.classList.add('animate');
+									}, i * 100);
+								});
+							}, index * 200);
+						}
 					});
-				});
+				}, { threshold: 0.3 });
 
-				// Add CSS for fade in animation
-				if (!document.querySelector('#dynamic-styles')) {
-					const style = document.createElement('style');
-					style.id = 'dynamic-styles';
-					style.textContent = `
-						@keyframes fadeInUp {
-							to {
-								opacity: 1;
-								transform: translateY(0);
-							}
-						}
-						@keyframes shimmer {
-							0%, 100% { transform: translateY(-2px) scale(1.05); }
-							50% { transform: translateY(-4px) scale(1.1); }
-						}
-					`;
-					document.head.appendChild(style);
-				}
+				sidebarSections.forEach(section => {
+					sidebarObserver.observe(section);
+				});
 			}
 
-			// Enhanced 3D hover effects
-			function initEnhanced3DEffects() {
-				// 3D effect for project image
-				const projectImage = document.querySelector('.project-image');
-				if (projectImage) {
-					projectImage.addEventListener('mousemove', (e) => {
-						const rect = projectImage.getBoundingClientRect();
-						const x = e.clientX - rect.left;
-						const y = e.clientY - rect.top;
-						const centerX = rect.width / 2;
-						const centerY = rect.height / 2;
-						const rotateX = (y - centerY) / 10;
-						const rotateY = (centerX - x) / 10;
+			// Animated counters for stats
+			function initStatCounters() {
+				const statNumbers = document.querySelectorAll('.stat-number');
 
-						projectImage.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(20px)`;
+				const counterObserver = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							const target = parseInt(entry.target.getAttribute('data-count'));
+							let current = 0;
+							const increment = target / 50;
+							const timer = setInterval(() => {
+								current += increment;
+								if (current >= target) {
+									current = target;
+									clearInterval(timer);
+								}
+								entry.target.textContent = Math.floor(current);
+							}, 30);
+						}
 					});
+				}, { threshold: 0.5 });
 
-					projectImage.addEventListener('mouseleave', () => {
-						projectImage.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
-					});
-				}
+				statNumbers.forEach(number => {
+					counterObserver.observe(number);
+				});
+			}
 
-				// 3D effect for tech stack cards
-				document.querySelectorAll('.tech-stack').forEach(card => {
+			// Enhanced 3D hover effects for project cards
+			function initProject3DEffects() {
+				document.querySelectorAll('.project-card').forEach(card => {
 					card.addEventListener('mousemove', (e) => {
 						const rect = card.getBoundingClientRect();
 						const x = e.clientX - rect.left;
@@ -555,46 +1014,26 @@
 						const deltaX = (x - centerX) / 20;
 						const deltaY = (y - centerY) / 20;
 
-						card.style.transform = `translateX(${deltaX}px) translateY(${deltaY}px) rotateX(${deltaY}deg) rotateY(${deltaX}deg)`;
+						card.style.transform = `
+							perspective(1000px)
+							rotateX(${deltaY}deg)
+							rotateY(${deltaX}deg)
+							translateY(-15px)
+							scale(1.03)
+						`;
 					});
 
 					card.addEventListener('mouseleave', () => {
-						card.style.transform = 'translateX(0) translateY(0) rotateX(0) rotateY(0)';
+						card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)';
 					});
 				});
 			}
 
-			// Smooth scrolling enhancement
-			function initSmoothScrolling() {
-				document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-					anchor.addEventListener('click', function (e) {
-						e.preventDefault();
-						const target = document.querySelector(this.getAttribute('href'));
-						if (target) {
-							target.scrollIntoView({
-								behavior: 'smooth',
-								block: 'start'
-							});
-						}
-					});
-				});
-			}
-
-			// Parallax scrolling effect for header
-			function initParallaxEffect() {
-				window.addEventListener('scroll', () => {
-					const scrolled = window.pageYOffset;
-					const header = document.querySelector('.project-header');
-					if (header) {
-						header.style.transform = `translateY(${scrolled * 0.5}px)`;
-					}
-				});
-			}
-
-			// Button ripple effect
-			function initButtonEffects() {
-				document.querySelectorAll('.btn').forEach(button => {
-					button.addEventListener('click', function(e) {
+			// Tech tag interactive effects
+			function initTechTagEffects() {
+				document.querySelectorAll('.tech-tag').forEach(tag => {
+					tag.addEventListener('click', function(e) {
+						// Create ripple effect
 						const ripple = document.createElement('span');
 						const rect = this.getBoundingClientRect();
 						const size = Math.max(rect.width, rect.height);
@@ -611,6 +1050,7 @@
 							height: ${size}px;
 							left: ${x}px;
 							top: ${y}px;
+							pointer-events: none;
 						`;
 
 						this.appendChild(ripple);
@@ -637,39 +1077,104 @@
 				}
 			}
 
-			// Initialize all animations when page loads
-			document.addEventListener('DOMContentLoaded', function() {
-				// Add loading class to body
-				document.body.style.opacity = '0';
-				document.body.style.transition = 'opacity 0.5s ease';
+			// Project link button effects
+			function initProjectLinkEffects() {
+				document.querySelectorAll('.project-link').forEach(link => {
+					link.addEventListener('click', function(e) {
+						// Add click animation
+						this.style.transform = 'scale(0.95)';
+						setTimeout(() => {
+							this.style.transform = '';
+						}, 150);
+					});
+				});
+			}
 
-				// Initialize all animation systems
-				setTimeout(() => {
-					document.body.style.opacity = '1';
+			// Parallax scrolling effect for header
+			function initParallaxEffect() {
+				window.addEventListener('scroll', () => {
+					const scrolled = window.pageYOffset;
+					const header = document.querySelector('.project-header');
+					if (header) {
+						header.style.transform = `translateY(${scrolled * 0.3}px)`;
+					}
+				});
+			}
 
-					initScrollAnimations();
-					initContentAnimations();
-					initTechTagAnimations();
-					initEnhanced3DEffects();
-					initSmoothScrolling();
-					initParallaxEffect();
-					initButtonEffects();
-
-					// Add loaded class for any final animations
-					document.body.classList.add('animations-loaded');
-				}, 100);
-			});
-
-			// Enhanced navigation hover effects
-			document.addEventListener('DOMContentLoaded', function() {
+			// Enhanced navigation effects
+			function initNavigationEffects() {
 				const navLinks = document.querySelectorAll('.nav-links a');
 				navLinks.forEach(link => {
 					link.addEventListener('mouseenter', function() {
 						this.style.transform = 'translateY(-2px) scale(1.05)';
+						this.style.boxShadow = '0 5px 15px rgba(255, 107, 107, 0.4)';
 					});
 					link.addEventListener('mouseleave', function() {
 						if (!this.classList.contains('active')) {
 							this.style.transform = 'translateY(0) scale(1)';
+							this.style.boxShadow = '';
+						}
+					});
+				});
+			}
+
+			// Project card loading simulation
+			function initProjectLoadingEffect() {
+				const projectCards = document.querySelectorAll('.project-card');
+
+				projectCards.forEach((card, index) => {
+					card.classList.add('loading');
+
+					setTimeout(() => {
+						card.classList.remove('loading');
+					}, 1000 + (index * 150));
+				});
+			}
+
+			// Smooth page loading animation
+			function initPageLoadAnimation() {
+				document.body.style.opacity = '0';
+				document.body.style.transition = 'opacity 0.5s ease';
+
+				setTimeout(() => {
+					document.body.style.opacity = '1';
+				}, 100);
+			}
+
+			// Initialize all animations when page loads
+			document.addEventListener('DOMContentLoaded', function() {
+				initPageLoadAnimation();
+
+				// Delay animation initialization for smooth loading
+				setTimeout(() => {
+					initScrollAnimations();
+					initProjectCardAnimations();
+					initContentStagger();
+					initSidebarAnimations();
+					initStatCounters();
+					initProject3DEffects();
+					initTechTagEffects();
+					initProjectLinkEffects();
+					initParallaxEffect();
+					initNavigationEffects();
+					// initProjectLoadingEffect(); // Uncomment for loading simulation
+
+					// Add loaded class for final touches
+					document.body.classList.add('animations-loaded');
+				}, 150);
+			});
+
+			// Add smooth scrolling for anchor links
+			document.addEventListener('DOMContentLoaded', function() {
+				document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+					anchor.addEventListener('click', function (e) {
+						e.preventDefault();
+						const target = document.querySelector(this.getAttribute('href'));
+						if (target) {
+							target.scrollIntoView({
+								behavior: 'smooth',
+								block: 'start'
+							});
 						}
 					});
 				});

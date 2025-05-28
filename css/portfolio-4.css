@@ -1,0 +1,558 @@
+body {
+	background: #2f2f2f;
+	color: #ffffff;
+	font-family: 'Raleway', sans-serif;
+}
+.top-nav {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	background: rgba(47, 47, 47, 0.95);
+	padding: 15px 0;
+	z-index: 1000;
+	border-bottom: 2px solid #ff6b6b;
+	backdrop-filter: blur(10px);
+}
+.nav-links {
+	text-align: center;
+}
+.nav-links a {
+	color: white;
+	text-decoration: none;
+	margin: 0 20px;
+	padding: 10px 20px;
+	border-radius: 25px;
+	transition: all 0.3s ease;
+	display: inline-block;
+}
+.nav-links a:hover, .nav-links a.active {
+	background: #ff6b6b;
+	color: white;
+	text-decoration: none;
+	transform: translateY(-2px) scale(1.05);
+	box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+}
+.project-header {
+	padding: 120px 0 60px 0;
+	text-align: center;
+}
+.project-content {
+	padding: 60px 0;
+}
+.back-btn {
+	position: fixed;
+	bottom: 30px;
+	right: 30px;
+	z-index: 1000;
+	background: #ff6b6b;
+	color: white;
+	padding: 15px 25px;
+	border-radius: 50px;
+	text-decoration: none;
+	font-weight: bold;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+	animation: float 3s ease-in-out infinite;
+}
+.back-btn:hover {
+	background: #ff5252;
+	color: white;
+	text-decoration: none;
+	transform: translateY(-2px) scale(1.05);
+	box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+	animation: none;
+}
+
+/* 🎨 ENHANCED CALISTHENICS ANIMATIONS & EFFECTS 🎨 */
+
+/* Scroll-triggered animations */
+.scroll-reveal {
+	opacity: 0;
+	transform: translateY(60px);
+	transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.scroll-reveal.revealed {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.scroll-reveal-left {
+	opacity: 0;
+	transform: translateX(-60px);
+	transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.scroll-reveal-left.revealed {
+	opacity: 1;
+	transform: translateX(0);
+}
+
+.scroll-reveal-right {
+	opacity: 0;
+	transform: translateX(60px);
+	transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.scroll-reveal-right.revealed {
+	opacity: 1;
+	transform: translateX(0);
+}
+
+/* Enhanced workout sections with professional animations */
+.workout-section {
+	background: #3a3a3a;
+	padding: 30px;
+	border-radius: 15px;
+	margin: 30px 0;
+	transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	position: relative;
+	overflow: hidden;
+	border: 1px solid rgba(255, 107, 107, 0.1);
+	opacity: 0;
+	transform: translateY(30px) scale(0.95);
+}
+.workout-section.animate {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+.workout-section::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), transparent);
+	opacity: 0;
+	transition: opacity 0.4s ease;
+	z-index: 1;
+}
+.workout-section:hover {
+	transform: translateY(-8px) scale(1.02);
+	box-shadow: 0 20px 40px rgba(255, 107, 107, 0.15);
+	border-color: rgba(255, 107, 107, 0.3);
+}
+.workout-section:hover::before {
+	opacity: 1;
+}
+.workout-section * {
+	position: relative;
+	z-index: 2;
+}
+
+/* Enhanced exercise cards with modern animations */
+.exercise-card {
+	background: #444;
+	padding: 20px;
+	border-radius: 12px;
+	margin: 15px 0;
+	border-left: 4px solid #ff6b6b;
+	transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	position: relative;
+	overflow: hidden;
+	opacity: 0;
+	transform: translateX(-30px);
+}
+.exercise-card.animate {
+	opacity: 1;
+	transform: translateX(0);
+}
+.exercise-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 4px;
+	height: 0;
+	background: linear-gradient(180deg, #ff6b6b, #ff5252);
+	transition: height 0.6s ease;
+	z-index: 1;
+}
+.exercise-card.animate::before {
+	height: 100%;
+}
+.exercise-card:hover {
+	transform: translateX(10px);
+	background: #4a4a4a;
+	box-shadow: 0 10px 25px rgba(255, 107, 107, 0.2);
+}
+.exercise-card:hover::before {
+	width: 6px;
+}
+
+/* Enhanced exercise table with interactive effects */
+.exercise-card table {
+	margin-top: 15px;
+	width: 100%;
+	border-collapse: collapse;
+}
+.exercise-card table th,
+.exercise-card table td {
+	padding: 12px 8px;
+	text-align: left;
+	transition: all 0.3s ease;
+	border-bottom: 1px solid #555;
+}
+.exercise-card table th {
+	background: rgba(255, 107, 107, 0.1);
+	font-weight: 600;
+	color: #ff6b6b;
+}
+.exercise-card table tr {
+	opacity: 0;
+	transform: translateY(10px);
+	transition: all 0.4s ease;
+}
+.exercise-card table tr.animate {
+	opacity: 1;
+	transform: translateY(0);
+}
+.exercise-card table tr:hover {
+	background: rgba(255, 107, 107, 0.05);
+	transform: translateX(5px);
+}
+
+/* Enhanced skill level tags */
+.skill-level {
+	display: inline-block;
+	background: linear-gradient(135deg, #ff6b6b, #ff5252);
+	color: white;
+	padding: 6px 14px;
+	margin: 5px 5px 5px 0;
+	border-radius: 20px;
+	font-size: 12px;
+	font-weight: 500;
+	transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	cursor: pointer;
+	position: relative;
+	overflow: hidden;
+	opacity: 0;
+	transform: scale(0.8) rotate(-5deg);
+}
+.skill-level.animate {
+	opacity: 1;
+	transform: scale(1) rotate(0deg);
+}
+.skill-level::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+	transition: left 0.6s;
+}
+.skill-level:hover {
+	transform: translateY(-3px) scale(1.1) rotate(2deg);
+	box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+	background: linear-gradient(135deg, #ff5252, #ff3030);
+}
+.skill-level:hover::before {
+	left: 100%;
+}
+
+/* Enhanced progress bars with smooth animations */
+.progress-bar-custom {
+	background: #555;
+	height: 10px;
+	border-radius: 5px;
+	overflow: hidden;
+	margin: 10px 0;
+	position: relative;
+	box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+.progress-fill {
+	background: linear-gradient(90deg, #ff6b6b, #ff5252);
+	height: 100%;
+	width: 0;
+	transition: width 2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	position: relative;
+	overflow: hidden;
+}
+.progress-fill::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+	animation: shimmer 2s infinite;
+	transform: translateX(-100%);
+}
+.progress-fill.animate::before {
+	animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+	0% { transform: translateX(-100%); }
+	100% { transform: translateX(100%); }
+}
+
+/* Enhanced philosophy quote with gradient background */
+.philosophy-quote {
+	background: linear-gradient(135deg, #333, #2a2a2a);
+	padding: 30px;
+	border-radius: 15px;
+	text-align: center;
+	font-style: italic;
+	font-size: 18px;
+	border-left: 5px solid #ff6b6b;
+	margin: 30px 0;
+	position: relative;
+	overflow: hidden;
+	opacity: 0;
+	transform: scale(0.95);
+	transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.philosophy-quote.animate {
+	opacity: 1;
+	transform: scale(1);
+}
+.philosophy-quote::before {
+	content: '"';
+	position: absolute;
+	top: -10px;
+	left: 20px;
+	font-size: 80px;
+	color: rgba(255, 107, 107, 0.2);
+	font-family: Georgia, serif;
+}
+.philosophy-quote:hover {
+	transform: scale(1.02);
+	box-shadow: 0 15px 30px rgba(255, 107, 107, 0.15);
+}
+
+/* Enhanced sidebar sections with 3D effects */
+.sidebar-section {
+	background: #3a3a3a;
+	padding: 25px;
+	border-radius: 15px;
+	margin: 30px 0;
+	transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	position: relative;
+	overflow: hidden;
+	border: 1px solid rgba(255, 107, 107, 0.1);
+	opacity: 0;
+	transform: translateX(30px);
+	cursor: pointer;
+}
+.sidebar-section.animate {
+	opacity: 1;
+	transform: translateX(0);
+}
+.sidebar-section:hover {
+	transform: perspective(1000px) rotateX(5deg) rotateY(5deg) translateZ(10px);
+	box-shadow: 0 15px 30px rgba(255, 107, 107, 0.15);
+	border-color: rgba(255, 107, 107, 0.3);
+}
+
+/* Enhanced training icons with professional effects */
+.training-icon {
+	font-size: 24px;
+	color: #ff6b6b;
+	margin-right: 10px;
+	transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	display: inline-block;
+}
+.workout-section:hover .training-icon {
+	transform: scale(1.2) rotate(10deg);
+	color: #ff5252;
+	text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+}
+
+/* Header animations */
+.project-header h1 {
+	opacity: 0;
+	transform: translateY(30px);
+	animation: slideInFromTop 0.8s ease forwards;
+	animation-delay: 0.2s;
+}
+.project-header h3 {
+	opacity: 0;
+	transform: translateY(30px);
+	animation: slideInFromTop 0.8s ease forwards;
+	animation-delay: 0.4s;
+}
+.project-header .lead {
+	opacity: 0;
+	transform: translateY(30px);
+	animation: slideInFromTop 0.8s ease forwards;
+	animation-delay: 0.6s;
+}
+
+@keyframes slideInFromTop {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Floating animation for back button */
+@keyframes float {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-5px); }
+}
+
+/* Enhanced list items with progressive reveal */
+.workout-section ul li {
+	opacity: 0;
+	transform: translateX(-20px);
+	transition: all 0.4s ease;
+	padding: 8px 0;
+	border-bottom: 1px solid transparent;
+	position: relative;
+}
+.workout-section ul li.animate {
+	opacity: 1;
+	transform: translateX(0);
+}
+.workout-section ul li:hover {
+	padding-left: 10px;
+	border-bottom-color: rgba(255, 107, 107, 0.3);
+}
+.workout-section ul li::before {
+	content: "💪";
+	margin-right: 10px;
+	transition: transform 0.3s ease;
+}
+.workout-section ul li:hover::before {
+	transform: scale(1.2);
+}
+
+/* Content stagger animation system */
+.content-stagger {
+	opacity: 0;
+	transform: translateY(40px);
+	transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.content-stagger.animate {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+/* Enhanced text highlight effect */
+.highlight-text {
+	background: linear-gradient(120deg, transparent 0%, transparent 50%, #ff6b6b 50%);
+	background-size: 240% 100%;
+	background-repeat: no-repeat;
+	transition: background-position 0.6s ease;
+	cursor: pointer;
+}
+.highlight-text:hover {
+	background-position: 100% 0;
+	color: white;
+}
+
+/* Responsive enhancements */
+@media (max-width: 768px) {
+	.workout-section {
+		padding: 20px;
+		margin: 20px 0;
+	}
+	.exercise-card {
+		padding: 15px;
+	}
+	.sidebar-section {
+		margin: 20px 0;
+		padding: 20px;
+	}
+	.exercise-card table th,
+	.exercise-card table td {
+		padding: 8px 4px;
+		font-size: 14px;
+	}
+}
+
+/* Skills progression visual enhancement */
+.skills-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 15px;
+	margin: 20px 0;
+}
+.skill-item {
+	opacity: 0;
+	transform: translateY(20px);
+	transition: all 0.5s ease;
+}
+.skill-item.animate {
+	opacity: 1;
+	transform: translateY(0);
+}
+.skill-item p {
+	margin: 8px 0 5px 0;
+	font-weight: 600;
+	color: #ffffff;
+}
+
+/* Workout day headers with enhanced styling */
+.workout-section h4 {
+	color: #ff6b6b;
+	margin-bottom: 15px;
+	position: relative;
+	opacity: 0;
+	transform: translateX(-20px);
+	transition: all 0.5s ease;
+}
+.workout-section h4.animate {
+	opacity: 1;
+	transform: translateX(0);
+}
+.workout-section h4::after {
+	content: '';
+	position: absolute;
+	bottom: -5px;
+	left: 0;
+	width: 0;
+	height: 2px;
+	background: linear-gradient(90deg, #ff6b6b, #ff5252);
+	transition: width 0.6s ease;
+}
+.workout-section h4.animate::after {
+	width: 100px;
+}
+
+/* Enhanced inspiration section */
+.inspiration-section {
+	background: linear-gradient(135deg, #4a4a4a, #3a3a3a);
+	border-radius: 15px;
+	padding: 25px;
+	margin: 20px 0;
+	border-left: 4px solid #ff6b6b;
+	position: relative;
+	overflow: hidden;
+}
+.inspiration-section::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 100px;
+	height: 100px;
+	background: radial-gradient(circle, rgba(255, 107, 107, 0.1), transparent);
+	border-radius: 50%;
+	transform: translate(50%, -50%);
+}
+
+/* Tech meets fitness section enhancement */
+.tech-fitness-list {
+	list-style: none;
+	padding: 0;
+}
+.tech-fitness-list li {
+	padding: 8px 0;
+	opacity: 0;
+	transform: translateX(-15px);
+	transition: all 0.4s ease;
+	border-radius: 8px;
+	margin: 5px 0;
+}
+.tech-fitness-list li.animate {
+	opacity: 1;
+	transform: translateX(0);
+}
+.tech-fitness-list li:hover {
+	background: rgba(255, 107, 107, 0.05);
+	padding-left: 15px;
+}

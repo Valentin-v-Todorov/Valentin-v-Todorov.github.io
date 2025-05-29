@@ -61,6 +61,49 @@ function initExperienceAnimations() {
 	});
 }
 
+// Recommendations sections staggered animation
+function initRecommendationsAnimations() {
+	const recommendationsSections = document.querySelectorAll('.recommendations-section');
+
+	const recommendationsObserver = new IntersectionObserver((entries) => {
+		entries.forEach((entry, index) => {
+			if (entry.isIntersecting) {
+				setTimeout(() => {
+					entry.target.classList.add('animate');
+
+					// Animate individual recommendation items
+					const recommendationItems = entry.target.querySelectorAll('.recommendation-item');
+					recommendationItems.forEach((item, i) => {
+						setTimeout(() => {
+							item.classList.add('animate');
+
+							// Animate recommendation header
+							const header = item.querySelector('.recommendation-header');
+							if (header) {
+								setTimeout(() => {
+									header.classList.add('animate');
+								}, 100);
+							}
+
+							// Animate recommendation text
+							const text = item.querySelector('.recommendation-text');
+							if (text) {
+								setTimeout(() => {
+									text.classList.add('animate');
+								}, 200);
+							}
+						}, i * 200);
+					});
+				}, index * 150);
+			}
+		});
+	}, { threshold: 0.2 });
+
+	recommendationsSections.forEach(section => {
+		recommendationsObserver.observe(section);
+	});
+}
+
 // Timeline progression animation
 function initTimelineAnimations() {
 	const timelineItems = document.querySelectorAll('.timeline');
@@ -118,7 +161,7 @@ function initSkillsAnimation() {
 	});
 }
 
-// Enhanced 3D hover effects for professional cards
+// Enhanced 3D hover effects for professional cards (very subtle tilt)
 function initProfessional3DEffects() {
 	document.querySelectorAll('.professional-card').forEach(card => {
 		card.addEventListener('mousemove', (e) => {
@@ -127,15 +170,15 @@ function initProfessional3DEffects() {
 			const y = e.clientY - rect.top;
 			const centerX = rect.width / 2;
 			const centerY = rect.height / 2;
-			const deltaX = (x - centerX) / 15;
-			const deltaY = (y - centerY) / 15;
+			const deltaX = (x - centerX) / 100; // Much higher divisor for very subtle effect
+			const deltaY = (y - centerY) / 100; // Much higher divisor for very subtle effect
 
 			card.style.transform = `
 				perspective(1000px)
 				rotateX(${deltaY}deg)
 				rotateY(${deltaX}deg)
-				translateZ(10px)
-				scale(1.02)
+				translateZ(5px)
+				scale(1.01)
 			`;
 		});
 
@@ -167,6 +210,35 @@ function initExperienceHoverEffects() {
 			if (icon) {
 				icon.style.transform = 'scale(1) rotate(0deg)';
 				icon.style.textShadow = '';
+			}
+		});
+	});
+}
+
+// Recommendations hover effects (removed avatar animations)
+function initRecommendationsHoverEffects() {
+	document.querySelectorAll('.recommendation-item').forEach(item => {
+		item.addEventListener('mouseenter', function() {
+			// Enhanced hover effects
+			this.style.transform = 'translateX(5px)';
+			this.style.background = '#4a4a4a';
+			this.style.boxShadow = '0 10px 25px rgba(255, 107, 107, 0.2)';
+
+			// Enhance text color
+			const text = this.querySelector('.recommendation-text');
+			if (text) {
+				text.style.color = '#ffffff';
+			}
+		});
+
+		item.addEventListener('mouseleave', function() {
+			this.style.transform = 'translateX(0)';
+			this.style.background = '#444';
+			this.style.boxShadow = '';
+
+			const text = this.querySelector('.recommendation-text');
+			if (text) {
+				text.style.color = '#e0e0e0';
 			}
 		});
 	});
@@ -321,11 +393,13 @@ document.addEventListener('DOMContentLoaded', function() {
 	setTimeout(() => {
 		initScrollAnimations();
 		initExperienceAnimations();
+		initRecommendationsAnimations();
 		initTimelineAnimations();
 		initContentStagger();
 		initSkillsAnimation();
 		initProfessional3DEffects();
 		initExperienceHoverEffects();
+		initRecommendationsHoverEffects();
 		initTechTagEffects();
 		initParallaxEffect();
 		initAchievementAnimations();

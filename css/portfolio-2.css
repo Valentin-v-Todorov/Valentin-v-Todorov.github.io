@@ -264,16 +264,39 @@ body {
     width: 4px;
     height: 0;
     background: linear-gradient(180deg, #ff6b6b, #ff5252);
-    transition: height 0.8s ease;
+    transition: height 1s ease;
     z-index: 1;
 }
 .timeline.animate::before {
     height: 100%;
 }
+.timeline::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -10px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    border: 3px solid #2f2f2f;
+    opacity: 0;
+    transition: all 0.6s ease 0.5s;
+}
+.timeline.animate::after {
+    opacity: 1;
+    animation: timelinePulse 2s ease-in-out infinite 1s;
+}
 .timeline:hover {
-    transform: translateX(10px);
-    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.2);
+    transform: translateX(15px);
+    box-shadow: 0 15px 30px rgba(255, 107, 107, 0.2);
     background: #383838;
+}
+
+@keyframes timelinePulse {
+    0%, 100% { transform: translateY(-50%) scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+    50% { transform: translateY(-50%) scale(1.2); box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
 }
 
 /* Enhanced blog date styling */
@@ -289,6 +312,140 @@ body {
 .blog-date.animate {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* RECOMMENDATIONS SECTION STYLING */
+.recommendations-section {
+    background: #3a3a3a;
+    padding: 25px;
+    border-radius: 15px;
+    margin: 30px 0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 107, 107, 0.1);
+    opacity: 0;
+    transform: translateX(30px);
+    cursor: default;
+}
+.recommendations-section.animate {
+    opacity: 1;
+    transform: translateX(0);
+}
+.recommendations-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(255, 107, 107, 0.15);
+    border-color: rgba(255, 107, 107, 0.3);
+}
+.recommendations-section * {
+    position: relative;
+    z-index: 2;
+}
+
+.recommendation-item {
+    background: #444;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 15px 0;
+    border-left: 4px solid #ff6b6b;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px);
+}
+.recommendation-item.animate {
+    opacity: 1;
+    transform: translateY(0);
+}
+.recommendation-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 0;
+    background: linear-gradient(180deg, #ff6b6b, #ff5252);
+    transition: height 0.8s ease;
+    z-index: 1;
+}
+.recommendation-item.animate::before {
+    height: 100%;
+}
+.recommendation-item:hover {
+    transform: translateX(5px);
+    background: #4a4a4a;
+    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.2);
+}
+
+.recommendation-header {
+    margin-bottom: 12px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s ease;
+}
+.recommendation-header.animate {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Removed avatar styles completely */
+.recommendation-avatar {
+    display: none;
+}
+
+.recommendation-info h5 {
+    color: #ffffff;
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+.recommendation-info p {
+    color: #cccccc;
+    margin: 0;
+    font-size: 13px;
+}
+.recommendation-company {
+    color: #ff6b6b;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.recommendation-text {
+    color: #e0e0e0;
+    line-height: 1.6;
+    font-size: 14px;
+    font-style: italic;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.6s ease;
+}
+.recommendation-text.animate {
+    opacity: 1;
+    transform: translateY(0);
+}
+.recommendation-item:hover .recommendation-text {
+    color: #ffffff;
+}
+
+.recommendation-text::before {
+    content: '"';
+    color: rgba(255, 107, 107, 0.6);
+    font-size: 24px;
+    line-height: 0;
+    position: relative;
+    top: 8px;
+    margin-right: 5px;
+}
+.recommendation-text::after {
+    content: '"';
+    color: rgba(255, 107, 107, 0.6);
+    font-size: 24px;
+    line-height: 0;
+    position: relative;
+    top: 8px;
+    margin-left: 5px;
 }
 
 /* Header animations */
@@ -359,13 +516,13 @@ body {
     transform: translateY(0);
 }
 
-/* Professional card hover effects */
+/* Professional card hover effects - SOFTER TILT */
 .professional-card {
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     cursor: pointer;
 }
 .professional-card:hover {
-    transform: perspective(1000px) rotateX(5deg) rotateY(5deg) translateZ(20px);
+    transform: perspective(1000px) rotateX(2deg) rotateY(2deg) translateZ(10px);
 }
 
 /* Quote section enhancement */

@@ -1,9 +1,9 @@
 // Typing effect implementation
 const texts = [
     "DevOps Engineer",
-    "Calisthenics Enthusiast",
-    "Cloud Platform Specialist",
-    "Automation Enthusiast"
+    "Calisthenics",
+    "Cloud Platform Engineer",
+    "Automation"
 ];
 
 let textIndex = 0;

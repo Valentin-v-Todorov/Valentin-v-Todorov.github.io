@@ -88,24 +88,6 @@ function animateProgressBars(container) {
 
 // ENHANCED HOVER EFFECTS
 function initEnhancedHoverEffects() {
-    document.querySelectorAll('.portfolio-thumb').forEach(item => {
-        item.addEventListener('mousemove', (e) => {
-            const rect = item.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = (y - centerY) / 10;
-            const rotateY = (centerX - x) / 10;
-
-            item.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
-        });
-
-        item.addEventListener('mouseleave', () => {
-            item.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
-        });
-    });
-
     document.querySelectorAll('.media').forEach(card => {
         card.addEventListener('mousemove', (e) => {
             const rect = card.getBoundingClientRect();
@@ -123,6 +105,79 @@ function initEnhancedHoverEffects() {
             card.style.transform = 'translateX(0) translateY(0) rotateX(0) rotateY(0)';
         });
     });
+}
+
+// ENHANCED PORTFOLIO EFFECTS - FIXED ROTATION LIMITS
+function initEnhancedPortfolioEffects() {
+    document.querySelectorAll('.portfolio-thumb').forEach(item => {
+        // Add subtle 3D tilt effect on mouse move - FIXED: Limited rotation
+        item.addEventListener('mousemove', (e) => {
+            const rect = item.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            // FIXED: Calculate rotation with limits
+            let rotateX = (y - centerY) / 30; // Increased divisor for gentler effect
+            let rotateY = (centerX - x) / 30; // Increased divisor for gentler effect
+
+            // FIXED: Clamp rotation values to prevent extreme tilting
+            const maxRotation = 8; // Maximum 8 degrees
+            rotateX = Math.max(-maxRotation, Math.min(maxRotation, rotateX));
+            rotateY = Math.max(-maxRotation, Math.min(maxRotation, rotateY));
+
+            item.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+        });
+
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+        });
+
+        // Add click ripple effect
+        item.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+
+            ripple.style.cssText = `
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 107, 107, 0.3);
+                transform: scale(0);
+                animation: ripple 0.6s linear;
+                width: ${size}px;
+                height: ${size}px;
+                left: ${x}px;
+                top: ${y}px;
+                pointer-events: none;
+                z-index: 3;
+            `;
+
+            this.appendChild(ripple);
+
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+
+    // Add ripple animation CSS if not already present
+    if (!document.querySelector('#portfolio-ripple-styles')) {
+        const style = document.createElement('style');
+        style.id = 'portfolio-ripple-styles';
+        style.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 // STAGGERED ANIMATIONS
@@ -214,6 +269,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initScrollAnimations();
     initEnhancedHoverEffects();
     initStaggeredAnimations();
+
+    // Initialize enhanced portfolio effects
+    setTimeout(() => {
+        initEnhancedPortfolioEffects();
+    }, 500);
 
     // Add loading complete class
     setTimeout(() => {

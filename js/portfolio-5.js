@@ -1,17 +1,5 @@
 // 🚀 ENHANCED COMING SOON ANIMATION SYSTEM 🚀
 
-// Page loader animation
-function initPageLoader() {
-	const loader = document.querySelector('.page-loader');
-
-	setTimeout(() => {
-		loader.classList.add('fade-out');
-		setTimeout(() => {
-			loader.style.display = 'none';
-		}, 500);
-	}, 1500);
-}
-
 // Particle system for background
 function initParticleSystem() {
 	const particlesContainer = document.querySelector('.particles');
@@ -353,7 +341,6 @@ function initShimmerEffect() {
 
 // Initialize all animations when page loads
 document.addEventListener('DOMContentLoaded', function() {
-	initPageLoader();
 	initParticleSystem();
 
 	// Delay animation initialization for smooth loading

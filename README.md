@@ -1,117 +1,54 @@
-# DevOps Portfolio Website
+# valentin-todorov.com
 
-## 🛠️ Tech Stack
+Personal site of Valentin Todorov - DevOps & Cloud Platform Engineer.
 
-- **HTML5**: Semantic structure with 5 main pages
-- **CSS3**: Custom animations, gradients, 3D transforms, grid layouts
-- **JavaScript**: Interactive animations, scroll effects, typing effects
-- **jQuery 1.10.2**: DOM manipulation and event handling
-- **fullPage.js 2.6.2**: Smooth scrolling navigation for main page
-- **WOW.js**: Scroll-triggered animations
-- **Bootstrap 3.3.4**: Responsive grid system
-- **Font Awesome**: Icons throughout the site
-- **Google Fonts**: Raleway typography
+Live at [valentin-todorov.com](https://valentin-todorov.com), served by GitHub Pages
+from the `main` branch root.
 
-## 📁 Project Structure
+## Layout
 
 ```
-.
-├── CNAME               # Custom domain configuration
-├── README.md           # Project documentation
-├── index.html          # Main landing page with fullPage.js
-├── portfolio-1.html    # DevOps projects showcase
-├── portfolio-2.html    # Professional work experience
-├── portfolio-3.html    # Technical blog (coming soon)
-├── portfolio-4.html    # Calisthenics fitness journey
-├── portfolio-5.html    # Future projects roadmap
-├── css/
-│   ├── animate.min.css         # Animation library styles
-│   ├── bootstrap.min.css       # Bootstrap framework
-│   ├── font-awesome.min.css    # Font Awesome icons
-│   ├── index.css               # Main page specific styles
-│   ├── jquery.fullPage.css     # fullPage plugin styles
-│   ├── portfolio-[1-5].css     # Individual page styles
-│   └── templatemo-style.css    # Base template styles
-├── fonts/
-│   ├── FontAwesome.*     # Font Awesome font files
-│   └── glyphicons-*.*    # Bootstrap Glyphicons
-├── images/
-│   ├── LOGO.png                  # Site favicon and logo
-│   ├── home-bg.jpg               # Homepage background image
-│   └── portfolio-img[1-5].jpg    # Portfolio section images
-└── js/
-    ├── bootstrap.min.js                 # Bootstrap JavaScript
-    ├── custom.js                        # Global configurations
-    ├── index.js                         # Main page interactions
-    ├── jquery.js                        # jQuery library
-    ├── jquery.fullPage.js               # Smooth scrolling plugin
-    ├── jquery.simple-text-rotator.js    # Text rotation effects
-    ├── portfolio-[1-5].js               # Page-specific animations
-    ├── smoothscroll.js                  # Enhanced scrolling
-    └── wow.min.js                       # Scroll-triggered animations
+index.html            Landing page (hero, about, stack, experience, contact)
+projects.html         Projects listing with filters and detail modal
+support.js            dc-runtime - parses the page and renders it with React
+effects.js            Canvas and text effects, loaded via dynamic import()
+vendor/               React 18.3.1 + ReactDOM 18.3.1 UMD builds, served locally
+images/valentin.webp  Hero portrait
+images/og.png         Open Graph / social share card (1200x630)
+favicon.svg           Favicon
+apple-touch-icon.png  Home screen icon (180x180)
+CNAME                 Custom domain
+.nojekyll             Serve files as-is, skip Jekyll processing
 ```
 
-## ✨ Key Features
+## How it renders
 
-### Animation System
-- **Intersection Observer API**: Scroll-triggered animations
-- **CSS3 Transforms**: 3D hover effects with perspective
-- **Staggered Animations**: Sequential element reveals
-- **Typing Effect**: Custom typewriter animation for role titles
-- **Progress Bars**: Animated skill level indicators
+The pages are authored as `<x-dc>` documents: markup with `{{ }}` bindings plus
+`<sc-for>` / `<sc-if>` control-flow elements. `support.js` parses that at load
+time and renders it through React.
 
-### Interactive Elements
-- **3D Card Effects**: Mouse-following tilt animations
-- **Ripple Effects**: Click feedback on buttons/tags
-- **Parallax Scrolling**: Header movement on scroll
-- **Magnetic Icons**: Cursor-following icon movements
-- **Hover Transforms**: Scale, rotate, and translate effects
+React and ReactDOM are committed under `vendor/` and loaded by plain `<script>`
+tags ahead of `support.js`, so the site does not depend on a third-party CDN
+being reachable. The runtime checks `window.React && window.ReactDOM` before it
+reaches for unpkg, finds them already present, and skips the network entirely.
+`support.js` itself is unmodified - it ships with a `do not edit` header.
 
-### Navigation
-- **fullPage.js**: Smooth section scrolling on main page
-- **Fixed Navigation**: Persistent top nav across all pages
-- **Visual Indicators**: Animated navigation dots with tooltips
-- **Smooth Scrolling**: Custom scroll behavior for anchor links
+Do not swap that for the runtime's `window.__resources` override map. Setting
+that map also suppresses a re-fetch the runtime does on boot, and that re-fetch
+is what repairs the hero headline after the `data-decrypt` scramble animation
+finishes - without it the `<h1>` sticks permanently on a half-scrambled string
+such as `VALENTIQ TODORS^`.
 
-## 🎨 Design Philosophy
+## Local preview
 
-- **Dark Theme**: #2f2f2f background with #ffffff text
-- **Accent Color**: #ff6b6b (coral red) for highlights and CTAs
-- **Typography**: Raleway font family for modern, clean look
-- **Responsive**: Mobile-first approach with Bootstrap grid
-- **Performance**: CSS animations over JavaScript for smooth 60fps
+Any static file server works, since there is no build step:
 
-## 📱 Responsive Design
+```bash
+python3 -m http.server 4599
+```
 
-- **Breakpoints**: 768px, 480px for mobile optimization
-- **Flexible Layouts**: CSS Grid and Flexbox for complex layouts
-- **Touch Interactions**: Optimized hover states for mobile
-- **Performance**: Reduced animation complexity on smaller screens
+Then open <http://localhost:4599>.
 
-## 🚀 Deployment
+## Deploying
 
-- **GitHub Pages**: Static hosting with automatic deployment
-- **GitHub Actions**: CI/CD pipeline for automated builds
-- **Custom Domain**: Professional URL setup
-- **Performance**: Optimized assets and lazy loading
-
-## 💡 Notable Implementations
-
-1. **Custom Typing Effect**: Multi-text rotation without external libraries
-2. **3D Hover System**: Perspective-based mouse tracking
-3. **Staggered Animations**: IntersectionObserver with delay calculations
-4. **Particle System**: CSS-only floating particles background
-5. **Progressive Enhancement**: Graceful degradation for older browsers
-
-## 🔧 Setup & Installation
-
-1. Clone the repository
-2. Open `index.html` in a web browser
-3. No build process required - pure static files
-4. For development, use a local server for best results
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-Built with modern web standards and optimized for performance across all devices.
+Push to `main`. GitHub Pages publishes the root of the branch.

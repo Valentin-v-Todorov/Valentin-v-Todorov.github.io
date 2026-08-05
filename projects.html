@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects - Valentin Todorov</title>
+<meta name="description" content="Builds, pipelines and open-source CLI tools by Valentin Todorov - including tix-cli, alix-cli and github-account-switch-cli.">
+<meta name="author" content="Valentin Todorov">
+<link rel="canonical" href="https://valentin-todorov.com/projects.html">
+<meta name="theme-color" content="#171310">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Valentin Todorov">
+<meta property="og:url" content="https://valentin-todorov.com/projects.html">
+<meta property="og:title" content="Projects - Valentin Todorov">
+<meta property="og:description" content="Builds, pipelines and open-source CLI tools by Valentin Todorov - including tix-cli, alix-cli and github-account-switch-cli.">
+<meta property="og:image" content="https://valentin-todorov.com/images/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Valentin Todorov - DevOps &amp; Cloud Platform Engineer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Projects - Valentin Todorov">
+<meta name="twitter:description" content="Builds, pipelines and open-source CLI tools by Valentin Todorov - including tix-cli, alix-cli and github-account-switch-cli.">
+<meta name="twitter:image" content="https://valentin-todorov.com/images/og.png">
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Space+Grotesk:wght@400;500;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #171310; }
+a { color: #e8551c; }
+a:hover { color: #ff7a3d; }
+::selection { background: #e8551c; color: #171310; }
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #171310; }
+::-webkit-scrollbar-thumb { background: #3a322b; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #e8551c; }
+@keyframes vt-fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vt-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@media (max-width: 1024px) {
+  [data-cards4] { grid-template-columns: repeat(2, 1fr) !important; }
+  [data-rs] { padding-left: 32px !important; padding-right: 32px !important; }
+  [data-pg-hero] { padding: 150px 32px 56px !important; }
+}
+@media (max-width: 760px) {
+  [data-cards4] { grid-template-columns: 1fr !important; }
+  [data-rs] { padding: 56px 20px 90px !important; }
+  [data-pg-hero] { padding: 130px 20px 48px !important; }
+  [data-foot] { padding: 24px 20px !important; }
+  [data-nav-back] { display: none !important; }
+}
+</style>
+</helmet>
+
+<div style="background:#171310; color:#ece5d6; font-family:'Space Grotesk',sans-serif; overflow-x:hidden; cursor:none" data-vt-root="1">
+
+  <div id="vt-cursor-dot" style="position:fixed; top:0; left:0; width:8px; height:8px; border-radius:50%; background:#e8551c; z-index:500; pointer-events:none; transform:translate(-100px,-100px)"></div>
+  <div id="vt-cursor-ring" style="position:fixed; top:0; left:0; width:36px; height:36px; border-radius:50%; border:1.5px solid rgba(232,85,28,.75); z-index:500; pointer-events:none; transform:translate(-100px,-100px); transition:width .25s, height .25s, border-color .25s"></div>
+
+  <nav style="position:fixed; top:0; left:0; right:0; z-index:150; display:flex; align-items:center; justify-content:space-between; padding:14px 48px; background:rgba(23,19,16,.92); backdrop-filter:blur(12px); border-bottom:1px solid rgba(236,229,216,.12)">
+    <a href="index.html" style="font-family:Anton,sans-serif; font-size:19px; letter-spacing:.04em; color:#ece5d6; text-decoration:none; text-transform:uppercase; white-space:nowrap">Valentin Todorov<span style="color:#e8551c">.</span></a>
+    <div style="display:flex; align-items:center; gap:clamp(12px,2vw,28px); font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.06em; white-space:nowrap">
+      <a data-nav-back href="index.html" style="color:rgba(236,229,216,.72); text-decoration:none; transition:color .25s" style-hover="color:#e8551c">← BACK HOME</a>
+      <a href="https://github.com/Valentin-v-Todorov" target="_blank" style="color:rgba(236,229,216,.72); text-decoration:none; transition:color .25s" style-hover="color:#e8551c">GITHUB ↗</a>
+      <a href="mailto:valentin.v.todorov@gmail.com" style="background:#e8551c; color:#171310; padding:10px 18px; text-decoration:none; font-weight:700; letter-spacing:.1em; transition:background .25s, transform .25s" style-hover="background:#ff7a3d; transform:translateY(-2px)">LET'S TALK ↗</a>
+    </div>
+  </nav>
+
+  <section data-screen-label="Projects Hero" data-pg-hero="1" style="position:relative; overflow:hidden; background:#171310; padding:170px 48px 70px">
+    <canvas id="vt-glitch" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(23,19,16,.3), rgba(23,19,16,.55) 55%, #171310 97%); pointer-events:none"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; height:130px; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); -webkit-mask-image:linear-gradient(180deg, transparent, black 75%); mask-image:linear-gradient(180deg, transparent, black 75%); pointer-events:none"></div>
+    <div style="position:relative; z-index:2; max-width:1500px; margin:0 auto">
+      <div style="font-family:'JetBrains Mono',monospace; color:#e8551c; font-size:13px; letter-spacing:.14em; margin-bottom:20px">~/projects <span style="color:rgba(236,229,216,.45)">- builds, pipelines &amp; open-source CLI tools</span></div>
+      <h1 id="vt-ptitle" style="font-family:Anton,sans-serif; font-size:clamp(52px,7.5vw,112px); line-height:.95; margin:0 0 24px; text-transform:uppercase; color:#ece5d6">All projects<span style="color:#e8551c">.</span></h1>
+      <p data-reveal="up" style="max-width:560px; font-size:16px; line-height:1.7; color:rgba(236,229,216,.65); margin:0; text-wrap:pretty">This site, the open-source CLI tools I've published under the TheDevOpsBlueprint org, and whatever app I'm currently building at 11 PM.</p>
+      <div data-reveal="up" data-rd="120" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:36px">
+        <sc-for list="{{ filters }}" as="fl" hint-placeholder-count="5">
+          <div data-cursor="1" onClick="{{ fl.set }}" style="font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.1em; padding:10px 18px; cursor:none; transition:all .25s; border:1px solid {{ fl.brd }}; background: {{ fl.bg }}; color: {{ fl.col }}" style-hover="border-color:#e8551c">{{ fl.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Projects Grid" data-rs="1" style="position:relative; overflow:hidden; background:#171310; padding:30px 48px 110px">
+    <canvas data-trail-canvas="1" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <div style="position:relative; z-index:2; max-width:1500px; margin:0 auto">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; color:rgba(236,229,216,.4); margin-bottom:22px">SHOWING {{ count }} / {{ total }} ▪ CLICK A CARD FOR DETAILS, A LINK FOR THE CODE</div>
+      <div data-cards4="1" style="display:grid; grid-template-columns:repeat(4,1fr); gap:20px">
+        <sc-for list="{{ list }}" as="p" hint-placeholder-count="8">
+          <div data-tilt="1" data-cursor="1" onClick="{{ p.open }}" style="background:#1d1814; border:1px solid rgba(236,229,216,.12); color:#ece5d6; padding:30px 26px; display:flex; flex-direction:column; gap:14px; min-height:300px; animation:vt-fadein .4s ease">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px"><span style="font-family:'JetBrains Mono',monospace; font-size:24px; color:rgba(236,229,216,.22); font-weight:700">{{ p.num }}</span><span style="font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.12em; padding:5px 10px; white-space:nowrap; background: {{ p.bBg }}; color: {{ p.bCol }}; border:1px solid {{ p.bBrd }}">{{ p.bT }}</span></div>
+            <h3 style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.03em; text-transform:uppercase; margin:6px 0 0">{{ p.title }}</h3>
+            <p style="font-size:13.5px; line-height:1.65; color:rgba(236,229,216,.6); margin:0; flex:1; text-wrap:pretty">{{ p.desc }}</p>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(236,229,216,.5)">
+              <sc-for list="{{ p.tags }}" as="t" hint-placeholder-count="3"><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">{{ t }}</span></sc-for>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.08em">
+              <div style="display:flex; gap:16px">
+                <sc-for list="{{ p.links }}" as="l" hint-placeholder-count="1"><a href="{{ l.href }}" target="_blank" onClick="{{ stop }}" style="color:#e8551c; text-decoration:none" style-hover="color:#ff7a3d">{{ l.label }} ↗</a></sc-for>
+                <sc-if value="{{ p.soon }}" hint-placeholder-val="{{ false }}"><span style="color:rgba(236,229,216,.4)">COMING SOON</span></sc-if>
+              </div>
+              <span style="color:rgba(236,229,216,.35)">DETAILS ⤢</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <div style="background:#e8551c; overflow:hidden; padding:14px 0">
+    <div style="display:flex; width:max-content; animation:vt-marquee 26s linear infinite">
+      <span style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.08em; color:#171310; white-space:nowrap">TIX-CLI ✦ ALIX-CLI ✦ CRONPAL ✦ CUSTOM-PROMPT-PS1 ✦ GITHUB-ACCOUNT-SWITCH ✦ OPEN SOURCE ✦ THEDEVOPSBLUEPRINT ✦&#160;</span>
+      <span style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.08em; color:#171310; white-space:nowrap">TIX-CLI ✦ ALIX-CLI ✦ CRONPAL ✦ CUSTOM-PROMPT-PS1 ✦ GITHUB-ACCOUNT-SWITCH ✦ OPEN SOURCE ✦ THEDEVOPSBLUEPRINT ✦&#160;</span>
+    </div>
+  </div>
+
+  <section data-screen-label="Projects CTA" data-rs="1" style="background:#ece5d6; color:#171310; padding:90px 48px">
+    <div style="max-width:1500px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:40px; flex-wrap:wrap">
+      <div data-reveal="left">
+        <h2 style="font-family:Anton,sans-serif; font-size:clamp(34px,3.6vw,56px); text-transform:uppercase; margin:0 0 14px; line-height:1.05">Want a walk-through of the code<span style="color:#e8551c">?</span></h2>
+        <p style="font-size:16px; line-height:1.7; color:rgba(23,19,16,.72); margin:0; max-width:520px; text-wrap:pretty">Happy to talk pipelines, Terraform or terminal tooling - reach out any time, I promise I won't answer only in YAML.</p>
+      </div>
+      <div data-reveal="right" style="display:flex; gap:16px; flex-wrap:wrap">
+        <a href="mailto:valentin.v.todorov@gmail.com" style="background:#e8551c; color:#171310; text-decoration:none; font-weight:700; font-size:14px; letter-spacing:.1em; padding:17px 32px; transition:background .25s, transform .25s" style-hover="background:#ff7a3d; transform:translateY(-3px)">EMAIL ME ↗</a>
+        <a href="index.html" style="border:1px solid rgba(23,19,16,.4); color:#171310; text-decoration:none; font-weight:700; font-size:14px; letter-spacing:.1em; padding:16px 32px; transition:all .25s" style-hover="border-color:#e8551c; background:rgba(232,85,28,.08); transform:translateY(-3px)">← BACK HOME</a>
+      </div>
+    </div>
+  </section>
+
+  <footer data-screen-label="Footer" data-foot="1" style="background:#100d0a; border-top:1px solid rgba(236,229,216,.1); padding:34px 48px">
+    <div style="max-width:1500px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap">
+      <a href="index.html" style="font-family:Anton,sans-serif; font-size:16px; letter-spacing:.05em; text-transform:uppercase; color:#ece5d6; text-decoration:none">Valentin Todorov<span style="color:#e8551c">.</span></a>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(236,229,216,.4); letter-spacing:.08em">&gt; code. automate. lift. repeat.</div>
+      <div style="display:flex; align-items:center; gap:20px">
+        <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(236,229,216,.4)">© 2026 Valentin Todorov</span>
+        <div data-cursor="1" onClick="{{ goTop }}" style="width:40px; height:40px; background:#e8551c; color:#171310; display:flex; align-items:center; justify-content:center; font-weight:700; cursor:none; transition:transform .25s, background .25s" style-hover="transform:translateY(-4px); background:#ff7a3d">↑</div>
+      </div>
+    </div>
+  </footer>
+
+  <div onClick="{{ closeModal }}" style="position:fixed; inset:0; z-index:400; display:flex; align-items:center; justify-content:center; padding:40px; overflow-y:auto; background:{{ modal.bg }}; backdrop-filter:blur({{ modal.blurPx }}); -webkit-backdrop-filter:blur({{ modal.blurPx }}); transition:background .4s cubic-bezier(.22,.61,.36,1), backdrop-filter .4s cubic-bezier(.22,.61,.36,1); opacity:{{ modal.op }}; pointer-events:{{ modal.pe }}">
+    <div onClick="{{ stop }}" style="position:relative; width:min(900px,100%); max-height:84vh; overflow-y:auto; background:#1d1814; border:1px solid rgba(236,229,216,.14); padding:48px; transform:{{ modal.tf }}; transition:transform .45s cubic-bezier(.22,.61,.36,1)">
+      <div onClick="{{ closeModal }}" data-cursor="1" style="position:absolute; top:18px; right:18px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:none; border:1px solid rgba(236,229,216,.22); transition:all .25s; font-size:15px" style-hover="border-color:#e8551c; background:#e8551c; color:#171310">✕</div>
+      <span style="font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.12em; padding:5px 10px; background:{{ mp.bBg }}; color:{{ mp.bCol }}; border:1px solid {{ mp.bBrd }}">{{ mp.bT }}</span>
+      <h3 style="font-family:Anton,sans-serif; font-size:clamp(28px,3.4vw,42px); text-transform:uppercase; margin:18px 0 16px; line-height:1.05">{{ mp.title }}</h3>
+      <p style="font-size:15.5px; line-height:1.75; color:rgba(236,229,216,.68); margin:0 0 22px; max-width:640px; text-wrap:pretty">{{ mp.desc }}</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(236,229,216,.55); margin-bottom:30px">
+        <sc-for list="{{ mp.tags }}" as="t" hint-placeholder-count="3"><span style="border:1px solid rgba(236,229,216,.22); padding:5px 10px">{{ t }}</span></sc-for>
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace; font-size:12.5px; letter-spacing:.06em">
+        <sc-for list="{{ mp.links }}" as="l" hint-placeholder-count="1"><a href="{{ l.href }}" target="_blank" style="color:#e8551c; text-decoration:none; border-bottom:1px solid #e8551c; padding-bottom:3px" style-hover="color:#ff7a3d">{{ l.label }} ↗</a></sc-for>
+        <sc-if value="{{ mp.soon }}" hint-placeholder-val="{{ false }}"><span style="color:rgba(236,229,216,.4)">CODE COMING SOON</span></sc-if>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;reduceMotion&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Motion&quot;}}">
+class Component extends DCLogic {
+  state = { filter: "ALL", openItem: null };
+
+  filterNames = ["ALL", "OPEN SOURCE CLI", "LIVE", "APPS"];
+
+  data = [
+    { title: "Portfolio Website", status: "live", desc: "This site - custom design and animations, deployed automatically to GitHub Pages with a custom domain.", tags: ["HTML5", "CSS3", "JS", "GH ACTIONS"], links: [{ label: "GITHUB", href: "https://github.com/Valentin-v-Todorov/Valentin-v-Todorov.github.io" }, { label: "LIVE", href: "https://valentin-todorov.com" }] },
+    { title: "tix-cli", status: "oss", desc: "A fast terminal task manager - track your TODOs without ever leaving the shell.", tags: ["CLI", "TERMINAL", "PRODUCTIVITY"], links: [{ label: "GITHUB", href: "https://github.com/TheDevOpsBlueprint/tix-cli" }] },
+    { title: "alix-cli", status: "oss", desc: "Interactive alias manager for your shell - create, search and organize aliases from a friendly TUI.", tags: ["CLI", "SHELL", "TUI"], links: [{ label: "GITHUB", href: "https://github.com/TheDevOpsBlueprint/alix-cli" }] },
+    { title: "GitHub Account Switch", status: "oss", desc: "A fast, reliable CLI for juggling multiple GitHub accounts - switch identities in one command.", tags: ["CLI", "GIT", "GITHUB"], links: [{ label: "GITHUB", href: "https://github.com/TheDevOpsBlueprint/github-account-switch-cli" }] },
+    { title: "custom-prompt-PS1", status: "oss", desc: "Customizable shell prompt for Mac/Linux with Git integration, themes, and a CLI configuration tool.", tags: ["BASH", "SHELL", "THEMES"], links: [{ label: "GITHUB", href: "https://github.com/TheDevOpsBlueprint/custom-prompt-PS1" }] },
+    { title: "cronpal", status: "oss", desc: "Cron helper CLI - part of the TheDevOpsBlueprint open-source toolbox.", tags: ["CLI", "CRON", "AUTOMATION"], links: [{ label: "GITHUB", href: "https://github.com/TheDevOpsBlueprint/cronpal" }] },
+    { title: "IronLog", status: "app", desc: "A workout tracking app I started for myself - logging sets and tracking progress, no app-store bloat. It's live and anyone is welcome to use it while I keep building; version 3 is on the way.", tags: ["FITNESS", "IN PROGRESS"], links: [{ label: "LIVE APP", href: "https://ironlog.valentin-todorov.com" }] }
+  ];
+
+  openModal = (item) => { this.setState({ openItem: item }); document.body.style.overflow = "hidden"; };
+  closeModal = () => { this.setState({ openItem: null }); document.body.style.overflow = ""; };
+  stop = (e) => { e.stopPropagation(); };
+
+  componentDidMount() {
+    this._cleanups = [];
+    const rm = this.props.reduceMotion ?? false;
+    const fine = window.matchMedia("(pointer:fine)").matches;
+    const $$ = (s) => Array.from(document.querySelectorAll(s));
+    const revealEls = $$("[data-reveal]");
+    if (rm) { revealEls.forEach(el => { el.style.opacity = "1"; }); }
+    else {
+      const io = new IntersectionObserver(es => es.forEach(e => {
+        if (e.isIntersecting) { e.target.style.opacity = "1"; e.target.style.transform = "none"; io.unobserve(e.target); }
+      }), { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+      revealEls.forEach(el => {
+        const dir = el.getAttribute("data-reveal"), delay = el.getAttribute("data-rd") || 0;
+        el.style.opacity = "0";
+        el.style.transform = dir === "left" ? "translateX(-44px)" : dir === "right" ? "translateX(44px)" : "translateY(32px)";
+        el.style.transition = "opacity .85s cubic-bezier(.22,.61,.36,1) " + delay + "ms, transform .85s cubic-bezier(.22,.61,.36,1) " + delay + "ms";
+        io.observe(el);
+      });
+      this._cleanups.push(() => io.disconnect());
+    }
+    const dot = document.getElementById("vt-cursor-dot"), ring = document.getElementById("vt-cursor-ring");
+    if (!rm && fine && dot && ring) {
+      let mx = -100, my = -100, cx = -100, cy = -100, raf;
+      const onMove = (e) => { mx = e.clientX; my = e.clientY; dot.style.transform = "translate(" + (mx - 4) + "px," + (my - 4) + "px)"; };
+      const loop = () => { cx += (mx - cx) * 0.16; cy += (my - cy) * 0.16; ring.style.transform = "translate(" + (cx - ring.offsetWidth / 2) + "px," + (cy - ring.offsetHeight / 2) + "px)"; raf = requestAnimationFrame(loop); };
+      raf = requestAnimationFrame(loop);
+      const onOver = (e) => {
+        if (e.target.closest("a, button, [data-tilt], [data-cursor]")) { ring.style.width = "58px"; ring.style.height = "58px"; ring.style.borderColor = "rgba(255,122,61,1)"; }
+        else { ring.style.width = "36px"; ring.style.height = "36px"; ring.style.borderColor = "rgba(232,85,28,.75)"; }
+      };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseover", onOver);
+      this._cleanups.push(() => { cancelAnimationFrame(raf); document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseover", onOver); });
+    } else {
+      if (dot) dot.style.display = "none";
+      if (ring) ring.style.display = "none";
+      const root = document.querySelector("[data-vt-root]");
+      if (root) root.style.cursor = "auto";
+    }
+    import("./effects.js").then(m => {
+      if (!rm) {
+        const c = document.getElementById("vt-glitch");
+        if (c) this._cleanups.push(m.letterGlitch(c, {}));
+        const t = document.getElementById("vt-ptitle");
+        if (t) m.decryptEl(t);
+        if (fine) $$("[data-trail-canvas]").forEach(cv => this._cleanups.push(m.pixelTrail(cv, {})));
+      }
+    }).catch(() => {});
+    if (!rm && window.matchMedia("(pointer:fine)").matches) {
+      let cur = null;
+      const reset = (el) => { el.style.transform = "perspective(900px) rotateX(0) rotateY(0)"; el.style.boxShadow = "none"; };
+      const mm = (e) => {
+        const el = e.target && e.target.closest ? e.target.closest("[data-tilt]") : null;
+        if (cur && cur !== el) { reset(cur); cur = null; }
+        if (el) {
+          cur = el;
+          el.style.transition = "transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s";
+          const r = el.getBoundingClientRect();
+          let rx = (e.clientY - r.top - r.height / 2) / 24, ry = (r.width / 2 - (e.clientX - r.left)) / 24;
+          rx = Math.max(-6, Math.min(6, rx)); ry = Math.max(-6, Math.min(6, ry));
+          el.style.transform = "perspective(900px) rotateX(" + rx + "deg) rotateY(" + ry + "deg) translateY(-5px)";
+          el.style.boxShadow = "0 22px 44px rgba(0,0,0,.4)";
+        }
+      };
+      document.addEventListener("mousemove", mm);
+      this._cleanups.push(() => document.removeEventListener("mousemove", mm));
+    }
+    const onKey = (e) => { if (e.key === "Escape" && this.state.openItem) this.closeModal(); };
+    document.addEventListener("keydown", onKey);
+    this._cleanups.push(() => document.removeEventListener("keydown", onKey));
+  }
+
+  componentWillUnmount() { (this._cleanups || []).forEach(f => f()); document.body.style.overflow = ""; }
+
+  renderVals() {
+    const f = this.state.filter;
+    const match = (p) => f === "ALL" || (f === "OPEN SOURCE CLI" && p.status === "oss") || (f === "LIVE" && (p.status === "live" || p.status === "oss")) || (f === "APPS" && p.status === "app");
+    const B = {
+      live: { t: "● LIVE", bg: "#e8551c", col: "#171310", brd: "#e8551c" },
+      oss: { t: "OPEN SOURCE", bg: "#e8551c", col: "#171310", brd: "#e8551c" },
+      app: { t: "IN DEVELOPMENT", bg: "transparent", col: "#ff7a3d", brd: "#e8551c" }
+    };
+    const enrich = (p, i) => ({
+      ...p,
+      num: ("0" + ((i ?? 0) + 1)).slice(-2),
+      bT: B[p.status].t, bBg: B[p.status].bg, bCol: B[p.status].col, bBrd: B[p.status].brd,
+      soon: !p.links || p.links.length === 0,
+      open: () => this.openModal(p)
+    });
+    const filtered = this.data.filter(match);
+    const list = filtered.map((p, i) => enrich(p, i));
+    const openItem = this.state.openItem;
+    const open = !!openItem;
+    const mp = open ? enrich(openItem) : { title: "", desc: "", tags: [], links: [], soon: false, bT: "", bBg: "transparent", bCol: "transparent", bBrd: "transparent" };
+    const filters = this.filterNames.map(x => ({
+      label: x,
+      set: () => this.setState({ filter: x }),
+      bg: x === f ? "#e8551c" : "transparent",
+      col: x === f ? "#171310" : "rgba(236,229,216,.75)",
+      brd: x === f ? "#e8551c" : "rgba(236,229,216,.3)"
+    }));
+    return {
+      list, filters, mp,
+      modal: {
+        bg: open ? "rgba(23,19,16,.72)" : "rgba(23,19,16,0)",
+        blurPx: open ? "14px" : "0px",
+        op: open ? 1 : 0,
+        tf: open ? "translateY(0) scale(1)" : "translateY(24px) scale(.94)",
+        pe: open ? "auto" : "none"
+      },
+      closeModal: this.closeModal, stop: this.stop,
+      count: ("0" + filtered.length).slice(-2),
+      total: ("0" + this.data.length).slice(-2),
+      goTop: () => window.scrollTo({ top: 0, behavior: "smooth" })
+    };
+  }
+}
+</script>
+</body>
+</html>

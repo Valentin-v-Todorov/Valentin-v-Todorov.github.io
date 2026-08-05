@@ -1,318 +1,770 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valentin Todorov - DevOps &amp; Cloud Platform Engineer</title>
+<meta name="description" content="DevOps and Cloud Platform Engineer building CI/CD pipelines, Infrastructure as Code and Kubernetes platforms on GCP, AWS and Azure.">
+<meta name="author" content="Valentin Todorov">
+<link rel="canonical" href="https://valentin-todorov.com/">
+<meta name="theme-color" content="#171310">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Valentin Todorov">
+<meta property="og:url" content="https://valentin-todorov.com/">
+<meta property="og:title" content="Valentin Todorov - DevOps &amp; Cloud Platform Engineer">
+<meta property="og:description" content="DevOps and Cloud Platform Engineer building CI/CD pipelines, Infrastructure as Code and Kubernetes platforms on GCP, AWS and Azure.">
+<meta property="og:image" content="https://valentin-todorov.com/images/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Valentin Todorov - DevOps &amp; Cloud Platform Engineer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Valentin Todorov - DevOps &amp; Cloud Platform Engineer">
+<meta name="twitter:description" content="DevOps and Cloud Platform Engineer building CI/CD pipelines, Infrastructure as Code and Kubernetes platforms on GCP, AWS and Azure.">
+<meta name="twitter:image" content="https://valentin-todorov.com/images/og.png">
+<link rel="preload" as="image" href="images/valentin.webp" fetchpriority="high">
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Space+Grotesk:wght@400;500;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #171310; }
+a { color: #e8551c; }
+a:hover { color: #ff7a3d; }
+::selection { background: #e8551c; color: #171310; }
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #171310; }
+::-webkit-scrollbar-thumb { background: #3a322b; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #e8551c; }
+@keyframes vt-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@keyframes vt-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes vt-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes vt-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: .45; } }
+@keyframes vt-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes vt-fadein { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 1120px) {
+  [data-nav-links] { display: none !important; }
+  [data-nav-burger] { display: flex !important; }
+}
+@media (max-width: 1024px) {
+  [data-hero-grid] { grid-template-columns: 1fr !important; padding: 112px 32px 0 !important; gap: 16px !important; }
+  [data-hero-left] { padding-bottom: 20px !important; }
+  [data-hero-photo] { min-height: 0 !important; justify-content: center !important; margin-top: 4px; }
+  [data-hero-img] { height: auto !important; width: min(78%, 440px) !important; }
+  [data-hero-dots] { display: none !important; }
+  [data-2col] { grid-template-columns: 1fr !important; gap: 48px !important; }
+  [data-cards4] { grid-template-columns: repeat(2, 1fr) !important; }
+  [data-rs] { padding-left: 32px !important; padding-right: 32px !important; }
+  [data-exp-row] { grid-template-columns: 44px 1fr 36px !important; row-gap: 4px !important; }
+  [data-exp-co], [data-exp-dates] { grid-column: 2; }
+  [data-exp-body] { grid-template-columns: 1fr !important; gap: 26px !important; }
+}
+@media (max-width: 760px) {
+  [data-rs] { padding: 72px 20px !important; }
+  [data-hero-grid] { padding: 100px 20px 0 !important; }
+  [data-hero-code] { display: none !important; }
+  [data-hero-badge] { display: none !important; }
+  [data-hero-img] { width: min(92%, 380px) !important; }
+  [data-cards4] { grid-template-columns: 1fr !important; }
+  [data-stats] { grid-template-columns: repeat(2, 1fr) !important; margin-top: 56px !important; }
+  [data-stat] { border-right: none !important; border-bottom: 1px solid rgba(23,19,16,.15); padding: 26px 10px 22px !important; }
+  [data-stats] > div:nth-child(n+3) { border-bottom: none; }
+  [data-form] { padding: 30px 22px !important; }
+  [data-foot] { padding: 24px 20px !important; }
+}
+</style>
+</helmet>
 
-		<title>Valentin Todorov - DevOps Engineer | Cloud Platform Specialist</title>
-		<meta name="keywords" content="DevOps, Cloud Engineer, AWS, Azure, Docker, Kubernetes, CI/CD, Infrastructure as Code, Terraform, Ansible">
-		<meta name="description" content="Valentin Todorov - DevOps Engineer with expertise in cloud platforms, automation, and infrastructure as code. Based in Sofia, Bulgaria.">
-        <meta name="author" content="Valentin Todorov">
+<div style="background:#171310; color:#ece5d6; font-family:'Space Grotesk',sans-serif; overflow-x:hidden; cursor:none" data-vt-root="1">
 
-		<meta http-equiv="X-UA-Compatible" content="IE=Edge">
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+  <div id="vt-progress" style="position:fixed; top:0; left:0; right:0; height:3px; z-index:200; background:transparent"><div id="vt-progress-fill" style="height:100%; width:100%; background:#e8551c; transform:scaleX(0); transform-origin:left"></div></div>
 
-		<!-- Favicon -->
-		<link rel="icon" type="image/png" href="images/LOGO.png">
-		<link rel="shortcut icon" type="image/png" href="images/LOGO.png">
-		<link rel="apple-touch-icon" href="images/LOGO.png">
+  <div id="vt-cursor-dot" style="position:fixed; top:0; left:0; width:8px; height:8px; border-radius:50%; background:#e8551c; z-index:300; pointer-events:none; transform:translate(-100px,-100px)"></div>
+  <div id="vt-cursor-ring" style="position:fixed; top:0; left:0; width:36px; height:36px; border-radius:50%; border:1.5px solid rgba(232,85,28,.75); z-index:300; pointer-events:none; transform:translate(-100px,-100px); transition:width .25s, height .25s, border-color .25s"></div>
 
-		<!-- animate -->
-		<link rel="stylesheet" href="css/animate.min.css">
-		<!-- bootstrap -->
-		<link rel="stylesheet" href="css/bootstrap.min.css">
-		<!-- font-awesome -->
-		<link rel="stylesheet" href="css/font-awesome.min.css">
-		<!-- google font -->
-		<link href='http://fonts.googleapis.com/css?family=Raleway:400,300,700,800' rel='stylesheet' type='text/css'>
-		<!-- fullpage -->
-		<link rel="stylesheet" href="css/jquery.fullPage.css">
-		<!-- custom -->
-		<link rel="stylesheet" href="css/templatemo-style.css">
-		<!-- index specific styles -->
-		<link rel="stylesheet" href="css/index.css">
+  <nav id="vt-nav" style="position:fixed; top:0; left:0; right:0; z-index:150; display:flex; align-items:center; justify-content:space-between; padding:18px 48px; transition:background .4s, border-color .4s, padding .4s; background:transparent; border-bottom:1px solid transparent">
+    <a href="#home" onClick="{{ nav.home }}" style="font-family:Anton,sans-serif; font-size:19px; letter-spacing:.04em; color:#ece5d6; text-decoration:none; text-transform:uppercase; white-space:nowrap">Valentin Todorov<span style="color:#e8551c">.</span></a>
+    <div data-nav-links="1" style="display:flex; align-items:center; gap:clamp(10px,1.6vw,28px); font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.06em; white-space:nowrap">
+      <a id="vt-link-home" href="#home" onClick="{{ nav.home }}" style="color:#e8551c; text-decoration:none">01. HOME</a>
+      <a id="vt-link-about" href="#about" onClick="{{ nav.about }}" style="color:rgba(236,229,216,.72); text-decoration:none">02. ABOUT</a>
+      <a id="vt-link-stack" href="#stack" onClick="{{ nav.stack }}" style="color:rgba(236,229,216,.72); text-decoration:none">03. STACK</a>
+      <a id="vt-link-experience" href="#experience" onClick="{{ nav.experience }}" style="color:rgba(236,229,216,.72); text-decoration:none">04. WORK</a>
+      <a id="vt-link-projects" href="#projects" onClick="{{ nav.projects }}" style="color:rgba(236,229,216,.72); text-decoration:none">05. PROJECTS</a>
+      <a id="vt-link-contact" href="#contact" onClick="{{ nav.contact }}" style="color:rgba(236,229,216,.72); text-decoration:none">06. CONTACT</a>
+      <a href="#contact" onClick="{{ nav.contact }}" style="background:#e8551c; color:#171310; padding:10px 18px; text-decoration:none; font-weight:700; letter-spacing:.1em; transition:background .25s, transform .25s" style-hover="background:#ff7a3d; transform:translateY(-2px)">LET'S TALK ↗</a>
+    </div>
+    <div data-nav-burger="1" onClick="{{ toggleMenu }}" style="display:none; flex-direction:column; gap:5px; padding:10px 2px">
+      <span style="width:26px; height:2px; background:#ece5d6; display:block"></span>
+      <span style="width:26px; height:2px; background:#e8551c; display:block"></span>
+      <span style="width:26px; height:2px; background:#ece5d6; display:block"></span>
+    </div>
+  </nav>
 
-	</head>
-	<body>
+  <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:240; background:rgba(23,19,16,.985); display:flex; flex-direction:column; justify-content:center; gap:2px; padding:70px 34px; animation:vt-fadein .3s ease">
+      <div onClick="{{ closeMenu }}" style="position:absolute; top:14px; right:18px; font-family:'JetBrains Mono',monospace; font-size:24px; color:#ece5d6; padding:12px">✕</div>
+      <a href="#home" onClick="{{ mnav.home }}" style="display:flex; align-items:baseline; gap:16px; font-family:Anton,sans-serif; font-size:clamp(30px,7vw,44px); text-transform:uppercase; color:#ece5d6; text-decoration:none; padding:12px 0; border-bottom:1px solid rgba(236,229,216,.1)"><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8551c">01</span>Home</a>
+      <a href="#about" onClick="{{ mnav.about }}" style="display:flex; align-items:baseline; gap:16px; font-family:Anton,sans-serif; font-size:clamp(30px,7vw,44px); text-transform:uppercase; color:#ece5d6; text-decoration:none; padding:12px 0; border-bottom:1px solid rgba(236,229,216,.1)"><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8551c">02</span>About</a>
+      <a href="#stack" onClick="{{ mnav.stack }}" style="display:flex; align-items:baseline; gap:16px; font-family:Anton,sans-serif; font-size:clamp(30px,7vw,44px); text-transform:uppercase; color:#ece5d6; text-decoration:none; padding:12px 0; border-bottom:1px solid rgba(236,229,216,.1)"><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8551c">03</span>Stack</a>
+      <a href="#experience" onClick="{{ mnav.experience }}" style="display:flex; align-items:baseline; gap:16px; font-family:Anton,sans-serif; font-size:clamp(30px,7vw,44px); text-transform:uppercase; color:#ece5d6; text-decoration:none; padding:12px 0; border-bottom:1px solid rgba(236,229,216,.1)"><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8551c">04</span>Work</a>
+      <a href="#projects" onClick="{{ mnav.projects }}" style="display:flex; align-items:baseline; gap:16px; font-family:Anton,sans-serif; font-size:clamp(30px,7vw,44px); text-transform:uppercase; color:#ece5d6; text-decoration:none; padding:12px 0; border-bottom:1px solid rgba(236,229,216,.1)"><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8551c">05</span>Projects</a>
+      <a href="#contact" onClick="{{ mnav.contact }}" style="display:flex; align-items:baseline; gap:16px; font-family:Anton,sans-serif; font-size:clamp(30px,7vw,44px); text-transform:uppercase; color:#ece5d6; text-decoration:none; padding:12px 0"><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8551c">06</span>Contact</a>
+      <div style="display:flex; gap:22px; margin-top:30px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.1em; flex-wrap:wrap">
+        <a href="https://github.com/Valentin-v-Todorov" target="_blank" style="color:rgba(236,229,216,.6); text-decoration:none">GITHUB ↗</a>
+        <a href="https://www.linkedin.com/in/valentin-todorov-49b065218/" target="_blank" style="color:rgba(236,229,216,.6); text-decoration:none">LINKEDIN ↗</a>
+        <a href="https://www.instagram.com/valentin_todorov/" target="_blank" style="color:rgba(236,229,216,.6); text-decoration:none">INSTAGRAM ↗</a>
+        <a href="mailto:valentin.v.todorov@gmail.com" style="color:rgba(236,229,216,.6); text-decoration:none">EMAIL ↗</a>
+      </div>
+    </div>
+  </sc-if>
 
-	<div class="top-social-icons">
-		<a href="https://www.linkedin.com/in/valentin-todorov-49b065218/" target="_blank" title="LinkedIn">
-			<i class="fa fa-linkedin"></i>
-		</a>
-		<a href="https://www.instagram.com/valentin_todorov/" target="_blank" title="Instagram">
-			<i class="fa fa-instagram"></i>
-		</a>
-		<a href="mailto:valentin.v.todorov@gmail.com" title="Email">
-			<i class="fa fa-envelope"></i>
-		</a>
-	</div>
+  <section id="home" data-screen-label="Hero" style="position:relative; min-height:100vh; display:flex; flex-direction:column; justify-content:flex-end; background:#171310">
+    <div style="position:absolute; inset:0; background:radial-gradient(ellipse 60% 50% at 75% 35%, rgba(232,85,28,.09), transparent 65%); pointer-events:none"></div>
+    <canvas id="vt-pixel-canvas" data-trail-canvas="1" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <div data-hero-grid="1" style="position:relative; z-index:2; display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:end; max-width:1500px; width:100%; margin:0 auto; padding:140px 48px 0; box-sizing:border-box; flex:1">
+      <div data-hero-left="1" style="padding-bottom:90px; align-self:center">
+        <div data-reveal="up" style="font-family:'JetBrains Mono',monospace; color:#e8551c; font-size:13px; letter-spacing:.14em; margin-bottom:22px">&lt;devops_engineer /&gt;<span style="color:rgba(236,229,216,.45); margin-left:14px">- CLOUD PLATFORM ENGINEER @ FLYR</span></div>
+        <h1 data-decrypt="1" data-reveal="up" data-rd="80" style="font-family:Anton,sans-serif; font-size:clamp(58px,9.5vw,158px); line-height:.92; margin:0 0 26px; text-transform:uppercase; letter-spacing:.005em; color:#ece5d6; text-wrap:balance">Valentin<br>Todorov<span style="color:#e8551c">.</span></h1>
+        <div data-reveal="up" data-rd="160" style="font-family:'JetBrains Mono',monospace; font-size:clamp(16px,1.4vw,22px); color:rgba(236,229,216,.85); margin-bottom:26px; min-height:30px"><span style="color:#e8551c">&gt;</span> {{ typed }}<span style="display:inline-block; width:11px; height:22px; background:#e8551c; margin-left:6px; vertical-align:middle; animation:vt-blink 1s step-end infinite"></span></div>
+        <p data-reveal="up" data-rd="240" style="max-width:520px; font-size:16px; line-height:1.7; color:rgba(236,229,216,.62); margin:0 0 38px; text-wrap:pretty">I build cloud infrastructure that just works - CI/CD pipelines, Infrastructure as Code, and Kubernetes platforms on GCP, AWS &amp; Azure. A decade of customer-facing work taught me to build for the people who depend on it, and to stay calm when it breaks anyway.</p>
+        <div data-reveal="up" data-rd="320" style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:44px">
+          <a href="#projects" onClick="{{ nav.projects }}" style="background:#e8551c; color:#171310; text-decoration:none; font-weight:700; font-size:14px; letter-spacing:.1em; padding:17px 32px; transition:background .25s, transform .25s" style-hover="background:#ff7a3d; transform:translateY(-3px)">VIEW MY WORK →</a>
+          <a href="#contact" onClick="{{ nav.contact }}" style="border:1px solid rgba(236,229,216,.35); color:#ece5d6; text-decoration:none; font-weight:700; font-size:14px; letter-spacing:.1em; padding:16px 32px; transition:border-color .25s, transform .25s, background .25s" style-hover="border-color:#e8551c; background:rgba(232,85,28,.08); transform:translateY(-3px)">GET IN TOUCH</a>
+        </div>
+        <div data-reveal="up" data-rd="400" style="display:flex; gap:24px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.1em">
+          <a href="https://github.com/Valentin-v-Todorov" target="_blank" style="color:rgba(236,229,216,.55); text-decoration:none; transition:color .25s" style-hover="color:#e8551c">GITHUB ↗</a>
+          <a href="https://www.linkedin.com/in/valentin-todorov-49b065218/" target="_blank" style="color:rgba(236,229,216,.55); text-decoration:none; transition:color .25s" style-hover="color:#e8551c">LINKEDIN ↗</a>
+          <a href="https://www.instagram.com/valentin_todorov/" target="_blank" style="color:rgba(236,229,216,.55); text-decoration:none; transition:color .25s" style-hover="color:#e8551c">INSTAGRAM ↗</a>
+          <a href="mailto:valentin.v.todorov@gmail.com" style="color:rgba(236,229,216,.55); text-decoration:none; transition:color .25s" style-hover="color:#e8551c">EMAIL ↗</a>
+        </div>
+      </div>
+      <div data-hero-photo="1" style="position:relative; align-self:stretch; min-height:640px; display:flex; align-items:flex-end; justify-content:flex-end">
+        <div style="position:absolute; right:6%; bottom:14%; width:min(66%,420px); height:52%; background:#e8551c; opacity:.92"></div>
+        <div data-hero-dots="1" style="position:absolute; left:2%; bottom:66%; width:170px; height:170px; background-image:radial-gradient(rgba(232,85,28,.55) 1.5px, transparent 1.5px); background-size:14px 14px"></div>
+        <img data-hero-img="1" data-reveal="right" src="images/valentin.webp" alt="Valentin Todorov" style="position:relative; z-index:2; height:clamp(560px,74vh,880px); width:auto; max-width:100%; object-fit:contain; object-position:bottom; display:block; filter:grayscale(1) contrast(1.06) brightness(1.02)">
+        <div data-hero-badge="1" style="position:absolute; z-index:3; bottom:72%; right:0; width:120px; height:120px; animation:vt-spin 14s linear infinite">
+          <svg viewBox="0 0 120 120" width="120" height="120" style="overflow:visible">
+            <defs><path id="vt-circ" d="M 60,60 m -46,0 a 46,46 0 1,1 92,0 a 46,46 0 1,1 -92,0"></path></defs>
+            <circle cx="60" cy="60" r="30" fill="none" stroke="#e8551c" stroke-width="1.5"></circle>
+            <text style="font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.28em; fill:#ece5d6"><textPath href="#vt-circ">LET'S TALK - SCROLL DOWN - </textPath></text>
+          </svg>
+        </div>
+        <div data-hero-code="1" style="position:absolute; z-index:3; bottom:16px; left:-6%; background:rgba(33,27,22,.96); border:1px solid rgba(236,229,216,.14); padding:14px 18px; font-family:'JetBrains Mono',monospace; font-size:11px; line-height:1.75; box-shadow:0 30px 60px rgba(0,0,0,.5)">
+          <div><span style="color:rgba(236,229,216,.3)">01&#160;&#160;</span><span style="color:#ff7a3d">const</span> <span style="color:#ece5d6">engineer</span> = {</div>
+          <div><span style="color:rgba(236,229,216,.3)">02&#160;&#160;</span>&#160;&#160;name: <span style="color:#7fb069">"Valentin Todorov"</span>,</div>
+          <div><span style="color:rgba(236,229,216,.3)">03&#160;&#160;</span>&#160;&#160;role: <span style="color:#7fb069">"Cloud Platform Engineer"</span>,</div>
+          <div><span style="color:rgba(236,229,216,.3)">04&#160;&#160;</span>&#160;&#160;stack: [<span style="color:#7fb069">"GCP"</span>, <span style="color:#7fb069">"K8s"</span>, <span style="color:#7fb069">"Terraform"</span>],</div>
+          <div><span style="color:rgba(236,229,216,.3)">05&#160;&#160;</span>&#160;&#160;based: <span style="color:#7fb069">"Sofia, Bulgaria"</span>,</div>
+          <div><span style="color:rgba(236,229,216,.3)">06&#160;&#160;</span>&#160;&#160;available: <span style="color:#e8551c">true</span></div>
+          <div><span style="color:rgba(236,229,216,.3)">07&#160;&#160;</span>};</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#e8551c; overflow:hidden; padding:14px 0; border-top:1px solid #171310">
+      <div style="display:flex; width:max-content; animation:vt-marquee 30s linear infinite" data-vt-marquee="1">
+        <span style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.08em; color:#171310; white-space:nowrap">CI/CD ✦ TERRAFORM ✦ KUBERNETES ✦ GCP ✦ AWS ✦ AZURE ✦ DOCKER ✦ ANSIBLE ✦ ARGOCD ✦ AUTOMATION ✦ MONITORING ✦ BASH ✦ GITHUB ACTIONS ✦&#160;</span>
+        <span style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.08em; color:#171310; white-space:nowrap">CI/CD ✦ TERRAFORM ✦ KUBERNETES ✦ GCP ✦ AWS ✦ AZURE ✦ DOCKER ✦ ANSIBLE ✦ ARGOCD ✦ AUTOMATION ✦ MONITORING ✦ BASH ✦ GITHUB ACTIONS ✦&#160;</span>
+      </div>
+    </div>
+  </section>
 
-	<div id="fullpage">
+  <section id="about" data-screen-label="About" data-rs="1" style="background:#ece5d6; color:#171310; padding:110px 48px 90px">
+    <div style="max-width:1500px; margin:0 auto">
+      <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:34px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>01 / ABOUT ME</div>
+      <div data-2col="1" style="display:grid; grid-template-columns:1.05fr .95fr; gap:80px; align-items:start">
+        <div>
+          <h2 data-decrypt="1" data-reveal="left" style="font-family:Anton,sans-serif; font-size:clamp(40px,4.2vw,66px); line-height:1.04; text-transform:uppercase; margin:0 0 30px; text-wrap:balance">From sales floors to cloud platforms<span style="color:#e8551c">.</span></h2>
+          <p data-reveal="left" data-rd="80" style="font-size:16.5px; line-height:1.75; color:rgba(23,19,16,.78); margin:0 0 18px; max-width:560px; text-wrap:pretty">With over a decade of expertise in sales and customer service, I've successfully transitioned into technical roles and I'm currently working as a Cloud Platform Engineer (DevOps) at FLYR.</p>
+          <p data-reveal="left" data-rd="140" style="font-size:16.5px; line-height:1.75; color:rgba(23,19,16,.78); margin:0 0 18px; max-width:560px; text-wrap:pretty">I have hands-on knowledge of GCP, AWS and Azure, and I work daily with Git, GitHub Actions, Jenkins, Ansible, Terraform, Docker, Kubernetes, ArgoCD, and CircleCI. I enjoy writing Bash scripts and creating automated workflows.</p>
+          <p data-reveal="left" data-rd="200" style="font-size:16.5px; line-height:1.75; color:rgba(23,19,16,.78); margin:0 0 28px; max-width:560px; text-wrap:pretty">I prefer working on bigger projects so I can take my time and make them properly, not just done. I love writing documentation, guides and blog posts, and I'm a big fan of calisthenics and the occasional Rocket League rage-quit.</p>
+          <div data-reveal="left" data-rd="260" style="font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(23,19,16,.55); letter-spacing:.08em">// Sofia, Bulgaria - working remotely</div>
+        </div>
+        <div data-reveal="right" style="display:flex; flex-direction:column; gap:20px">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>CLOUD PLATFORMS (GCP / AWS / AZURE)</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">85%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="85" style="height:100%; width:0%; background:#e8551c"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>CI/CD &amp; AUTOMATION</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">90%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="90" style="height:100%; width:0%; background:#e8551c"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>INFRASTRUCTURE AS CODE</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">80%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="80" style="height:100%; width:0%; background:#e8551c"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>CONTAINERIZATION (DOCKER / K8S)</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">75%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="75" style="height:100%; width:0%; background:#e8551c"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>BASH SCRIPTING &amp; LINUX</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">85%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="85" style="height:100%; width:0%; background:#e8551c"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>MONITORING &amp; LOGGING</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">70%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="70" style="height:100%; width:0%; background:#e8551c"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>TENNIS</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">20%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="20" style="height:100%; width:0%; background:#e8551c"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; letter-spacing:.06em"><span>CALISTHENICS</span><span style="font-family:'JetBrains Mono',monospace; color:#e8551c">75%</span></div>
+          <div style="height:6px; background:rgba(23,19,16,.14)"><div data-bar="75" style="height:100%; width:0%; background:#e8551c"></div></div>
+        </div>
+      </div>
+      <div data-reveal="up" data-stats="1" style="display:grid; grid-template-columns:repeat(4,1fr); margin-top:80px; border-top:1px solid rgba(23,19,16,.2)">
+        <div data-stat="1" style="padding:38px 24px 0; border-right:1px solid rgba(23,19,16,.2); text-align:center"><div style="font-family:Anton,sans-serif; font-size:56px; color:#e8551c"><span data-count="3">3</span>+</div><div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; margin-top:8px">YEARS DEVOPS &amp; SRE</div></div>
+        <div data-stat="1" style="padding:38px 24px 0; border-right:1px solid rgba(23,19,16,.2); text-align:center"><div style="font-family:Anton,sans-serif; font-size:56px; color:#e8551c"><span data-count="5">5</span>+</div><div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; margin-top:8px">YEARS IN TECH</div></div>
+        <div data-stat="1" style="padding:38px 24px 0; border-right:1px solid rgba(23,19,16,.2); text-align:center"><div style="font-family:Anton,sans-serif; font-size:56px; color:#e8551c"><span data-count="10">10</span>+</div><div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; margin-top:8px">YEARS WITH CUSTOMERS</div></div>
+        <div data-stat="1" style="padding:38px 24px 0; text-align:center"><div style="font-family:Anton,sans-serif; font-size:56px; color:#e8551c"><span data-count="100">100</span>%</div><div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; margin-top:8px">COMMITMENT TO QUALITY</div></div>
+      </div>
+    </div>
+  </section>
 
-		<!-- start home -->
-		<div id="home" class="section">
-			<div class="container">
-				<div class="row">
-					<div class="col-md-2"></div>
-					<div class="col-md-8 wow fadeIn" data-wow-delay="0.9s">
-						<h3>&nbsp;</h3>
-						<h3>&nbsp;</h3>
-						<h3>&nbsp;</h3>
-						<h1 class="name-highlight"></h1>
-						<h2 class="typewriter">
-							<span class="typing-text" id="typewriter-text"></span>
-						</h2>
-						<a href="#portfolio" class="btn btn-default smoothScroll wow fadeInUp" data-wow-delay="1s">View My Work</a>
-					</div>
-					<div class="col-md-2"></div>
-				</div>
-			</div>
-		</div>
-		<!-- end home -->
+  <section id="services" data-screen-label="What I Do" data-rs="1" style="position:relative; overflow:hidden; background:#171310; padding:110px 48px">
+    <canvas data-trail-canvas="1" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <div style="position:relative; z-index:2; max-width:1500px; margin:0 auto">
+      <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:18px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>02 / WHAT I DO</div>
+      <div style="display:flex; justify-content:space-between; align-items:end; gap:30px; margin-bottom:56px; flex-wrap:wrap">
+        <h2 data-decrypt="1" data-reveal="up" data-rd="60" style="font-family:Anton,sans-serif; font-size:clamp(38px,3.8vw,60px); text-transform:uppercase; margin:0; line-height:1.05">Things I do best<span style="color:#e8551c">.</span></h2>
+        <div data-reveal="up" data-rd="120" style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.12em; color:rgba(236,229,216,.45)">I HELP TEAMS SHIP FASTER &amp; SAFER ▪</div>
+      </div>
+      <div data-cards4="1" style="display:grid; grid-template-columns:repeat(4,1fr); gap:20px">
+        <div data-reveal="up" data-tilt="1" style="border:1px solid rgba(236,229,216,.14); padding:34px 28px; background:#1d1814; transition:border-color .3s">
+          <div style="width:52px; height:52px; background:rgba(232,85,28,.14); border:1px solid #e8551c; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-weight:700; color:#e8551c; font-size:18px; margin-bottom:26px">&gt;_</div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(236,229,216,.4); letter-spacing:.14em; margin-bottom:10px">01</div>
+          <h3 style="font-family:Anton,sans-serif; font-size:21px; letter-spacing:.03em; text-transform:uppercase; margin:0 0 14px">DevOps Engineering</h3>
+          <p style="font-size:14px; line-height:1.7; color:rgba(236,229,216,.6); margin:0; text-wrap:pretty">Building CI/CD pipelines, automating deployments, and keeping dev and ops moving as one team.</p>
+        </div>
+        <div data-reveal="up" data-rd="80" data-tilt="1" style="border:1px solid rgba(236,229,216,.14); padding:34px 28px; background:#1d1814; transition:border-color .3s">
+          <div style="width:52px; height:52px; background:rgba(232,85,28,.14); border:1px solid #e8551c; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-weight:700; color:#e8551c; font-size:18px; margin-bottom:26px">{&#160;}</div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(236,229,216,.4); letter-spacing:.14em; margin-bottom:10px">02</div>
+          <h3 style="font-family:Anton,sans-serif; font-size:21px; letter-spacing:.03em; text-transform:uppercase; margin:0 0 14px">Cloud Platforms</h3>
+          <p style="font-size:14px; line-height:1.7; color:rgba(236,229,216,.6); margin:0; text-wrap:pretty">Designing cloud infrastructure on GCP, AWS and Azure - cloud-native architectures, migrations, cost optimization.</p>
+        </div>
+        <div data-reveal="up" data-rd="160" data-tilt="1" style="border:1px solid rgba(236,229,216,.14); padding:34px 28px; background:#1d1814; transition:border-color .3s">
+          <div style="width:52px; height:52px; background:rgba(232,85,28,.14); border:1px solid #e8551c; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-weight:700; color:#e8551c; font-size:18px; margin-bottom:26px">//</div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(236,229,216,.4); letter-spacing:.14em; margin-bottom:10px">03</div>
+          <h3 style="font-family:Anton,sans-serif; font-size:21px; letter-spacing:.03em; text-transform:uppercase; margin:0 0 14px">Automation &amp; IaC</h3>
+          <p style="font-size:14px; line-height:1.7; color:rgba(236,229,216,.6); margin:0; text-wrap:pretty">Terraform, Ansible and Bash - eliminating manual processes at work, and automating everything at home too.</p>
+        </div>
+        <div data-reveal="up" data-rd="240" data-tilt="1" style="border:1px solid rgba(236,229,216,.14); padding:34px 28px; background:#1d1814; transition:border-color .3s">
+          <div style="width:52px; height:52px; background:rgba(232,85,28,.14); border:1px solid #e8551c; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-weight:700; color:#e8551c; font-size:18px; margin-bottom:26px">+</div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(236,229,216,.4); letter-spacing:.14em; margin-bottom:10px">04</div>
+          <h3 style="font-family:Anton,sans-serif; font-size:21px; letter-spacing:.03em; text-transform:uppercase; margin:0 0 14px">Calisthenics &amp; Sport</h3>
+          <p style="font-size:14px; line-height:1.7; color:rgba(236,229,216,.6); margin:0; text-wrap:pretty">Bodyweight training, gym sessions and tennis - the same discipline and progressive-overload mindset, applied to life.</p>
+        </div>
+      </div>
+      <div data-reveal="up" style="display:flex; align-items:center; column-gap:clamp(12px,2vw,28px); row-gap:14px; flex-wrap:wrap; margin-top:56px; padding-top:32px; border-top:1px solid rgba(236,229,216,.14); font-family:'JetBrains Mono',monospace; font-size:12.5px; letter-spacing:.1em">
+        <span style="color:rgba(236,229,216,.4)">HOW I SHIP //</span>
+        <span style="color:#ece5d6"><span style="color:#e8551c">01</span> UNDERSTAND</span><span style="color:#e8551c">→</span>
+        <span style="color:#ece5d6"><span style="color:#e8551c">02</span> AUTOMATE</span><span style="color:#e8551c">→</span>
+        <span style="color:#ece5d6"><span style="color:#e8551c">03</span> DOCUMENT</span><span style="color:#e8551c">→</span>
+        <span style="color:#ece5d6"><span style="color:#e8551c">04</span> ITERATE</span><span style="color:#e8551c">→</span>
+        <span style="color:rgba(236,229,216,.4)">REPEAT ∞</span>
+      </div>
+    </div>
+  </section>
 
-		<!-- start work -->
-		<div id="work" class="section">
-			<div class="container">
-				<div class="row">
-					<div class="col-md-12 wow bounce">
-						<h2>WHAT I DO</h2>
-					</div>
+  <section id="stack" data-screen-label="Stack and Skills" data-rs="1" style="background:#ece5d6; color:#171310; padding:110px 48px">
+    <div data-2col="1" style="max-width:1500px; margin:0 auto; display:grid; grid-template-columns:.9fr 1.1fr; gap:80px; align-items:start">
+      <div>
+        <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:18px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>03 / STACK &amp; SKILLS</div>
+        <h2 data-decrypt="1" data-reveal="left" style="font-family:Anton,sans-serif; font-size:clamp(38px,4vw,62px); line-height:1.03; text-transform:uppercase; margin:0 0 26px; text-wrap:balance">Technologies I work with<span style="color:#e8551c">.</span></h2>
+        <p data-reveal="left" data-rd="80" style="font-size:16px; line-height:1.75; color:rgba(23,19,16,.72); max-width:420px; text-wrap:pretty">The daily toolkit - battle-tested in production, one 3 AM incident at a time. Hover around - everything here has broken at least once.</p>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:30px">
+        <div data-reveal="right">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.16em; color:rgba(23,19,16,.5); margin-bottom:12px">CLOUD</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px">
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s; background:transparent" style-hover="background:#e8551c; border-color:#e8551c; color:#171310; transform:translateY(-2px)">Google Cloud Platform</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s; background:transparent" style-hover="background:#e8551c; border-color:#e8551c; color:#171310; transform:translateY(-2px)">Azure</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s; background:transparent" style-hover="background:#e8551c; border-color:#e8551c; color:#171310; transform:translateY(-2px)">AWS</span>
+          </div>
+        </div>
+        <div data-reveal="right" data-rd="60">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.16em; color:rgba(23,19,16,.5); margin-bottom:12px">CI/CD &amp; GITOPS</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px">
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">GitHub Actions</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">CircleCI</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Jenkins</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">ArgoCD</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Git</span>
+          </div>
+        </div>
+        <div data-reveal="right" data-rd="120">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.16em; color:rgba(23,19,16,.5); margin-bottom:12px">INFRASTRUCTURE AS CODE</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px">
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Terraform</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Ansible</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Helm</span>
+          </div>
+        </div>
+        <div data-reveal="right" data-rd="180">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.16em; color:rgba(23,19,16,.5); margin-bottom:12px">CONTAINERS &amp; ORCHESTRATION</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px">
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Docker</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Kubernetes</span>
+          </div>
+        </div>
+        <div data-reveal="right" data-rd="240">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.16em; color:rgba(23,19,16,.5); margin-bottom:12px">MONITORING &amp; SCRIPTING</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px">
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Zabbix</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Prometheus</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Grafana</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Bash</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 16px; font-size:13.5px; font-weight:500; transition:all .22s" style-hover="background:#e8551c; border-color:#e8551c; transform:translateY(-2px)">Linux</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="experience" data-screen-label="Work Experience" data-rs="1" style="position:relative; overflow:hidden; background:#171310; padding:110px 48px">
+    <canvas data-trail-canvas="1" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <div style="position:relative; z-index:2; max-width:1500px; margin:0 auto">
+      <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:18px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>04 / EXPERIENCE</div>
+      <div style="display:flex; justify-content:space-between; align-items:end; gap:30px; margin-bottom:50px; flex-wrap:wrap">
+        <h2 data-decrypt="1" data-reveal="up" data-rd="60" style="font-family:Anton,sans-serif; font-size:clamp(38px,3.8vw,60px); text-transform:uppercase; margin:0; line-height:1.05">Where I've worked<span style="color:#e8551c">.</span></h2>
+        <div data-reveal="up" data-rd="120" style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.12em; color:rgba(236,229,216,.45)">CLICK A ROLE TO EXPAND ▾</div>
+      </div>
+      <div data-reveal="up" data-rd="100" style="border-top:1px solid rgba(236,229,216,.14)">
+        <sc-for list="{{ expItems }}" as="job" hint-placeholder-count="6">
+          <div style="border-bottom:1px solid rgba(236,229,216,.14)">
+            <div data-exp-row="1" onClick="{{ job.toggle }}" style="display:grid; grid-template-columns:70px 1.2fr 1fr 220px 40px; gap:20px; align-items:center; padding:30px 10px; cursor:none; transition:background .3s; background: {{ job.bg }}" style-hover="background:#1d1814">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8551c">{{ job.num }}</div>
+              <div style="font-family:Anton,sans-serif; font-size:clamp(18px,1.7vw,26px); letter-spacing:.03em; text-transform:uppercase">{{ job.role }}</div>
+              <div data-exp-co="1" style="font-size:14.5px; color:rgba(236,229,216,.65); font-weight:500">{{ job.company }}</div>
+              <div data-exp-dates="1" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(236,229,216,.45); letter-spacing:.06em">{{ job.dates }}</div>
+              <div style="font-size:22px; color:#e8551c; text-align:center; transition:transform .35s; transform:rotate({{ job.rot }}deg)">+</div>
+            </div>
+            <div style="overflow:hidden; transition:max-height .55s cubic-bezier(.4,0,.2,1), opacity .45s; max-height: {{ job.mh }}; opacity: {{ job.op }}">
+              <div data-exp-body="1" style="padding:6px 10px 36px; display:grid; grid-template-columns:1.1fr .9fr; gap:40px">
+                <div>
+                  <p style="font-size:15px; line-height:1.75; color:rgba(236,229,216,.72); margin:0 0 20px; max-width:600px; text-wrap:pretty">{{ job.summary }}</p>
+                  <div style="display:flex; flex-wrap:wrap; gap:8px">
+                    <sc-for list="{{ job.tags }}" as="t" hint-placeholder-count="4">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.05em; border:1px solid rgba(232,85,28,.5); color:#ff7a3d; padding:6px 12px">{{ t }}</span>
+                    </sc-for>
+                  </div>
                 </div>
+                <div style="display:flex; flex-direction:column; gap:11px">
+                  <sc-for list="{{ job.bullets }}" as="b" hint-placeholder-count="4">
+                    <div style="display:flex; gap:12px; align-items:baseline; font-size:14px; line-height:1.6; color:rgba(236,229,216,.65)"><span style="color:#e8551c; font-family:'JetBrains Mono',monospace">→</span><span>{{ b }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
 
-                <div class="row">
-					<div class="work-col-md col-xs-11 wow fadeInUp scroll-reveal-left" data-wow-delay="0.6s">
-						<div class="media">
-							<div class="media-object media-left">
-								<i class="fa fa-cogs"></i>
-							</div>
-							<div class="media-body">
-								<h3 class="media-heading">DevOps Engineer</h3>
-								<p>Building CI/CD pipelines, automating deployment processes, and ensuring smooth collaboration between development and operations teams.</p>
-							</div>
-						</div>
-					</div>
+  <section id="projects" data-screen-label="Projects" data-rs="1" style="background:#ece5d6; color:#171310; padding:110px 48px">
+    <div style="max-width:1500px; margin:0 auto">
+      <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:18px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>05 / PROJECTS</div>
+      <div style="display:flex; justify-content:space-between; align-items:end; gap:30px; margin-bottom:56px; flex-wrap:wrap">
+        <h2 data-decrypt="1" data-reveal="up" data-rd="60" style="font-family:Anton,sans-serif; font-size:clamp(38px,3.8vw,60px); text-transform:uppercase; margin:0; line-height:1.05">Featured projects<span style="color:#e8551c">.</span></h2>
+        <a data-reveal="up" data-rd="120" href="projects.html" style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.12em; color:#171310; text-decoration:none; border-bottom:2px solid #e8551c; padding-bottom:4px; transition:color .25s" style-hover="color:#e8551c">FULL PROJECTS PAGE →</a>
+      </div>
+      <div data-cards4="1" style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px">
+        <div data-reveal="up" data-tilt="1" style="background:#1d1814; color:#ece5d6; padding:30px 26px; display:flex; flex-direction:column; gap:14px; min-height:320px">
+          <div style="display:flex; justify-content:space-between; align-items:center"><span style="font-family:'JetBrains Mono',monospace; font-size:24px; color:rgba(236,229,216,.22); font-weight:700">01</span><span style="background:#e8551c; color:#171310; font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.12em; padding:5px 10px">OPEN SOURCE</span></div>
+          <h3 style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.03em; text-transform:uppercase; margin:6px 0 0">tix-cli</h3>
+          <p style="font-size:13.5px; line-height:1.65; color:rgba(236,229,216,.6); margin:0; flex:1; text-wrap:pretty">A fast terminal task manager - track your TODOs without ever leaving the shell.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(236,229,216,.5)"><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">CLI</span><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">TERMINAL</span><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">PRODUCTIVITY</span></div>
+          <div style="display:flex; gap:16px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.08em"><a href="https://github.com/TheDevOpsBlueprint/tix-cli" target="_blank" style="color:#e8551c; text-decoration:none" style-hover="color:#ff7a3d">GITHUB ↗</a></div>
+        </div>
+        <div data-reveal="up" data-rd="70" data-tilt="1" style="background:#1d1814; color:#ece5d6; padding:30px 26px; display:flex; flex-direction:column; gap:14px; min-height:320px">
+          <div style="display:flex; justify-content:space-between; align-items:center"><span style="font-family:'JetBrains Mono',monospace; font-size:24px; color:rgba(236,229,216,.22); font-weight:700">02</span><span style="background:#e8551c; color:#171310; font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.12em; padding:5px 10px">OPEN SOURCE</span></div>
+          <h3 style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.03em; text-transform:uppercase; margin:6px 0 0">alix-cli</h3>
+          <p style="font-size:13.5px; line-height:1.65; color:rgba(236,229,216,.6); margin:0; flex:1; text-wrap:pretty">Interactive alias manager for your shell - create, search and organize aliases from a friendly TUI.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(236,229,216,.5)"><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">CLI</span><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">SHELL</span><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">TUI</span></div>
+          <div style="display:flex; gap:16px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.08em"><a href="https://github.com/TheDevOpsBlueprint/alix-cli" target="_blank" style="color:#e8551c; text-decoration:none" style-hover="color:#ff7a3d">GITHUB ↗</a></div>
+        </div>
+        <div data-reveal="up" data-rd="140" data-tilt="1" style="background:#1d1814; color:#ece5d6; padding:30px 26px; display:flex; flex-direction:column; gap:14px; min-height:320px">
+          <div style="display:flex; justify-content:space-between; align-items:center"><span style="font-family:'JetBrains Mono',monospace; font-size:24px; color:rgba(236,229,216,.22); font-weight:700">03</span><span style="background:#e8551c; color:#171310; font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.12em; padding:5px 10px">OPEN SOURCE</span></div>
+          <h3 style="font-family:Anton,sans-serif; font-size:20px; letter-spacing:.03em; text-transform:uppercase; margin:6px 0 0">GitHub Account Switch</h3>
+          <p style="font-size:13.5px; line-height:1.65; color:rgba(236,229,216,.6); margin:0; flex:1; text-wrap:pretty">A fast, reliable CLI for juggling multiple GitHub accounts - switch identities in one command.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(236,229,216,.5)"><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">CLI</span><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">GIT</span><span style="border:1px solid rgba(236,229,216,.2); padding:4px 8px">GITHUB</span></div>
+          <div style="display:flex; gap:16px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.08em"><a href="https://github.com/TheDevOpsBlueprint/github-account-switch-cli" target="_blank" style="color:#e8551c; text-decoration:none" style-hover="color:#ff7a3d">GITHUB ↗</a></div>
+        </div>
+        </div>
+      <div data-reveal="up" style="display:flex; justify-content:center; margin-top:44px">
+        <a href="projects.html" style="background:#171310; color:#ece5d6; text-decoration:none; font-weight:700; font-size:14px; letter-spacing:.12em; padding:19px 40px; display:inline-flex; align-items:center; gap:12px; transition:background .25s, color .25s, transform .25s" style-hover="background:#e8551c; color:#171310; transform:translateY(-3px)">ALL PROJECTS + CLI TOOLS →</a>
+      </div>
+    </div>
+  </section>
 
-					<div class="work-col-md col-xs-11 wow fadeInUp scroll-reveal-right" data-wow-delay="0.6s">
-						<div class="media">
-							<div class="media-object media-left">
-								<i class="fa fa-heart"></i>
-							</div>
-							<div class="media-body">
-								<h3 class="media-heading">Calisthenics</h3>
-								<p>Passionate about bodyweight training and functional fitness. Applying discipline and progressive improvement mindset to both fitness and professional growth.</p>
-							</div>
-						</div>
-					</div>
+  <section id="testimonials" data-screen-label="Testimonials" data-rs="1" style="position:relative; overflow:hidden; background:#171310; padding:110px 48px">
+    <canvas data-trail-canvas="1" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <div style="position:relative; z-index:2; max-width:1500px; margin:0 auto">
+      <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:18px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>06 / TESTIMONIALS</div>
+      <div style="display:flex; justify-content:space-between; align-items:end; gap:30px; margin-bottom:56px; flex-wrap:wrap">
+        <h2 data-decrypt="1" data-reveal="up" data-rd="60" style="font-family:Anton,sans-serif; font-size:clamp(38px,3.8vw,60px); text-transform:uppercase; margin:0; line-height:1.05">What colleagues say<span style="color:#e8551c">.</span></h2>
+        <a data-reveal="up" data-rd="120" href="https://www.linkedin.com/in/valentin-todorov-49b065218/details/recommendations/?detailScreenTabIndex=0" target="_blank" style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.12em; color:#ece5d6; text-decoration:none; border-bottom:2px solid #e8551c; padding-bottom:4px; transition:color .25s" style-hover="color:#ff7a3d">ALL RECOMMENDATIONS ON LINKEDIN ↗</a>
+      </div>
+      <div data-reveal="up" data-2col="1" style="display:grid; grid-template-columns:1fr 300px; gap:56px; align-items:start">
+        <div>
+          <div id="vt-tcard" style="border:1px solid rgba(236,229,216,.14); background:#1d1814; padding:clamp(28px,3vw,46px); min-height:250px; display:flex; flex-direction:column; gap:20px; box-sizing:border-box">
+            <div style="display:flex; justify-content:space-between; align-items:start"><div style="font-family:Anton,sans-serif; font-size:64px; line-height:.6; color:#e8551c">"</div><div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; color:rgba(236,229,216,.4)">{{ tCounter }}</div></div>
+            <p style="font-size:clamp(15px,1.25vw,17.5px); line-height:1.8; color:rgba(236,229,216,.78); margin:0; flex:1; text-wrap:pretty">{{ tQuote }}</p>
+            <div style="display:flex; justify-content:space-between; align-items:end; gap:16px; flex-wrap:wrap">
+              <div><div style="font-weight:700; font-size:16px">{{ tName }}</div><div style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#ff7a3d; letter-spacing:.08em; margin-top:5px">{{ tRole }}</div></div>
+              <a href="https://www.linkedin.com/in/valentin-todorov-49b065218/details/recommendations/?detailScreenTabIndex=0" target="_blank" style="font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.1em; color:rgba(236,229,216,.55); text-decoration:none; border-bottom:1px solid rgba(232,85,28,.6); padding-bottom:3px; transition:color .25s" style-hover="color:#ff7a3d">VIEW ON LINKEDIN ↗</a>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:16px; margin-top:22px">
+            <div onClick="{{ tPrev }}" style="width:46px; height:46px; border:1px solid rgba(236,229,216,.25); display:flex; align-items:center; justify-content:center; color:#ece5d6; font-size:18px; transition:all .25s" style-hover="background:#e8551c; border-color:#e8551c; color:#171310">←</div>
+            <div onClick="{{ tNext }}" style="width:46px; height:46px; border:1px solid rgba(236,229,216,.25); display:flex; align-items:center; justify-content:center; color:#ece5d6; font-size:18px; transition:all .25s" style-hover="background:#e8551c; border-color:#e8551c; color:#171310">→</div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; border-top:1px solid rgba(236,229,216,.14)">
+          <sc-for list="{{ tList }}" as="tn" hint-placeholder-count="4">
+            <div onClick="{{ tn.go }}" style="padding:18px 4px; border-bottom:1px solid rgba(236,229,216,.14); cursor:none; transition:opacity .25s; opacity: {{ tn.op }}">
+              <div style="font-size:14.5px; font-weight:700; color: {{ tn.col }}">{{ tn.name }}</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.06em; color:#ff7a3d; margin-top:4px">{{ tn.role }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
 
-					<div class="work-col-md col-xs-11 wow fadeInUp scroll-reveal-left" data-wow-delay="0.6s">
-						<div class="media">
-							<div class="media-object media-left">
-								<i class="fa fa-cloud"></i>
-							</div>
-							<div class="media-body">
-								<h3 class="media-heading">Cloud Platform Specialist</h3>
-								<p>Designing and implementing cloud infrastructure on GCP and Azure. Expertise in cloud-native architectures, cost optimization and migration strategies.</p>
-							</div>
-						</div>
-					</div>
+  <sc-if value="{{ showCalisthenics }}" hint-placeholder-val="{{ true }}">
+    <section id="calisthenics" data-screen-label="Calisthenics" data-rs="1" style="background:#ece5d6; color:#171310; padding:110px 48px">
+      <div data-2col="1" style="max-width:1500px; margin:0 auto; display:grid; grid-template-columns:1.05fr .95fr; gap:80px; align-items:center">
+        <div>
+          <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:18px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>07 / BEYOND THE TERMINAL</div>
+          <h2 data-decrypt="1" data-reveal="left" style="font-family:Anton,sans-serif; font-size:clamp(38px,4vw,62px); line-height:1.03; text-transform:uppercase; margin:0 0 26px; text-wrap:balance">Discipline is the best framework<span style="color:#e8551c">.</span></h2>
+          <p data-reveal="left" data-rd="80" style="font-size:16px; line-height:1.75; color:rgba(23,19,16,.72); max-width:520px; margin:0 0 22px; text-wrap:pretty">"The same discipline that drives me to perfect DevOps automation fuels my dedication to mastering bodyweight movements. Both require patience, consistency, and progressive improvement."</p>
+          <p data-reveal="left" data-rd="140" style="font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(23,19,16,.55); letter-spacing:.06em; margin:0">// calisthenics &amp; gym 5 days a week - tennis, MTB and indoor climbing on the side (ego permitting)</p>
+          <div data-reveal="left" data-rd="200" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:24px">
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 18px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.1em; transition:all .22s" style-hover="background:#171310; color:#ece5d6; transform:translateY(-2px)">CALISTHENICS</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 18px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.1em; transition:all .22s" style-hover="background:#171310; color:#ece5d6; transform:translateY(-2px)">GYM</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 18px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.1em; transition:all .22s" style-hover="background:#171310; color:#ece5d6; transform:translateY(-2px)">TENNIS</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 18px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.1em; transition:all .22s" style-hover="background:#171310; color:#ece5d6; transform:translateY(-2px)">MTB</span>
+            <span style="border:1px solid rgba(23,19,16,.35); padding:9px 18px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.1em; transition:all .22s" style-hover="background:#171310; color:#ece5d6; transform:translateY(-2px)">INDOOR CLIMBING</span>
+          </div>
+        </div>
+        <div data-reveal="right" style="display:flex; flex-direction:column; gap:18px">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.16em; color:rgba(23,19,16,.5)">CURRENTLY BUILDING</div>
+          <a href="https://ironlog.valentin-todorov.com" target="_blank" rel="noopener" data-tilt="1" style="display:grid; grid-template-columns:60px 1fr auto; gap:22px; align-items:center; background:#1d1814; color:#ece5d6; text-decoration:none; padding:28px 26px; transition:transform .3s">
+            <div style="width:60px; height:60px; background:#e8551c; display:flex; align-items:center; justify-content:center; font-family:Anton,sans-serif; font-size:21px; color:#171310">IL</div>
+            <div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px"><span style="font-family:Anton,sans-serif; font-size:21px; text-transform:uppercase; letter-spacing:.02em">IronLog</span><span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:.12em; padding:4px 8px; color:#ff7a3d; border:1px solid #e8551c; white-space:nowrap">TRY IT</span></div>
+              <div style="font-size:13.5px; line-height:1.6; color:rgba(236,229,216,.6); text-wrap:pretty">A workout tracker I started for myself - logging sets and progress, no app-store bloat. Live now and free to use, with version 3 on the way.</div>
+            </div>
+            <div style="font-size:20px; color:#e8551c">↗</div>
+          </a>
+        </div>
+      </div>
+    </section>
+  </sc-if>
 
-					<div class="work-col-md col-xs-11 wow fadeInUp scroll-reveal-right" data-wow-delay="0.6s">
-						<div class="media">
-							<div class="media-object media-left">
-								<i class="fa fa-magic"></i>
-							</div>
-							<div class="media-body">
-								<h3 class="media-heading">Automation</h3>
-								<p>Creating automated workflows and Infrastructure as Code using Terraform, Ansible, and Bash scripting to eliminate manual processes at my job. At my home I'm automating my daily tasks and whatever I can. </p>
-							</div>
-						</div>
-					</div>
+  <section id="contact" data-screen-label="Contact" data-rs="1" style="background:#171310; padding:110px 48px 90px; position:relative; overflow:hidden">
+    <div style="position:absolute; inset:0; background:radial-gradient(ellipse 50% 45% at 20% 30%, rgba(232,85,28,.08), transparent 65%); pointer-events:none"></div>
+    <canvas id="vt-particles" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <canvas data-trail-canvas="1" style="position:absolute; inset:0; pointer-events:none"></canvas>
+    <div style="max-width:1500px; margin:0 auto; position:relative">
+      <div data-reveal="up" style="display:flex; align-items:center; gap:14px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.16em; color:#e8551c; margin-bottom:18px"><span style="width:10px; height:10px; background:#e8551c; display:inline-block"></span>08 / CONTACT</div>
+      <div data-2col="1" style="display:grid; grid-template-columns:1.05fr .95fr; gap:80px; align-items:start">
+        <div>
+          <h2 data-decrypt="1" data-reveal="left" style="font-family:Anton,sans-serif; font-size:clamp(46px,5vw,84px); line-height:1; text-transform:uppercase; margin:0 0 30px; text-wrap:balance">Let's build something great<span style="color:#e8551c">.</span></h2>
+          <p data-reveal="left" data-rd="80" style="font-size:16px; line-height:1.75; color:rgba(236,229,216,.62); max-width:480px; margin:0 0 36px; text-wrap:pretty">Have a project in mind, a question about DevOps, or just want to talk shop? My inbox is always open - I usually reply within a day, deploys permitting.</p>
+          <sc-if value="{{ showAvailability }}" hint-placeholder-val="{{ true }}">
+            <div data-reveal="left" data-rd="140" style="display:inline-flex; align-items:center; gap:12px; border:1px solid rgba(232,85,28,.5); padding:12px 20px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.12em; color:#ff7a3d; margin-bottom:44px"><span style="width:9px; height:9px; border-radius:50%; background:#e8551c; animation:vt-pulse 1.6s ease-in-out infinite"></span>OPEN TO NEW OPPORTUNITIES</div>
+          </sc-if>
+          <div style="display:flex; flex-direction:column; gap:22px">
+            <a data-reveal="left" data-rd="200" href="mailto:valentin.v.todorov@gmail.com" style="display:flex; align-items:center; gap:18px; text-decoration:none; color:#ece5d6; transition:transform .25s" style-hover="transform:translateX(8px)"><span style="width:44px; height:44px; border:1px solid rgba(236,229,216,.25); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; color:#e8551c">@</span><span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; color:rgba(236,229,216,.45); margin-bottom:3px">EMAIL</span><span style="font-size:16px; font-weight:500">valentin.v.todorov@gmail.com</span></span></a>
+            <a data-reveal="left" data-rd="260" href="https://www.linkedin.com/in/valentin-todorov-49b065218/" target="_blank" style="display:flex; align-items:center; gap:18px; text-decoration:none; color:#ece5d6; transition:transform .25s" style-hover="transform:translateX(8px)"><span style="width:44px; height:44px; border:1px solid rgba(236,229,216,.25); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; color:#e8551c">in</span><span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; color:rgba(236,229,216,.45); margin-bottom:3px">LINKEDIN</span><span style="font-size:16px; font-weight:500">valentin-todorov</span></span></a>
+            <a data-reveal="left" data-rd="320" href="https://www.instagram.com/valentin_todorov/" target="_blank" style="display:flex; align-items:center; gap:18px; text-decoration:none; color:#ece5d6; transition:transform .25s" style-hover="transform:translateX(8px)"><span style="width:44px; height:44px; border:1px solid rgba(236,229,216,.25); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; color:#e8551c">ig</span><span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; color:rgba(236,229,216,.45); margin-bottom:3px">INSTAGRAM</span><span style="font-size:16px; font-weight:500">@valentin_todorov</span></span></a>
+            <div data-reveal="left" data-rd="380" style="display:flex; align-items:center; gap:18px; color:#ece5d6"><span style="width:44px; height:44px; border:1px solid rgba(236,229,216,.25); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; color:#e8551c">⌖</span><span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; color:rgba(236,229,216,.45); margin-bottom:3px">LOCATION</span><span style="font-size:16px; font-weight:500">Sofia, Bulgaria</span></span></div>
+          </div>
+        </div>
+        <form data-form="1" data-reveal="right" method="post" action="https://formspree.io/f/mwpogzoe" style="background:#1d1814; border:1px solid rgba(236,229,216,.14); padding:44px 40px; display:flex; flex-direction:column; gap:20px">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; color:rgba(236,229,216,.45); margin-bottom:4px">// SEND ME A MESSAGE</div>
+          <input name="name" type="text" placeholder="Your Name" style="background:#171310; border:1px solid rgba(236,229,216,.18); color:#ece5d6; font-family:'Space Grotesk',sans-serif; font-size:15px; padding:16px 18px; outline:none; transition:border-color .25s; box-sizing:border-box; width:100%" style-focus="border-color:#e8551c">
+          <input name="email" type="email" placeholder="Your Email" style="background:#171310; border:1px solid rgba(236,229,216,.18); color:#ece5d6; font-family:'Space Grotesk',sans-serif; font-size:15px; padding:16px 18px; outline:none; transition:border-color .25s; box-sizing:border-box; width:100%" style-focus="border-color:#e8551c">
+          <textarea name="message" rows="6" placeholder="Tell me about your project..." style="background:#171310; border:1px solid rgba(236,229,216,.18); color:#ece5d6; font-family:'Space Grotesk',sans-serif; font-size:15px; padding:16px 18px; outline:none; resize:vertical; transition:border-color .25s; box-sizing:border-box; width:100%" style-focus="border-color:#e8551c"></textarea>
+          <button type="submit" style="background:#e8551c; color:#171310; border:none; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; letter-spacing:.12em; padding:18px; cursor:none; transition:background .25s, transform .25s" style-hover="background:#ff7a3d; transform:translateY(-2px)">SEND MESSAGE ↗</button>
+        </form>
+      </div>
+    </div>
+  </section>
 
-				</div>
-			</div>
-		</div>
-		<!-- end work -->
+  <footer data-screen-label="Footer" data-foot="1" style="background:#100d0a; border-top:1px solid rgba(236,229,216,.1); padding:34px 48px">
+    <div style="max-width:1500px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap">
+      <div style="font-family:Anton,sans-serif; font-size:16px; letter-spacing:.05em; text-transform:uppercase; color:#ece5d6">Valentin Todorov<span style="color:#e8551c">.</span></div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(236,229,216,.4); letter-spacing:.08em">&gt; code. automate. lift. repeat.</div>
+      <div style="display:flex; align-items:center; gap:20px">
+        <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(236,229,216,.4)">© 2026 Valentin Todorov</span>
+        <a href="#home" onClick="{{ nav.home }}" style="width:40px; height:40px; background:#e8551c; color:#171310; display:flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700; transition:transform .25s, background .25s" style-hover="transform:translateY(-4px); background:#ff7a3d">↑</a>
+      </div>
+    </div>
+  </footer>
 
-		<!-- start about -->
-		<div id="about" class="section">
-			<div class="container">
-				<div class="row">
-					<div class="col-md-6 col-xs-11 wow fadeInLeft scroll-reveal-left" data-wow-delay="0.9s">
-						<h2>ABOUT ME</h2>
-						<h4>DEVOPS ENGINEER &AMP; CLOUD SPECIALIST</h4>
-						<p>With over a decade of expertise in sales and customer service, I've successfully transitioned into technical roles and I'm currently working as a DevOps (Cloud Platform) Engineer at FLYR.</p>
-						<p>I have hands-on knowledge of GCP and Azure cloud platforms, and I'm working on a daily basis with tools like Git, GitHub Actions, Jenkins, Ansible, Terraform, Docker, Kubernetes, ArgoCD, and CircleCI. I enjoy writing Bash scripts and creating automated workflows.</p>
-						<p>I prefer working on bigger projects/tasks so I can take my time to make it perfect. Love making documentation, guides and blog posts. </p>
-						<p>I'm also a big fan of Calisthenics and Rocket League!</p>
-					</div>
-					<div class="col-md-6 col-xs-11 wow fadeInRight scroll-reveal-right" data-wow-delay="0.9s">
-						<span class="text-top">Cloud Platforms (GCP/Azure) <small>85%</small></span>
-							<div class="progress">
-								<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-width="85"></div>
-							</div>
-						<span>CI/CD & Automation <small>90%</small></span>
-							<div class="progress">
-								<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-width="90"></div>
-							</div>
-						<span>Infrastructure as Code <small>80%</small></span>
-							<div class="progress">
-								<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-width="80"></div>
-							</div>
-						<span>Containerization (Docker/K8s) <small>75%</small></span>
-							<div class="progress">
-								<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-width="75"></div>
-							</div>
-						<span>Bash Scripting & Linux <small>85%</small></span>
-							<div class="progress">
-								<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-width="85"></div>
-							</div>
-						<span>Monitoring & Logging <small>70%</small></span>
-							<div class="progress">
-								<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-width="70"></div>
-							</div>
-						<span>Security & Compliance <small>75%</small></span>
-							<div class="progress">
-								<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" data-width="75"></div>
-							</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!-- end about -->
+</div>
 
-		<!-- start portfolio -->
-		<div id="portfolio" class="section">
-		<div class="container">
-			<div class="row">
-				<div class="col-md-12">
-					<h2 class="wow bounce">PORTFOLIO</h2>
-				</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showAvailability&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}, &quot;showCalisthenics&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}, &quot;reduceMotion&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Motion&quot;}}">
+class Component extends DCLogic {
+  state = { typed: "", exp: [true, false, false, false, false, false, false], menuOpen: false, tIndex: 0 };
 
-				<div class="col-md-4 col-xs-6 wow fadeIn scroll-reveal" data-wow-delay="0.6s">
-					<div class="portfolio-thumb">
-						<a href="portfolio-1.html">
-							<img src="images/portfolio-img1.jpg" class="img-responsive" alt="DevOps Portfolio Projects">
-							<div class="portfolio-title">
-								<h4>DevOps Projects</h4>
-								<h5>GitHub Pages + CI/CD</h5>
-							</div>
-						</a>
-					</div>
-				</div>
+  expData = [
+    { role: "Cloud Platform Engineer / DevOps", company: "FLYR", dates: "APR 2024 - PRESENT · REMOTE",
+      summary: "I design and maintain cloud infrastructure on Google Cloud Platform, collaborating with development and data teams to implement and optimize cloud-native solutions using Terraform, Kubernetes, CircleCI, GitHub Actions, and ArgoCD.",
+      bullets: ["Design and maintain cloud infrastructure on GCP", "Manage infrastructure as code with Terraform", "Implement and optimize CI/CD pipelines (GitHub Actions, CircleCI)", "Deploy and manage applications with Kubernetes and ArgoCD", "Drive platform consolidation and cloud cost optimization"],
+      tags: ["GCP", "Terraform", "Kubernetes", "ArgoCD", "CircleCI", "GitHub Actions", "Helm"] },
+    { role: "Site Reliability Engineer", company: "CTW", dates: "JUL 2023 - APR 2024 · REMOTE",
+      summary: "Worked closely with a small team to keep systems running smoothly and at their best - catching and fixing problems before they became big issues.",
+      bullets: ["Implemented comprehensive monitoring with Zabbix", "Automated operational tasks with Bash scripts", "Set up Jenkins jobs for continuous integration", "Developed Ansible playbooks for configuration management", "Maintained high system availability and performance"],
+      tags: ["Zabbix", "Ansible", "Jenkins", "Bash", "Linux", "Git"] },
+    { role: "Web Integration & IT Support Engineer", company: "eMerchantPay", dates: "APR 2023 - JUL 2023 · REMOTE",
+      summary: "Ensured smooth merchant integration with payment gateways - collaborating across teams, managing merchant expectations, and monitoring transaction flows.",
+      bullets: ["Ensured smooth merchant integrations with payment gateways", "Monitored transaction flows and system performance", "Participated in integration calls providing insights", "Conducted user acceptance testing after deployments"],
+      tags: ["Postman API", "Payment Gateways", "Zendesk", "New Relic", "Icinga"] },
+    { role: "Technical Support Specialist", company: "GoDaddy", dates: "JAN 2021 - APR 2023",
+      summary: "First line of support, troubleshooting a wide range of server and hosting issues while delivering exceptional customer service.",
+      bullets: ["Achieved 150–300% of sales targets monthly", "Troubleshot DNS, SSL, email and domain issues", "Resolved PHP and malware-related challenges", "Applied Linux skills in production environments"],
+      tags: ["Linux", "DNS", "cPanel", "SSL", "PHP", "Customer Service"] },
+    { role: "Flight Attendant", company: "Wizz Air", dates: "2018 - JAN 2021 · PLANET EARTH",
+      summary: "Passenger safety and onboard sales - building stable knowledge in first aid, customer service, teamwork, and working under pressure.",
+      bullets: ["Crisis management and working under pressure", "Exceptional customer service in challenging environments", "Safety protocols and compliance procedures", "Sales and revenue generation"],
+      tags: ["Customer Service", "Sales", "Crisis Management", "Teamwork"] },
+    { role: "Outbound Sales Specialist", company: "Studio Moderna Bulgaria", dates: "2017 - 2018",
+      summary: "Outbound sales across diverse product portfolios - strategic presentation approaches for different product lines, with a focus on additional sales and excellent customer treatment.",
+      bullets: ["Mastered diverse product portfolios across multiple categories", "Developed strategic presentation approaches per product line", "Focused on additional sales and excellent customer treatment"],
+      tags: ["Sales Strategy", "Presentations", "Customer Care"] },
+    { role: "Promoter & Supervisor", company: "QWERTY", dates: "2012 - 2018",
+      summary: "Started on the sales floor and grew into supervision - leading small teams, monitoring performance, and consistently hitting commercial goals.",
+      bullets: ["Led teams of 4–6 people as Supervisor", "Achieved commercial sales goals consistently", "Provided customer advice and product expertise", "Monitored team performance and work processes"],
+      tags: ["Team Leadership", "Sales", "Communication"] }
+  ];
 
-				<div class="col-md-4 col-xs-6 wow fadeIn scroll-reveal" data-wow-delay="0.6s">
-					<div class="portfolio-thumb">
-						<a href="portfolio-2.html">
-							<img src="images/portfolio-img2.jpg" class="img-responsive" alt="Work Experience">
-							<div class="portfolio-title">
-								<h4>Work Experience</h4>
-								<h5>Professional Journey</h5>
-							</div>
-						</a>
-					</div>
-				</div>
+  tData = [
+    { name: "Ilia M", role: "SR. ENG LEADER - PLATFORM / SRE / DEVOPS", quote: "Valentin is one of those engineers who genuinely enjoys getting into the weeds of a new challenge. We collaborated quite a bit and I appreciated how he'd pitch new ideas instead of just following the status quo. He's proactive, easy to work with, and has a real 'deep dive' mentality. I enjoyed working with him and would recommend him." },
+    { name: "Adam Ciezkowski", role: "MANAGER @ FLYR", quote: "I've had the pleasure of managing Valentin and can confidently say he brings exceptional drive and motivation to everything he does. He's a fast learner, always open to feedback, and applies it quickly and effectively. One of his standout qualities is his attention to documentation - clear, thorough, and always crafted with the team in mind. Valentin has immense potential, and I have no doubt he'll thrive even more in the future." },
+    { name: "Andrey Ivanov", role: "MANAGER @ CTW", quote: "Valentin is a very dedicated engineer who carefully touches up every single detail. He strives to understand even the smallest aspects to ensure his tasks are completed perfectly. His meticulous approach guarantees that nothing is overlooked, and his passion for precision drives him to continually improve his skills. His commitment to excellence is evident in every project he undertakes." },
+    { name: "Peter Tsenkov", role: "MANAGER @ GODADDY", quote: "Valentin is exceptionally dedicated to his work. During my work with him, I noticed his eye for detail, excellent teamwork spirit, and perfect customer satisfaction qualities. He executed all his tasks in the time frame we've set up and received great feedback from our clients. Valentin will be a valuable asset to any company!" }
+  ];
 
-				<div class="col-md-4 col-xs-6 wow fadeIn scroll-reveal" data-wow-delay="0.6s">
-					<div class="portfolio-thumb">
-						<a href="portfolio-3.html">
-							<img src="images/portfolio-img3.jpg" class="img-responsive" alt="DevOps Blog">
-							<div class="portfolio-title">
-								<h4>Blog</h4>
-								<h5>Technical Articles</h5>
-							</div>
-						</a>
-					</div>
-				</div>
+  componentDidMount() {
+    this._timers = []; this._cleanups = [];
+    this._decryptDone = new Set(); this._decryptQueue = [];
+    const rm = this.props.reduceMotion ?? false;
+    const $$ = (s) => Array.from(document.querySelectorAll(s));
 
-				<div class="col-md-6 col-xs-6 wow fadeIn scroll-reveal" data-wow-delay="0.6s">
-					<div class="portfolio-thumb">
-						<a href="portfolio-4.html">
-							<img src="images/portfolio-img4.jpg" class="img-responsive" alt="Calisthenics Program">
-							<div class="portfolio-title">
-								<h4>My Calisthenics Program</h4>
-								<h5>Fitness Journey</h5>
-							</div>
-						</a>
-					</div>
-				</div>
+    // Typewriter
+    const texts = ["DevOps Engineer", "Cloud Platform Engineer", "Automation Enthusiast", "Calisthenics Athlete"];
+    let ti = 0, ci = 0, del = false;
+    const tick = () => {
+      const cur = texts[ti];
+      if (del) { ci--; if (ci === 0) { del = false; ti = (ti + 1) % texts.length; } }
+      else { ci++; }
+      this.setState({ typed: cur.substring(0, ci) });
+      let d = del ? 45 : 95;
+      if (!del && ci === cur.length) { del = true; d = 2100; }
+      this._timers.push(setTimeout(tick, d));
+    };
+    if (rm) { this.setState({ typed: texts[0] }); } else { this._timers.push(setTimeout(tick, 700)); }
 
-				<div class="col-md-6 col-xs-6 wow fadeIn scroll-reveal" data-wow-delay="0.6s">
-					<div class="portfolio-thumb">
-						<a href="portfolio-5.html">
-							<img src="images/portfolio-img5.jpg" class="img-responsive" alt="Coming Soon Projects">
-							<div class="portfolio-title">
-								<h4>Coming Soon</h4>
-								<h5>Future Projects</h5>
-							</div>
-						</a>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<!-- end portfolio -->
+    // Scroll reveals
+    const revealEls = $$("[data-reveal]");
+    if (rm) {
+      revealEls.forEach(el => { el.style.opacity = "1"; });
+    } else {
+      const io = new IntersectionObserver(es => es.forEach(e => {
+        if (e.isIntersecting) { e.target.style.opacity = "1"; e.target.style.transform = "none"; this._decrypt(e.target); io.unobserve(e.target); }
+      }), { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+      revealEls.forEach(el => {
+        const dir = el.getAttribute("data-reveal");
+        const delay = el.getAttribute("data-rd") || 0;
+        el.style.opacity = "0";
+        el.style.transform = dir === "left" ? "translateX(-44px)" : dir === "right" ? "translateX(44px)" : "translateY(32px)";
+        el.style.transition = "opacity .85s cubic-bezier(.22,.61,.36,1) " + delay + "ms, transform .85s cubic-bezier(.22,.61,.36,1) " + delay + "ms";
+        io.observe(el);
+      });
+      this._cleanups.push(() => io.disconnect());
+    }
 
-		<!-- start contact -->
-		<div id="contact" class="section">
-			<div class="container">
-				<div class="row">
-					<div class="col-lg-5 col-lg-offset-1 col-md-6 wow fadeInUp" data-wow-delay="0.6s">
-						<address>
-							<p class="contact-title">CONTACT ME</p>
-							<p><i class="fa fa-envelope-o"></i> <a href="mailto:valentin.v.todorov@gmail.com" style="color: #ffffff; text-decoration: none;">valentin.v.todorov@gmail.com</a></p>
-							<p><i class="fa fa-linkedin"></i> <a href="https://www.linkedin.com/in/valentin-todorov-49b065218/" target="_blank">LinkedIn Profile</a></p>
-							<p><i class="fa fa-instagram"></i> <a href="https://www.instagram.com/valentin_todorov/" target="_blank">Instagram Profile</a></p>
-							<p><i class="fa fa-map-marker"></i> Sofia, Bulgaria</p>
-						</address>
-					</div>
-					<div class="col-lg-6 col-md-6 col-xs-10 wow fadeInUp" data-wow-delay="0.6s">
-						<form role="form" method="post" action="https://formspree.io/f/mwpogzoe">
-							<input name="name" type="text" class="form-control" id="name" placeholder="Your Name">
-							<input name="email" type="email" class="form-control" id="email" placeholder="Your Email">
-							<textarea name="message" rows="5" class="form-control" id="message" placeholder="Your Message"></textarea>
-							<input name="send" type="submit" class="form-control" id="send" value="SEND MESSAGE">
-						</form>
-					</div>
-					<div class="col-md-1 col-sm-1"></div>
-				</div>
-			</div>
-		</div>
-		<!-- end contact -->
+    // Counters
+    const cio = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target, target = parseInt(el.getAttribute("data-count"), 10);
+      cio.unobserve(el);
+      if (rm) { el.textContent = target; return; }
+      const t0 = performance.now(), dur = 1500;
+      const step = (t) => {
+        const p = Math.min((t - t0) / dur, 1);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }), { threshold: 0.4 });
+    $$("[data-count]").forEach(el => { el.textContent = "0"; cio.observe(el); });
+    this._cleanups.push(() => cio.disconnect());
 
-		<!-- start footer -->
-		<footer>
-			<div class="container">
-				<div class="row">
-					<div class="col-md-12 wow fadeIn" data-wow-delay="0.9s">
-						<p>Copyright &copy; 2025 Valentin Todorov - DevOps Portfolio</p>
-						<hr>
-						<ul class="social-icon">
-							<li><a href="https://www.linkedin.com/in/valentin-todorov-49b065218/" target="_blank" class="fa fa-linkedin"></a></li>
-							<li><a href="https://www.instagram.com/valentin_todorov/" target="_blank" class="fa fa-instagram"></a></li>
-							<li><a href="mailto:valentin.v.todorov@gmail.com" class="fa fa-envelope"></a></li>
-						</ul>
-					</div>
-				</div>
-			</div>
-		</footer>
-		<!-- end footer -->
+    // Skill bars
+    const bio = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      el.style.transition = rm ? "none" : "width 1.3s cubic-bezier(.22,.61,.36,1) .15s";
+      el.style.width = el.getAttribute("data-bar") + "%";
+      bio.unobserve(el);
+    }), { threshold: 0.5 });
+    $$("[data-bar]").forEach(el => bio.observe(el));
+    this._cleanups.push(() => bio.disconnect());
 
-	</div>
+    // Card tilt
+    if (!rm && window.matchMedia("(pointer:fine)").matches) {
+      $$("[data-tilt]").forEach(card => {
+        const move = (e) => {
+          const r = card.getBoundingClientRect();
+          let rx = (e.clientY - r.top - r.height / 2) / 24, ry = (r.width / 2 - (e.clientX - r.left)) / 24;
+          rx = Math.max(-6, Math.min(6, rx)); ry = Math.max(-6, Math.min(6, ry));
+          card.style.transform = "perspective(900px) rotateX(" + rx + "deg) rotateY(" + ry + "deg) translateY(-6px)";
+          card.style.boxShadow = "0 24px 48px rgba(0,0,0,.35)";
+          card.style.zIndex = "5";
+        };
+        const leave = () => { card.style.transform = "perspective(900px) rotateX(0) rotateY(0) translateY(0)"; card.style.boxShadow = "none"; card.style.zIndex = "auto"; };
+        card.style.transition = "transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s";
+        card.addEventListener("mousemove", move); card.addEventListener("mouseleave", leave);
+        this._cleanups.push(() => { card.removeEventListener("mousemove", move); card.removeEventListener("mouseleave", leave); });
+      });
+    }
 
-		<!-- jQuery -->
-		<script src="js/jquery.js"></script>
-		<!-- bootstrap -->
-		<script src="js/bootstrap.min.js"></script>
-		<!-- fullpage -->
-		<script src="js/jquery.fullPage.js"></script>
-		<!-- smoothScroll -->
-		<script src="js/smoothscroll.js"></script>
-		<!-- wow -->
-		<script src="js/wow.min.js"></script>
-		<!-- custom -->
-		<script src="js/custom.js"></script>
-		<!-- index specific scripts -->
-		<script src="js/index.js"></script>
+    // Scroll: progress bar, nav background, section spy
+    const fill = document.getElementById("vt-progress-fill");
+    const nav = document.getElementById("vt-nav");
+    const ids = ["home", "about", "stack", "experience", "projects", "contact"];
+    const spyMap = { home: "home", about: "about", services: "about", stack: "stack", experience: "experience", projects: "projects", testimonials: "projects", calisthenics: "projects", contact: "contact" };
+    const onScroll = () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      if (fill) fill.style.transform = "scaleX(" + (max > 0 ? h.scrollTop / max : 0) + ")";
+      if (nav) {
+        if (h.scrollTop > 40) { nav.style.background = "rgba(23,19,16,.92)"; nav.style.borderBottomColor = "rgba(236,229,216,.12)"; nav.style.backdropFilter = "blur(12px)"; nav.style.padding = "13px 48px"; }
+        else { nav.style.background = "transparent"; nav.style.borderBottomColor = "transparent"; nav.style.backdropFilter = "none"; nav.style.padding = "18px 48px"; }
+      }
+      let current = "home";
+      Object.keys(spyMap).forEach(sid => {
+        const el = document.getElementById(sid);
+        if (el && el.getBoundingClientRect().top < window.innerHeight * 0.4) current = spyMap[sid];
+      });
+      ids.forEach(id => {
+        const link = document.getElementById("vt-link-" + id);
+        if (link) link.style.color = id === current ? "#e8551c" : "rgba(236,229,216,.72)";
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    this._cleanups.push(() => window.removeEventListener("scroll", onScroll));
 
-	</body>
+    // Custom cursor
+    const dot = document.getElementById("vt-cursor-dot"), ring = document.getElementById("vt-cursor-ring");
+    const fine = window.matchMedia("(pointer:fine)").matches;
+    if (!rm && fine && dot && ring) {
+      let mx = -100, my = -100, rx = -100, ry = -100, raf;
+      const onMove = (e) => { mx = e.clientX; my = e.clientY; dot.style.transform = "translate(" + (mx - 4) + "px," + (my - 4) + "px)"; };
+      const loop = () => {
+        rx += (mx - rx) * 0.16; ry += (my - ry) * 0.16;
+        ring.style.transform = "translate(" + (rx - ring.offsetWidth / 2) + "px," + (ry - ring.offsetHeight / 2) + "px)";
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      const grow = () => { ring.style.width = "58px"; ring.style.height = "58px"; ring.style.borderColor = "rgba(255,122,61,1)"; };
+      const shrink = () => { ring.style.width = "36px"; ring.style.height = "36px"; ring.style.borderColor = "rgba(232,85,28,.75)"; };
+      const onOver = (e) => { if (e.target.closest("a, button, input, textarea, [data-tilt], [onclick]")) grow(); else shrink(); };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseover", onOver);
+      this._cleanups.push(() => { cancelAnimationFrame(raf); document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseover", onOver); });
+    } else {
+      if (dot) dot.style.display = "none";
+      if (ring) ring.style.display = "none";
+      const root = document.querySelector("[data-vt-root]");
+      if (root) root.style.cursor = "auto";
+    }
+
+    // ReactBits-style effects: pixel trail (hero), particles (contact), decrypted headings
+    import("./effects.js").then(m => {
+      this._fx = m;
+      if (!rm) {
+        if (fine) Array.from(document.querySelectorAll("[data-trail-canvas]")).forEach(cv => this._cleanups.push(m.pixelTrail(cv, {})));
+        const pt = document.getElementById("vt-particles");
+        if (pt) this._cleanups.push(m.particles(pt, {}));
+      }
+      this._decryptQueue.forEach(el => m.decryptEl(el));
+      this._decryptQueue = [];
+    }).catch(() => {});
+    if (!rm) { this._tTimer = setInterval(() => this._tGo(1), 6500); }
+  }
+
+  _decrypt(el) {
+    if (!el.hasAttribute || !el.hasAttribute("data-decrypt")) return;
+    if (this._decryptDone.has(el)) return;
+    this._decryptDone.add(el);
+    if (this.props.reduceMotion ?? false) return;
+    if (this._fx) this._fx.decryptEl(el);
+    else this._decryptQueue.push(el);
+  }
+
+  _tGo(delta, abs, manual) {
+    const n = this.tData.length;
+    const next = abs !== undefined ? abs : (this.state.tIndex + delta + n) % n;
+    const card = document.getElementById("vt-tcard");
+    if (card && !(this.props.reduceMotion ?? false)) card.animate([{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], { duration: 450, easing: "cubic-bezier(.22,.61,.36,1)" });
+    this.setState({ tIndex: next });
+    if (manual) { if (this._tTimer) { clearInterval(this._tTimer); this._tTimer = null; } }
+    else if (this._tTimer) { clearInterval(this._tTimer); this._tTimer = setInterval(() => this._tGo(1), 6500); }
+  }
+
+  componentWillUnmount() {
+    if (this._tTimer) clearInterval(this._tTimer);
+    (this._timers || []).forEach(clearTimeout);
+    (this._cleanups || []).forEach(fn => fn());
+  }
+
+  renderVals() {
+    const go = (id) => (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+      const el = document.getElementById(id);
+      if (el) window.scrollTo({ top: id === "home" ? 0 : el.offsetTop - 56, behavior: "smooth" });
+    };
+    const mgo = (id) => (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+      this.setState({ menuOpen: false });
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) window.scrollTo({ top: id === "home" ? 0 : el.offsetTop - 56, behavior: "smooth" });
+      }, 80);
+    };
+    const expItems = this.expData.map((x, i) => ({
+      ...x,
+      num: "0" + (i + 1),
+      mh: this.state.exp[i] ? "1400px" : "0px",
+      op: this.state.exp[i] ? "1" : "0",
+      rot: this.state.exp[i] ? "45" : "0",
+      bg: this.state.exp[i] ? "#1d1814" : "transparent",
+      toggle: () => this.setState(s => { const a = [...s.exp]; a[i] = !a[i]; return { exp: a }; })
+    }));
+    return {
+      typed: this.state.typed,
+      expItems,
+      showCalisthenics: this.props.showCalisthenics ?? true,
+      showAvailability: this.props.showAvailability ?? true,
+      menuOpen: this.state.menuOpen,
+      tQuote: this.tData[this.state.tIndex].quote,
+      tName: this.tData[this.state.tIndex].name,
+      tRole: this.tData[this.state.tIndex].role,
+      tCounter: "0" + (this.state.tIndex + 1) + " / 0" + this.tData.length,
+      tPrev: () => this._tGo(-1, undefined, true),
+      tNext: () => this._tGo(1, undefined, true),
+      tList: this.tData.map((t, i) => ({ name: t.name, role: t.role, op: i === this.state.tIndex ? 1 : 0.45, col: i === this.state.tIndex ? "#e8551c" : "#ece5d6", go: () => this._tGo(0, i, true) })),
+      toggleMenu: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      closeMenu: () => this.setState({ menuOpen: false }),
+      mnav: { home: mgo("home"), about: mgo("about"), stack: mgo("stack"), experience: mgo("experience"), projects: mgo("projects"), contact: mgo("contact") },
+      nav: { home: go("home"), about: go("about"), stack: go("stack"), experience: go("experience"), projects: go("projects"), contact: go("contact") }
+    };
+  }
+}
+</script>
+</body>
 </html>

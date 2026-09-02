@@ -113,6 +113,7 @@ json.dump(d, open(tmp, "w"), indent=2); os.replace(tmp, p)
 PY
 }
 session_is_x11() { [ "${XDG_SESSION_TYPE:-}" = "x11" ]; }
+export -f has in_group pkg_installed json_get json_set session_is_x11      # usable inside `bash -c` checks too
 have_display() { [ -n "${DISPLAY:-}" ] && [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]; }
 wait_http() {             # wait_http url seconds
   local i=0; while [ $i -lt "$2" ]; do curl -fsS -m 3 -o /dev/null "$1" 2>/dev/null && return 0; sleep 2; i=$((i+2)); done; return 1

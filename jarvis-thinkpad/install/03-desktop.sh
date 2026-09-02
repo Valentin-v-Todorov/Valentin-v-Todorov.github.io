@@ -6,6 +6,7 @@
 run() {
   log "GDM: Ubuntu on Xorg, auto-login for $USER"
   local gdm=/etc/gdm3/custom.conf
+  sudo mkdir -p /etc/gdm3
   sudo test -f "$gdm" || printf '[daemon]\n' | sudo tee "$gdm" >/dev/null
   sudo python3 - "$gdm" "$USER" <<'PY'
 import re, sys

@@ -33,3 +33,22 @@ Pick a number and Flint gets that face; the other four stay here as options.
 | 8 | **Halo** | One chromatic ring that flexes with the voice, a serif italic name, five tiny constellations | intimate, cinematic, "Her" |
 | 9 | **Circuit Nexus** | Gold traces on a dark board, department chips with LEDs, a CPU labelled with the agent, pulses on the traces | refined PCB, tactile |
 | 10 | **Command Deck** | A product dashboard: live mesh tile, stat tiles, department rows, activity ticker, rounded glass tiles | bridge console, product UI |
+
+## Round three: Halo × Command Deck (`lab3.html?v=1..10`, previews `r3-1.jpg` to `r3-10.jpg`)
+
+One design system (serif italic wordmark, chromatic voice ring, constellation of
+the team inside it, KPI tiles with sparklines, department rows, activity feed,
+transcript) composed ten ways:
+
+| # | Name | Composition | Feel |
+| --- | --- | --- | --- |
+| 1 | **Halo Deck** | ring with the team inside on the left, 2×2 KPI tiles, departments and activity on the right, transcript under the ring | the direct merge |
+| 2 | **Split Stage** | cinematic ring with labelled leads on the left, an information column on the right: conversation, departments with load, activity, four KPI tiles | editorial two-column |
+| 3 | **Orbit Bar** | leads sit ON the ring with callouts, five KPI tiles and an activity strip below | structure inside the voice |
+| 4 | **Ledger** | giant serif headline, the ring top-right, a full 14-row agent table, KPI numerals in a rule-divided band | magazine data page |
+| 5 | **Dual Core** | voice tile and structure tile side by side, KPI row, spoken line | balanced product layout |
+| 6 | **Console Rings** | usage arcs drawn around the ring itself, departments as pills orbiting it, conversation and voice tiles left, activity right | instrument console |
+| 7 | **Blueprint** | blueprint blue, dimension lines and figure captions, an org chart as a schematic, readouts as boxed values | technical drawing |
+| 8 | **Warm Glass Deck** | warm aurora glass, the ring in a big tile, two tall KPI tiles, five department cards with sparklines | premium warm |
+| 9 | **Timeline Stage** | ring top-left, KPI row, conversation, the team's whole day as timeline lanes with a now-marker | operations wall |
+| 10 | **Focus** | the ring huge and centred, name and spoken line in serif, data reduced to four corner readouts and a department strip | cinematic, quiet |

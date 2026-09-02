@@ -52,3 +52,28 @@ transcript) composed ten ways:
 | 8 | **Warm Glass Deck** | warm aurora glass, the ring in a big tile, two tall KPI tiles, five department cards with sparklines | premium warm |
 | 9 | **Timeline Stage** | ring top-left, KPI row, conversation, the team's whole day as timeline lanes with a now-marker | operations wall |
 | 10 | **Focus** | the ring huge and centred, name and spoken line in serif, data reduced to four corner readouts and a department strip | cinematic, quiet |
+
+## Round four: the two-layer concept (`lab4.html?v=1..10&z=0|1`, previews `r4-N-out.jpg` and `r4-N-in.jpg`)
+
+This round is built around the idea from the brief: **the outer layer is the
+voice and personality** (it moves while Flint thinks and speaks), **the core is
+the team structure zoomed out** (leads, workers, who is working), and pressing
+`Z` (or Flint deciding to show you) **zooms into the core**: the outer layer
+scales past the frame and fades, the compact core grows into the full org chart
+(leads, workers with their jobs, tools) while the data panels stay put.
+
+Every variant has two previews: `-out` is the resting state (voice outside,
+structure as a compact core), `-in` is the zoomed-in state (the core open).
+
+| # | Name | Outer layer (voice) | Core (structure) | Feel |
+| --- | --- | --- | --- | --- |
+| 1 | **Sphere** | wireframe sphere with a particle shell, flexes on the voice | dense particle nucleus with the leads inside | the reference image, cool blue |
+| 2 | **Halo Nucleus** | the chromatic Halo ring plus two rotating accent arcs | leads as a small constellation in the ring's centre | warm, intimate, Halo lineage |
+| 3 | **Aperture** | fourteen glass blades that flex with the voice and open when the core is zoomed | dark pupil with the leads | camera iris, mechanical |
+| 4 | **Orbitals** | three tilted particle orbits like an atom, particles bright on the beat | the nucleus | scientific, warm |
+| 5 | **Waveshell** | a 128-bar equaliser ring; flattens to a strip at the bottom when the core is open | glow with the leads | audio-first, crisp |
+| 6 | **Veil** | 2,200-particle veil with twelve spiral arms that swell with the voice; parts left and right when zoomed | magenta glow with the leads | galaxy, dreamy |
+| 7 | **Lens** | a glass disc with a reflection and an iris waveform on the inner ring | the leads inside the lens | optical, premium |
+| 8 | **Saturn** | a planet with tilted particle rings that pass in front and behind | the leads on the planet's face | planetary, calm |
+| 9 | **Monolith Core** | a white hairline ring with a jagged voice trace and Flint's charter written along the arc | white leads, five-column index below | black and white, editorial |
+| 10 | **Reactor Core** | segment ring, tick ring, rotating arcs, PWR/LAT/MEM/LINK telemetry | the leads inside the inner ring | HUD, Iron Man |

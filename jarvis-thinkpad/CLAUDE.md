@@ -44,7 +44,7 @@ already made. Every other file here is a detail you read when its phase comes.
      done by the agent in its own home so it lands in the vault:
 
      ```
-     cd ~/my-agent && claude "read ~/site/jarvis-thinkpad/04-full-power-agent.md and ~/site/jarvis-thinkpad/05-home-automation.md, then set up the pieces I want, one at a time, and document each in the vault"
+     cd ~/my-agent && claude "read ~/site/jarvis-thinkpad/04-full-power-agent.md, 05-home-automation.md and 07-agent-team.md in that folder, then set up the pieces I want, one at a time, and document each in the vault"
      ```
 
      (Adjust `~/site` if this repo was cloned elsewhere: use the absolute path of this folder.)

@@ -19,6 +19,7 @@ Read this file first. It is the map. The other files are the detail.
 | `04-full-power-agent.md` | Giving Jarvis full control of the machine safely: permission modes, sandbox, Remote Control from the phone, MCP servers, app control, scheduled work |
 | `05-home-automation.md` | Home Assistant on the ThinkPad and wiring it into Jarvis through the Home Assistant MCP server |
 | `06-founder-os-and-brain.md` | What thefounderos.com and the `#brain` link are, the open-source FounderOS demo, and how it overlaps with the memory vault |
+| `07-agent-team.md` | A team of specialist agents inside Jarvis (subagents with their own memory), running on schedules on their own, and the FounderOS dashboard as an optional face for the team |
 
 ---
 
@@ -124,7 +125,9 @@ laptop into a server that never sleeps with the lid closed.
 7. **Give Jarvis full power**: `04-full-power-agent.md` (permission mode,
    sandbox, Remote Control, MCP servers).
 8. **Home automation**: `05-home-automation.md`.
-9. Optional: marketing skill, FounderOS demo (`06-founder-os-and-brain.md`).
+9. **The agent team**: named specialists that work on their own, on schedules:
+   `07-agent-team.md`.
+10. Optional: marketing skill, FounderOS demo as the team's dashboard (`06`, `07`).
 
 ---
 

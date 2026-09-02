@@ -24,6 +24,7 @@ cat > "$HOME_DIR/bin/launch.sh" <<'WRAP'
 #!/usr/bin/env bash
 # launch.sh <chat|talk|hands|all|update>
 export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] && { set -a; . "$f"; set +a; }; done   # secrets by name (chmod 600 files)
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$HERE"
 case "${1:-chat}" in

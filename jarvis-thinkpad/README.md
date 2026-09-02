@@ -11,8 +11,9 @@ Read this file first. It is the map. The other files are the detail.
 | --- | --- |
 | `README.md` | This map: what Flint is, the OS decision, the install order, the quick start |
 | `CLAUDE.md` | Boot file. Open Claude Code inside this folder on the ThinkPad and it becomes the setup conductor |
-| `01-os-and-first-boot.md` | Installing Ubuntu on the ThinkPad and the first-boot checklist (BIOS, Xorg, power, SSH, Tailscale) |
-| `bootstrap.sh` | One idempotent script: every system package, uv, Claude Code, Obsidian, Chrome, Docker, Tailscale, Node |
+| `setup.sh` + `install/` | **The one command.** Fifteen numbered, idempotent stages with a check after each: system update, packages, desktop-as-server, remote access, tools, apps, the two logins, one reboot that continues by itself, Jared's wizard headless, the face, the team, Home Assistant, the doctor, the first hello. `install/README.md` explains it |
+| `01-os-and-first-boot.md` | Installing Ubuntu on the ThinkPad (the only manual part) and the reference for what the first-boot stages do (BIOS, Xorg, power, SSH, Tailscale) |
+| `bootstrap.sh` | The older single-script bootstrap (packages, uv, Claude Code, Obsidian, Chrome, Docker, Tailscale, Node). `setup.sh` supersedes it; kept for a manual install |
 | `02-flint-install.md` | Running Jared's `fullstack-agent` installer on Linux, with the interview answers pre-decided and every config file explained |
 | `make-launchers.sh` | Creates the Linux desktop launchers (Chat / Talk / Barehands / Update) the installer only knows how to make for macOS and Windows |
 | `03-linux-quirks.md` | Every Linux-specific trap found in the code: push-to-talk on Wayland, Obsidian registry path, Python version, audio, keyring, ports |
@@ -112,56 +113,51 @@ laptop into a server that never sleeps with the lid closed.
 
 ---
 
-## 3. Install order (do not reorder)
+## 3. Install order (setup.sh does 2 to 9 by itself)
 
-1. **Install Ubuntu 24.04 LTS** on the ThinkPad. `01-os-and-first-boot.md`.
-2. **First boot checklist**: updates, firmware, Xorg session, no-sleep, SSH,
-   Tailscale, auto-login. Same file.
-3. **Clone this repo and run `bootstrap.sh`.** It installs every dependency
-   (git, curl, python3, uv, espeak-ng, portaudio, ffmpeg, libsecret-tools,
-   bubblewrap, socat, Chrome, Obsidian `.deb`, Docker, Tailscale, Node) and
-   Claude Code itself. Safe to re-run.
-4. **Log in to Claude Code once** (`claude`, pick "Claude account with
-   subscription", `/exit`).
-5. **Run Jared's installer** in a fresh terminal:
-   `mkdir -p ~/my-agent && cd ~/my-agent && git clone https://github.com/jaredrhod/fullstack-agent && cd fullstack-agent && claude "set me up"`.
-   Answer the interview with the sheet in `02-flint-install.md`.
-6. **Run `make-launchers.sh`** for the Linux desktop icons.
-7. **Give Flint full power**: `04-full-power-agent.md` (permission mode,
-   sandbox, Remote Control, MCP servers).
-8. **Home automation**: `05-home-automation.md`.
-9. **The agent team and the Command screen**: named specialists that work on
-   their own, on schedules, and the face that shows the voice with the team
-   beside it: `07-agent-team.md`, `command-face/install.sh`.
-10. Optional: marketing skill, FounderOS demo as the team's dashboard (`06`, `07`).
+1. **Install Ubuntu 24.04 LTS** on the ThinkPad: sections A to D of
+   `01-os-and-first-boot.md` (USB stick, BIOS, the installer's questions).
+2. **First boot**: updates, firmware, Xorg session, auto-login, never sleep,
+   battery thresholds, SSH, firewall, Tailscale, timezone, hostname.
+3. **Every package and tool**: python, uv, espeak-ng, PortAudio, ffmpeg, the
+   sandbox, Claude Code, Node, GitHub CLI, Docker, Obsidian, Chrome, Claude Desktop.
+4. **The two logins** only you can do (Claude with the Max plan, GitHub) and
+   one reboot that continues on its own.
+5. **Jared's installer**, headless, with every interview answer pre-supplied:
+   the vault, the voice, the face, the hands, the marketing skill.
+6. **The wiring**: launchers, the Orbitals face, hooks, the permission profile,
+   MCP servers, secrets, vault backups, Remote Control, the stack at login.
+7. **The agent team**: roster to subagents, schedules to timers.
+8. **Home Assistant**, onboarded through its API, with the MCP server for Flint.
+9. **The doctor**: real tests (it speaks, it hears, the agent boots as Flint),
+   the report, a Timeshift snapshot, and the first hello.
+10. Afterwards, with Flint in a typed session: the vault notes from `04`, `05`,
+    `07`; your real departments in `team.yaml`; optional FounderOS dashboard (`06`).
 
 ---
 
 ## 4. Quick start on the ThinkPad (copy-paste)
 
-After Ubuntu is installed and you are logged into the desktop, open a terminal:
+After Ubuntu is installed and you are logged into the desktop once with your
+password, open a terminal:
 
 ```bash
-sudo apt-get update && sudo apt-get install -y git curl
-git clone https://github.com/Valentin-v-Todorov/Valentin-v-Todorov.github.io.git ~/site
-cd ~/site
-git checkout claude/jarvis-thinkpad-setup-9a3aiv   # skip if this folder is already on main
-cd jarvis-thinkpad
-chmod +x bootstrap.sh make-launchers.sh
-./bootstrap.sh --all
+sudo apt-get install -y git
+git clone -b claude/jarvis-thinkpad-setup-9a3aiv https://github.com/Valentin-v-Todorov/Valentin-v-Todorov.github.io.git ~/site
+~/site/jarvis-thinkpad/setup.sh
 ```
 
-Then log out and back in (group memberships and PATH), open a terminal again, and:
+Then do only what it asks: your password once, the Claude login in the browser,
+the GitHub login, the Tailscale link on your phone. It reboots once and carries
+on by itself after the automatic login; at the end the doctor runs its tests,
+the face opens and Flint says hello. About two hours, mostly downloads. To
+change any default first, edit `~/.flint-setup/setup.env` after the first
+seconds of the run (or `install/setup.env.example` before). `install/README.md`
+lists every stage and every command (`--check`, `--only NN`, `--list`).
 
-```bash
-claude            # first-run login: "Claude account with subscription", then /exit
-cd ~/site/jarvis-thinkpad && claude "set up my thinkpad"
-```
-
-That second command opens Claude Code with `CLAUDE.md` in this folder as the
-boot file. It becomes the setup conductor: it verifies the bootstrap, walks the
-first-boot checklist with you, then hands you the exact fullstack-agent command
-and the answer sheet, and after Flint exists it wires the power-user pieces.
+If something needs judgement, open Claude Code in this folder and it becomes
+the setup conductor: `cd ~/site/jarvis-thinkpad && claude "set up my thinkpad"`.
+It reads `CLAUDE.md`, runs `setup.sh --check`, and fixes what fails.
 
 **Important distinction.** claude.ai/code in a browser runs Claude in Anthropic's
 cloud, not on the ThinkPad. To control the ThinkPad, Claude Code must run ON the

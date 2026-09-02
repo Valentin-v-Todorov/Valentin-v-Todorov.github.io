@@ -145,7 +145,10 @@ focus; moving the mouse into the team pane gives the keys back to the Command pa
 `team.yaml` shape: `operator`, `command`, and `departments[]` each with `id`,
 `name`, `lead`, `folder` and `workers[]` of `name`, `job`, `description`, `tools[]`.
 Worker names are lowercase-with-hyphens and unique; one worker owns one Job.
-`team-sync.py --check` validates without writing.
+`team-sync.py --check` validates without writing. An optional `schedules[]`
+list (`name`, `on_calendar`, `agent`, `prompt`, `permission_mode`, `max_turns`,
+`enabled`) becomes systemd user timers through `install/team-timers.py`
+(`07-agent-team.md`, section 3).
 
 ## Updating
 

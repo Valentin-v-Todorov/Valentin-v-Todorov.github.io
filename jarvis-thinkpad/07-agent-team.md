@@ -374,6 +374,13 @@ List: `systemctl --user list-timers`. The user session must exist for user
 timers to fire when nobody is logged in: `sudo loginctl enable-linger valentin`
 (auto-login from `01` covers it too).
 
+**The automated way (what `setup.sh` does):** a `schedules:` list in
+`~/my-agent/team.yaml` (see `command-face/team.example.yaml`: morning brief,
+weekly finance review, vault hygiene) and `uv run ~/my-agent/bin/team-timers.py --apply`.
+It writes one `jobs/<name>.json` and one `flint-<name>.{service,timer}` per entry,
+enables them, and `bin/run-job.py <name>` runs any job by hand. Edit the YAML,
+re-run `--apply`; `--remove` takes them all away. Flint can do all of this himself.
+
 Notifications reach you three ways: `notify-send` on the ThinkPad screen, a
 push to your phone through Home Assistant (`notify.mobile_app_<phone>` via the
 REST API, section 4 of `05`), or a message into a Remote Control session you

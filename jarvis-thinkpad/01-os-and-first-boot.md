@@ -52,6 +52,22 @@ Boot from the USB (F12 at the logo picks the device). In the installer:
   "Log in automatically" here; we set that up properly in step F.
 - Timezone, then install and reboot. Remove the USB when asked.
 
+## E0. From here, one command does everything below
+
+Log in once with your password, open a terminal, and run:
+
+```bash
+sudo apt-get install -y git
+git clone -b claude/jarvis-thinkpad-setup-9a3aiv https://github.com/Valentin-v-Todorov/Valentin-v-Todorov.github.io.git ~/site
+~/site/jarvis-thinkpad/setup.sh
+```
+
+`setup.sh` performs sections E to K of this file (updates, firmware, the Xorg
+session and auto-login, never-sleep, battery thresholds, SSH, firewall,
+Tailscale, timezone, hostname, Timeshift) and then the whole Flint install,
+with a check after every stage (`install/README.md`). The sections below stay
+as the reference for what it does and how to redo any single piece by hand.
+
 ## E. First boot: updates and firmware
 
 ```bash

@@ -9,16 +9,25 @@ one question at a time, and do the work yourself instead of handing over command
 Read `README.md` in this folder first. It is the map and it lists the decisions
 already made. Every other file here is a detail you read when its phase comes.
 
+## The automated path (use it; the manual phases below are the fallback)
+
+`./setup.sh` in this folder does the entire install on a fresh Ubuntu 24.04:
+system update, packages, desktop-as-server, remote access, tools, apps, the two
+logins, one reboot with automatic continuation, Jared's wizard headless, the
+face, the team, Home Assistant, the doctor, the first hello. `install/README.md`
+explains it; `~/.flint-setup/` holds progress, logs and the answers.
+
 ## On the first message of a session, establish the state and act
 
-1. **Where are we?** Run `lsb_release -ds`, `echo $XDG_SESSION_TYPE`,
-   `python3 --version`, `command -v claude uv espeak-ng obsidian google-chrome docker tailscale node`.
-   Report in one short block what is present and what is missing.
-2. **Bootstrap not done** (any of claude/uv/espeak-ng/obsidian missing): run
-   `./bootstrap.sh --all` for the person. It needs sudo, so it will ask for their
-   password in the terminal. It is idempotent; re-run it if it stops. Then tell
-   them to log out and back in once (group membership and PATH), and to come back
-   with `cd ~/site/jarvis-thinkpad && claude "set up my thinkpad"`.
+1. **Where are we?** Run `~/site/jarvis-thinkpad/setup.sh --list` (adjust the path to
+   this folder) and `setup.sh --check`. Report in one short block which stages are
+   done and which checks fail.
+2. **Not everything done**: run `./setup.sh` for the person from this folder. It
+   is idempotent and continues where it stopped; it needs their sudo password once
+   and their hands for the Claude and GitHub browser logins (stage 07) and the
+   Tailscale link (stage 04). If a stage keeps failing, read its log in
+   `~/.flint-setup/logs/`, fix the cause, and run `./setup.sh --only NN`. Only fall
+   back to the manual phases below when a stage cannot be made to pass.
 3. **Bootstrap done, Flint not installed** (`~/my-agent/CLAUDE.md` does not exist):
    - Walk `01-os-and-first-boot.md` as a checklist: verify each item from the actual
      system (Xorg session, no-sleep settings, SSH, Tailscale, firmware) and fix what is

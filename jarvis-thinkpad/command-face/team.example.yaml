@@ -92,3 +92,32 @@ departments:
         job: Own the scheduled jobs
         description: "The systemd timers that run the team on their own, and their logs."
         tools: [systemd, vault]
+
+# Scheduled work (systemd user timers made by bin/team-timers.py; edit, then re-run it with --apply).
+# agent "" = Flint himself with the whole vault; or a subagent name from above. Keep max_turns modest:
+# every run counts against the plan's usage windows. Set enabled: false to pause a job.
+schedules:
+  - name: morning-brief
+    description: Morning brief
+    on_calendar: "Mon..Fri 07:00"
+    agent: ""
+    prompt: "Run the morning routine: read Active Priorities and yesterday's daily note, ask comms-lead for the inbox triage and automations-machine for a one-line machine report, then write '00 - Inbox/Morning Brief.md' with today's priorities, the triage and the report. Finish with: notify-send 'Flint' 'Morning brief ready'."
+    permission_mode: acceptEdits
+    max_turns: 60
+    enabled: true
+  - name: finance-weekly
+    description: Weekly finance review
+    on_calendar: "Fri 18:00"
+    agent: finance-lead
+    prompt: "Produce this week's finance review from the Finance folder and update the ledger note. Write the result to the Finance folder and add one line to today's daily note."
+    permission_mode: acceptEdits
+    max_turns: 40
+    enabled: true
+  - name: vault-hygiene
+    description: Vault hygiene
+    on_calendar: "Sun 20:00"
+    agent: knowledge-librarian
+    prompt: "Check every folder index in the vault against its folder, fix broken wikilinks, archive notes whose status is done, and write a short hygiene report to the Knowledge folder."
+    permission_mode: acceptEdits
+    max_turns: 40
+    enabled: true

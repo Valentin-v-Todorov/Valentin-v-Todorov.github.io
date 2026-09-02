@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# lib.sh: shared helpers for the staged installer. Every stage sources this file.
+# Stages define run() and check(); stage_main dispatches "run" | "check" | both.
+set -euo pipefail
+
+INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GUIDE_DIR="$(cd "$INSTALL_DIR/.." && pwd)"
+STATE_DIR="$HOME/.flint-setup"
+ENV_FILE="$STATE_DIR/setup.env"
+LOG_DIR="$STATE_DIR/logs"
+DONE_DIR="$STATE_DIR/done"
+mkdir -p "$STATE_DIR" "$LOG_DIR" "$DONE_DIR"
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a           # never pop the "which services to restart" dialog
+
+# ------------------------------------------------------------------ config
+if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE"; set +a; fi
+: "${YOUR_NAME:=Valentin}"
+: "${AGENT_NAME:=Flint}"
+: "${AGENT_HOME:=$HOME/my-agent}"
+: "${VAULT_DIR:=$HOME/Brain}"
+: "${IDENTITY_DOOR:=B}"
+: "${PTT_KEY:=home}"
+: "${MIC_MODE:=ptt}"
+: "${VOICE:=bm_lewis}"
+: "${STT_MODEL:=small.en}"
+: "${VOICE_PERMISSIONS:=ask}"
+: "${FACE:=core}"
+: "${TIMEZONE:=}"
+: "${HOSTNAME_WANTED:=thinkpad}"
+: "${GIT_NAME:=$YOUR_NAME}"
+: "${GIT_EMAIL:=}"
+: "${SUDO_NOPASSWD:=1}"
+: "${TAILSCALE:=1}"
+: "${TS_AUTHKEY:=}"
+: "${DOCKER:=1}"
+: "${HOME_ASSISTANT:=1}"
+: "${HA_USER:=}"
+: "${CLAUDE_DESKTOP:=1}"
+: "${GITHUB_CLI:=1}"
+: "${VSCODE:=0}"
+: "${AUTOSTART_STACK:=1}"
+: "${REMOTE_CONTROL:=1}"
+: "${AGENT_TIMERS:=1}"
+: "${VAULT_GIT:=1}"
+: "${TIMESHIFT_SNAPSHOT:=1}"
+: "${FIRMWARE_UPDATE:=1}"
+: "${UFW:=1}"
+: "${ACCOUNTS_LATER:=0}"
+: "${WIZARD_MODE:=headless}"
+: "${YOUR_WORK:=I run a personal business and I am building an AI operating partner on this ThinkPad.}"
+: "${PROJECTS:=Personal Business; Home Automation; ThinkPad (this machine, the server the agent runs on)}"
+: "${KEY_PEOPLE:=}"
+: "${PRIORITIES:=Get the agent, the team and the home automation working end to end}"
+: "${RECURRING:=Morning brief; Inbox triage; Weekly finance review; Vault backup}"
+export YOUR_NAME AGENT_NAME AGENT_HOME VAULT_DIR PTT_KEY MIC_MODE VOICE STT_MODEL VOICE_PERMISSIONS FACE
+
+# ------------------------------------------------------------------ output
+if [ -t 1 ]; then C_H=$'\033[1;36m'; C_OK=$'\033[1;32m'; C_W=$'\033[1;33m'; C_E=$'\033[1;31m'; C_0=$'\033[0m'; else C_H=""; C_OK=""; C_W=""; C_E=""; C_0=""; fi
+log()  { printf '\n%s== %s%s\n' "$C_H" "$*" "$C_0"; }
+ok()   { printf '   %s%s%s\n' "$C_OK" "$*" "$C_0"; }
+warn() { printf '   %s%s%s\n' "$C_W" "$*" "$C_0"; }
+err()  { printf '   %s%s%s\n' "$C_E" "$*" "$C_0" >&2; }
+die()  { err "$*"; exit 1; }
+say()  { printf '   %s\n' "$*"; }
+
+# ------------------------------------------------------------------ helpers
+has() { command -v "$1" >/dev/null 2>&1; }
+in_group() { id -nG "$USER" | tr ' ' '\n' | grep -qx "$1"; }
+pkg_installed() { dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q "install ok installed"; }
+apt_update_once() { if [ ! -f "$STATE_DIR/.apt-updated" ] || [ "$(( $(date +%s) - $(stat -c %Y "$STATE_DIR/.apt-updated") ))" -gt 3600 ]; then sudo apt-get update -qq; touch "$STATE_DIR/.apt-updated"; fi; }
+apt_install() {           # apt_install pkg...   (retries once; skips what is present)
+  local want=() p
+  for p in "$@"; do pkg_installed "$p" || want+=("$p"); done
+  [ "${#want[@]}" = 0 ] && return 0
+  apt_update_once
+  sudo apt-get install -y -qq --no-install-recommends "${want[@]}" || { sleep 5; sudo apt-get install -y -qq --no-install-recommends "${want[@]}"; }
+}
+apt_install_full() {      # with recommends (desktop apps want them)
+  local want=() p
+  for p in "$@"; do pkg_installed "$p" || want+=("$p"); done
+  [ "${#want[@]}" = 0 ] && return 0
+  apt_update_once
+  sudo apt-get install -y -qq "${want[@]}" || { sleep 5; sudo apt-get install -y -qq "${want[@]}"; }
+}
+mark_reboot() { echo "$1" >> "$STATE_DIR/reboot-needed"; warn "reboot needed later: $1"; }
+reboot_needed() { [ -s "$STATE_DIR/reboot-needed" ]; }
+json_get() {              # json_get file key   (top-level key; prints "" if absent)
+  python3 - "$1" "$2" <<'PY'
+import json, sys
+try:
+    v = json.load(open(sys.argv[1])).get(sys.argv[2], "")
+    print(v if isinstance(v, str) else json.dumps(v))
+except Exception:
+    print("")
+PY
+}
+json_set() {              # json_set file key value-as-json   (creates the file; keeps other keys)
+  python3 - "$1" "$2" "$3" <<'PY'
+import json, os, sys
+p, k, v = sys.argv[1:4]
+try:
+    d = json.load(open(p))
+except Exception:
+    d = {}
+d[k] = json.loads(v)
+os.makedirs(os.path.dirname(p) or ".", exist_ok=True)
+tmp = p + ".tmp"
+json.dump(d, open(tmp, "w"), indent=2); os.replace(tmp, p)
+PY
+}
+session_is_x11() { [ "${XDG_SESSION_TYPE:-}" = "x11" ]; }
+have_display() { [ -n "${DISPLAY:-}" ] && [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]; }
+wait_http() {             # wait_http url seconds
+  local i=0; while [ $i -lt "$2" ]; do curl -fsS -m 3 -o /dev/null "$1" 2>/dev/null && return 0; sleep 2; i=$((i+2)); done; return 1
+}
+term_run() {              # open a visible terminal window that runs a command (falls back to plain run)
+  if have_display && has gnome-terminal; then gnome-terminal --wait -- bash -lc "$1"; else bash -lc "$1"; fi
+}
+
+# ------------------------------------------------------------------ checks
+CHECK_FAILS=0; CHECK_TOTAL=0
+chk() {                   # chk "what" cmd args...   -> prints a tick or a cross, counts failures
+  local what="$1"; shift
+  CHECK_TOTAL=$((CHECK_TOTAL+1))
+  if "$@" >/dev/null 2>&1; then printf '   %s✓%s %s\n' "$C_OK" "$C_0" "$what"; return 0
+  else printf '   %s✗%s %s\n' "$C_E" "$C_0" "$what"; CHECK_FAILS=$((CHECK_FAILS+1)); return 1; fi
+}
+chk_warn() {              # like chk, but a failure is only a warning (optional feature)
+  local what="$1"; shift
+  if "$@" >/dev/null 2>&1; then printf '   %s✓%s %s\n' "$C_OK" "$C_0" "$what"; else printf '   %s~%s %s (optional)\n' "$C_W" "$C_0" "$what"; fi
+  return 0
+}
+checks_done() { if [ "$CHECK_FAILS" = 0 ]; then ok "all $CHECK_TOTAL checks passed"; return 0; else err "$CHECK_FAILS of $CHECK_TOTAL checks failed"; return 1; fi; }
+
+stage_main() {
+  case "${1:-both}" in
+    run)   run ;;
+    check) check ;;
+    both)  run; check ;;
+    *) die "usage: $0 run|check" ;;
+  esac
+}

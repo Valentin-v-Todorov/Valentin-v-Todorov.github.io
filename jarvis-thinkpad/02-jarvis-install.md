@@ -91,9 +91,13 @@ runs on Linux unchanged, whatever the READMEs say about "macOS".
   "barehands_state_dir": "/home/valentin/my-agent/barehands/state",
   "greeting": "Hello Valentin, what are we working on today?",
   "resume_last_session": false,
-  "show_usage": false
+  "show_usage": true
 }
 ```
+
+`show_usage` is off in backtalk's own defaults; turn it on so the face's usage
+tiles (the plan's 5-hour and 7-day windows) show real numbers. It is your own
+usage, published on your own machine only.
 
 Other keys you may add later (defaults live in `backtalk/backtalk/config.py`):
 `"speed": 1.15` (brisker voice), `"mic_device": "<name from python -m sounddevice>"`,

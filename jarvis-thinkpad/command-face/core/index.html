@@ -1,69 +1,55 @@
 <!DOCTYPE html>
 <!--
-The Core: a face for ai-visualizer (github.com/jaredrhod/ai-visualizer, AGPL-3.0-or-later),
-written for the jarvis-thinkpad build. Same license as the visualizer it plugs into.
+The Core (Orbitals): a face for ai-visualizer (github.com/jaredrhod/ai-visualizer,
+AGPL-3.0-or-later), written for the jarvis-thinkpad build. Same license as the
+visualizer it plugs into.
 
-Two layers in one sphere:
-  outer  a wireframe sphere plus drifting particles = the voice and the personality.
-         It turns slowly at idle, whirls and carries pulses while thinking, and its
-         vertices push outward with the waveform while speaking.
-  core   a dense particle sphere = the agent team, zoomed out. Leads and workers are
-         the brighter points; Command is the cluster at the very centre. Agents that
-         are working right now glow green even from here.
-Zoom in (Z, click the core, or a signal from the agent) and the outer sphere opens
-past the edges while the core resolves into the org chart from the Command face.
+Two layers on one screen:
+  outer  three tilted particle orbits = the voice and the personality. They drift
+         at idle, whirl while thinking, tint amber and follow the mic while
+         listening, and their particles swell with the waveform while speaking.
+  core   the agent team, zoomed out: Command in the middle, the leads around it,
+         the workers as points. Whoever is working right now glows green.
+Zoom in (Z, click the core, or Flint's own signal) and the orbits open past the
+edges of the screen while the core grows into the org chart: Command, leads,
+workers, each worker's Job, and their tools. The data tiles stay where they are.
 
 Data (shared with the Command face, in faces/command/):
-  team.json   the roster            (bin/team-sync.py)
-  live.json   who works right now   (bin/team-live.py, from hooks)
-  view.json   {"view":"team"|"voice","focus":"<dept id>","ts":<epoch>} (bin/core-view.sh)
+  team.json   the roster                       bin/team-sync.py
+  live.json   who works, the feed, the words   bin/team-live.py (hooks) + bin/talk-tap.py
+  view.json   {"view":"team"|"voice","focus":"<dept id>","ts":<epoch>}  bin/core-view.sh
+  usage       AV.rateLimits, published by backtalk when "show_usage": true
 
-Keys: Z zoom in/out · Esc back to the voice · F fullscreen · R reload the roster ·
+Keys: Z / Enter zoom in and out · Esc back to the voice · F fullscreen · R reload the roster
 in the team view: wheel zoom, drag pan, click a lead to focus it, double-click to reset.
+?view=team opens zoomed in · ?demo=1 performs with sample data · ?shot=<state> screenshot harness.
 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:,">
 <title>The Core</title>
 <style>
-  :root{--ink:#dfeeff;--dim:#46688a;--cyan:#39c6ff;--green:#3ddc84;--amber:#ffc46b;
-        --mono:"SF Mono",Menlo,Consolas,monospace}
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{width:100%;height:100%;background:#000;overflow:hidden}
-  body{font-family:var(--mono);color:var(--ink)}
-  canvas#stage{position:fixed;inset:0;width:100vw;height:100vh;display:block}
-  .hud{position:fixed;inset:0;pointer-events:none;z-index:10}
-  #brand{position:absolute;top:34px;left:48px}
-  #brand .t{font-size:clamp(14px,1.1vw,22px);letter-spacing:.6em;text-shadow:0 0 14px rgba(57,198,255,.55)}
-  #brand .s{margin-top:7px;font-size:clamp(8px,.55vw,11px);letter-spacing:.34em;color:var(--dim)}
-  #brand .s b{color:var(--cyan);font-weight:normal}
-  #state{position:absolute;top:34px;right:48px;text-align:right;font-size:clamp(12px,.9vw,18px);letter-spacing:.5em}
-  #state .s{margin-top:7px;font-size:clamp(8px,.55vw,11px);letter-spacing:.3em;color:var(--dim)}
-  #teamline{position:absolute;bottom:30px;left:48px;font-size:clamp(8px,.55vw,11px);letter-spacing:.3em;color:var(--dim)}
-  #teamline b{color:var(--cyan);font-weight:normal}
-  #teamline b.hot{color:var(--green)}
-  #hint{position:absolute;bottom:30px;right:48px;font-size:clamp(8px,.55vw,11px);letter-spacing:.3em;color:var(--dim);text-align:right}
-  #tip{position:fixed;pointer-events:none;display:none;max-width:300px;padding:8px 10px;z-index:20;
-       background:rgba(0,4,12,.92);border:1px solid #123;border-radius:4px;font-size:11px;line-height:1.6;color:#bcd6f0}
-  #tip b{color:var(--ink);font-weight:normal;letter-spacing:.15em}
-  #tip .k{color:var(--dim)}
-  #detail{position:fixed;left:48px;bottom:64px;max-width:420px;display:none;padding:10px 12px;z-index:20;
-       background:rgba(0,4,12,.9);border:1px solid #123;border-radius:4px;font-size:11px;line-height:1.7;color:#bcd6f0}
-  #detail b{color:var(--cyan);font-weight:normal;letter-spacing:.2em}
-  #detail .k{color:var(--dim)}
-  #vig{position:fixed;inset:0;pointer-events:none;z-index:5;
-       background:radial-gradient(ellipse at 50% 50%,transparent 45%,rgba(0,0,0,.75) 100%)}
+  html,body{width:100%;height:100%;background:#0b0a09;overflow:hidden}
+  body{font-family:"Inter","Helvetica Neue",Helvetica,Arial,"Ubuntu","DejaVu Sans",sans-serif;color:#f6f1ec}
+  canvas#stage{position:fixed;inset:0;width:100vw;height:100vh;display:block;cursor:default}
+  #tip{position:fixed;pointer-events:none;display:none;max-width:320px;padding:9px 11px;z-index:20;
+       background:rgba(14,11,9,.94);border:1px solid rgba(255,235,220,.14);border-radius:8px;font-size:11px;line-height:1.65;color:#d8cfc6}
+  #tip b{color:#f6f1ec;font-weight:600}
+  #tip .k{color:#8d8178}
+  #tip .on{color:#60de98}
+  #detail{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);max-width:520px;display:none;padding:12px 16px;z-index:20;
+       background:rgba(14,11,9,.94);border:1px solid rgba(255,235,220,.14);border-radius:10px;font-size:12px;line-height:1.75;color:#d8cfc6;
+       box-shadow:0 20px 50px rgba(0,0,0,.5)}
+  #detail b{color:#f6f1ec;font-weight:600}
+  #detail .k{color:#8d8178}
+  #detail .on{color:#60de98}
+  #detail code{font-family:"SF Mono",Menlo,Consolas,"Ubuntu Mono","DejaVu Sans Mono",monospace;font-size:11px;color:#ffbe6e}
 </style>
 </head>
 <body>
 <canvas id="stage"></canvas>
-<div id="vig"></div>
-<div class="hud">
-  <div id="brand"><div class="t" id="name">FLINT</div><div class="s">THE CORE · <b id="link">CONNECTED</b></div></div>
-  <div id="state"><div id="statemode">IDLE</div><div class="s" id="clock"></div></div>
-  <div id="teamline">TEAM <b id="tstat">loading</b></div>
-  <div id="hint">Z CORE · F FULLSCREEN</div>
-</div>
 <div id="tip"></div>
 <div id="detail"></div>
 <script src="../../core.js"></script>
@@ -71,315 +57,358 @@ in the team view: wheel zoom, drag pan, click a lead to focus it, double-click t
 "use strict";
 const Q = new URLSearchParams(location.search);
 AV.init({ mic: true });
-const DATA = "../command/";                      // shared with the Command face
+const DATA = "../command/";                        // shared with the Command face
 const $ = id => document.getElementById(id);
 const cv = $("stage"), g = cv.getContext("2d");
 const U = AV.util;
-const CYAN = [57, 198, 255], BLUE = [64, 140, 255], WHITE = [225, 240, 255], GREEN = [61, 220, 132], AMBER = [255, 196, 107];
-let W = 0, H = 0, DPR = 1;
+const SANS = '"Inter","Helvetica Neue",Helvetica,Arial,"Ubuntu","DejaVu Sans",sans-serif';
+const MONO = '"SF Mono",Menlo,Consolas,"Ubuntu Mono","DejaVu Sans Mono",monospace';
+const SERIF = 'Georgia,"Times New Roman","DejaVu Serif",serif';
+const P = { bg: "#0b0a09", tile: [255, 250, 245], text: [246, 241, 236], muted: [160, 150, 140], dim: [98, 90, 84], line: [255, 245, 235],
+            accent: [255, 122, 92], green: [96, 222, 152], amber: [255, 190, 110], blue: [130, 170, 255], cyan: [120, 210, 255], white: [255, 255, 255] };
+const rgba = U.rgba;
+let W = 0, H = 0, DPR = 1, S = 1, M = 0, CX = 0, CY = 0;
+let grainC = null, STARS = [];
 function resize() {
   DPR = Math.min(2, devicePixelRatio || 1);
-  W = innerWidth; H = innerHeight;
-  cv.width = W * DPR; cv.height = H * DPR;
+  W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR;
+  S = Math.max(0.55, Math.min(1.6, Math.min(W / 1920, H / 1080)));      // the layout is drawn for 1920×1080 and scaled
+  M = Math.min(W, H); CX = W / 2; CY = H / 2;
+  STARS = Array.from({ length: 260 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.2, a: .15 + Math.random() * .5, w: Math.random() * 6.28 }));
+  grainC = null;
 }
 addEventListener("resize", resize); resize();
+const px = v => v * S;
 
-/* ------------------------------------------------------------ geometry */
-function fib(n, jitter = 0) {
-  const pts = [], ga = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < n; i++) {
-    const y = 1 - (i / (n - 1)) * 2, r = Math.sqrt(1 - y * y), a = ga * i + jitter * Math.sin(i * 12.9898) * 0.6;
-    pts.push([Math.cos(a) * r, y, Math.sin(a) * r]);
+/* ---------------------------------------------------------------- drawing */
+const glow = {};
+function sprite(c) { const k = c.join(","); return glow[k] || (glow[k] = U.makeGlow(c, 64)); }
+function dot(x, y, r, c, a = 1, halo = 2.4) {
+  if (r > 1.2 && halo) { g.globalAlpha = a; g.drawImage(sprite(c), x - r * halo, y - r * halo, r * halo * 2, r * halo * 2); g.globalAlpha = 1; }
+  g.fillStyle = rgba(c, Math.min(1, a * 1.2)); g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+}
+function text(s, x, y, size, c, o = {}) {
+  const { a = 1, align = "left", ls = 0, font = SANS, weight = "", base = "middle", style = "" } = o;
+  g.font = `${style} ${weight} ${Math.max(8, size)}px ${font}`.trim(); g.textBaseline = base; g.fillStyle = rgba(c, a);
+  if (ls) {
+    const chars = [...s], w = chars.reduce((t, ch) => t + g.measureText(ch).width + ls, 0) - ls;
+    let x0 = align === "center" ? x - w / 2 : align === "right" ? x - w : x;
+    g.textAlign = "left"; for (const ch of chars) { g.fillText(ch, x0, y); x0 += g.measureText(ch).width + ls; } return w;
   }
-  return pts;
+  g.textAlign = align; g.fillText(s, x, y); return g.measureText(s).width;
 }
-const MESH = fib(72, 0.25);                          // the outer wireframe
-const MESH_E = [];                                    // k nearest neighbours, deduped
-(function () {
-  const seen = new Set();
-  MESH.forEach((p, i) => {
-    const d = MESH.map((q, j) => [Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]), j]).sort((a, b) => a[0] - b[0]).slice(1, 5);
-    for (const [, j] of d) { const k = i < j ? i + ":" + j : j + ":" + i; if (!seen.has(k)) { seen.add(k); MESH_E.push([i, j]); } }
-  });
-})();
-const SCATTER = [];                                   // drifting particles outside the sphere
-for (let i = 0; i < 340; i++) {
-  const v = fib(340, 1.7)[i], rr = 1.06 + Math.pow(Math.random(), 0.7) * 0.55;
-  SCATTER.push({ p: v, r: rr, s: 0.6 + Math.random() * 1.4, bright: Math.random() < 0.12, w: Math.random() * 6.28 });
+const label = (s, x, y, o = {}) => text(String(s).toUpperCase(), x, y, o.size || px(9), o.c || P.dim, { ls: px(2.6), font: MONO, align: o.align || "left", a: o.a ?? 1 });
+function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function tile(x, y, w, h, o = {}) {
+  const r = px(16);
+  g.save(); g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = px(30); g.shadowOffsetY = px(10); rr(x, y, w, h, r); g.fillStyle = rgba(P.tile, .035); g.fill(); g.restore();
+  rr(x, y, w, h, r); const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, rgba(P.tile, .035)); gr.addColorStop(1, rgba(P.tile, 0)); g.fillStyle = gr; g.fill();
+  g.strokeStyle = rgba(P.line, .09); g.lineWidth = 1; g.stroke();
+  const hl = g.createLinearGradient(x, y, x + w, y); hl.addColorStop(0, rgba(P.line, 0)); hl.addColorStop(.5, rgba(P.line, .28)); hl.addColorStop(1, rgba(P.line, 0));
+  g.strokeStyle = hl; g.beginPath(); g.moveTo(x + r, y + .5); g.lineTo(x + w - r, y + .5); g.stroke();
+  if (o.title) label(o.title, x + px(22), y + px(26));
 }
-const CORE = fib(460, 0.9).map(p => ({ p, s: 0.7 + Math.random() * 0.9 }));   // the dense core shell
-const NUCLEUS = fib(70, 1.3).map(p => ({ p, r: 0.35 + Math.random() * 0.65 })); // command's cluster
+function spark(x, y, w, h, c, pts) {
+  if (!pts || pts.length < 2) { g.strokeStyle = rgba(c, .35); g.lineWidth = 1; g.beginPath(); g.moveTo(x, y + h * .6); g.lineTo(x + w, y + h * .6); g.stroke(); return; }
+  let lo = Math.min(...pts), hi = Math.max(...pts); if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
+  const P2 = pts.map((v, i) => [x + i / (pts.length - 1) * w, y + h - (.12 + .76 * (v - lo) / (hi - lo)) * h]);
+  const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, rgba(c, .25)); gr.addColorStop(1, rgba(c, 0));
+  g.fillStyle = gr; g.beginPath(); g.moveTo(P2[0][0], y + h); P2.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(P2[P2.length - 1][0], y + h); g.closePath(); g.fill();
+  g.strokeStyle = rgba(c, .95); g.lineWidth = 1.5; g.beginPath(); P2.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke();
+  const e = P2[P2.length - 1]; dot(e[0], e[1], 2.5, c, 1, 2);
+}
+function kpi(x, y, w, h, o) {
+  tile(x, y, w, h); const c = o.color || P.text;
+  text(o.value, x + px(22), y + h * .46, px(o.size || 28), c, { weight: "700" });
+  label(o.label, x + px(22), y + h - px(22));
+  if (o.sub) label(o.sub, x + w - px(22), y + h - px(22), { align: "right", c: o.subc || P.dim });
+  if (o.spark) spark(x + w * .52, y + h * .3, w * .48 - px(22), h * .36, c, o.spark);
+}
+function wrap(str, maxW) { const lines = []; let cur = ""; for (const w of String(str).split(/\s+/)) { const t = cur ? cur + " " + w : w; if (cur && g.measureText(t).width > maxW) { lines.push(cur); cur = w; } else cur = t; } if (cur) lines.push(cur); return lines; }
+function blob(x, y, r, c, a) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgba(c, a)); gr.addColorStop(1, rgba(c, 0)); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function grain() {
+  if (!grainC) { const s = 3, w = Math.ceil(W / s), h = Math.ceil(H / s); grainC = document.createElement("canvas"); grainC.width = w; grainC.height = h; const x = grainC.getContext("2d"), id = x.createImageData(w, h); for (let i = 0; i < id.data.length; i += 4) { const v = 128 + (Math.random() - .5) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } x.putImageData(id, 0, 0); }
+  g.globalAlpha = .04; g.globalCompositeOperation = "overlay"; g.drawImage(grainC, 0, 0, W, H); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
+}
+const fmtTime = ts => new Date(ts * 1000).toLocaleTimeString([], { hour12: false });
+const clip = (s, n) => { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
 
-/* --------------------------------------------------------------- team */
+/* ------------------------------------------------------------------ team */
 const R1 = 1, RJ = 1.62, R2 = 2.25, R3 = 3.15;   // the org chart, world units (same as the Command face)
-let team = null, live = { active: {}, command: "idle" }, nodes = [], edges = [];
+const SAMPLE_TEAM = { operator: "Valentin", command: "flint", departments: [
+  { id: "comms", name: "Comms", lead: "comms-lead", workers: [{ name: "comms-inbox-triage", job: "Triage the inbox", tools: ["gmail", "vault"] }, { name: "comms-reply-drafter", job: "Draft replies", tools: ["vault"] }, { name: "comms-crm-pipeline", job: "Pipeline", tools: ["sheets", "vault"] }] },
+  { id: "finance", name: "Finance", lead: "finance-lead", workers: [{ name: "finance-ledger", job: "Keep the ledger", tools: ["vault", "csv"] }, { name: "finance-invoices", job: "Chase invoices", tools: ["gmail", "vault"] }, { name: "finance-weekly-review", job: "Weekly review", tools: ["vault"] }] },
+  { id: "content", name: "Content", lead: "content-lead", workers: [{ name: "content-writer", job: "Write", tools: ["marketing", "vault"] }, { name: "content-scheduler", job: "Calendar", tools: ["calendar", "vault"] }, { name: "content-lead-magnets", job: "Lead magnets", tools: ["browser", "vault"] }] },
+  { id: "knowledge", name: "Knowledge", lead: "knowledge-lead", workers: [{ name: "knowledge-librarian", job: "Vault hygiene", tools: ["vault", "obsidian"] }, { name: "knowledge-researcher", job: "Research", tools: ["web", "vault"] }] },
+  { id: "automations", name: "Automations", lead: "automations-lead", workers: [{ name: "automations-home", job: "Run the house", tools: ["home-assistant"] }, { name: "automations-machine", job: "ThinkPad", tools: ["bash", "docker", "systemd"] }, { name: "automations-timers", job: "Timers", tools: ["systemd"] }] } ] };
+const SAMPLE_LIVE = { active: { "comms-inbox-triage": 1, "finance-ledger": 1 }, command: "thinking", turns: 142,
+  you: { text: "Get the inbox sorted and the ledger, then tell me what finance looks like.", ts: 0 },
+  said: { text: "Comms is on the inbox, Finance is reading September. Two things need your call, sir.", ts: 0 },
+  feed: [["finance-ledger", "reading Finance/exports/09.csv · 212 rows"], ["comms-inbox-triage", "14 threads · 3 need a reply"], ["Flint", "dispatched comms-lead and finance-lead"], ["You", "“get the inbox sorted and the ledger”"], ["automations-machine", "vault backup pushed · disk 61%"]].map(([w, s], i) => ({ ts: Date.now() / 1000 - i * 48 - 20, who: w, what: s })) };
+let team = null, roster = "loading", live = { active: {}, command: "idle", feed: [] }, nodes = [], edges = [];
 function layout() {
   nodes = []; edges = [];
   const depts = (team.departments || []).filter(d => d && d.name);
-  const cmd = { id: "cmd", kind: "cmd", name: team.command || "flint", label: (team.command || "FLINT").toUpperCase(), x: 0, y: 0, r: 0.24, desc: "Command" };
+  const cmd = { id: "cmd", kind: "cmd", name: team.command || "flint", label: (team.command || "FLINT").toUpperCase(), x: 0, y: 0, th: 0, desc: "Command" };
   nodes.push(cmd);
   const n = Math.max(1, depts.length), sector = Math.PI * 2 / n;
   depts.forEach((d, i) => {
     const th = -Math.PI / 2 + i * sector;
-    const lead = { id: "lead:" + d.id, kind: "lead", name: d.lead || d.id + "-lead", label: d.name, x: Math.cos(th) * R1, y: Math.sin(th) * R1, r: 0.17, dept: d.id, th, desc: d.folder ? "folder: " + d.folder : "" };
+    const lead = { id: "lead:" + d.id, kind: "lead", name: d.lead || d.id + "-lead", label: d.name, x: Math.cos(th) * R1, y: Math.sin(th) * R1, th, dept: d.id, desc: d.folder ? "folder: " + d.folder : "" };
     nodes.push(lead); edges.push({ a: cmd, b: lead, kind: "pillar" });
     const workers = d.workers || [], m = workers.length, spread = sector * 0.78, tools = [];
     workers.forEach((w, j) => {
       const a = th + (m === 1 ? 0 : (j - (m - 1) / 2) * (spread / Math.max(1, m - 1)));
-      const wn = { id: "w:" + w.name, kind: "worker", name: w.name, label: w.name, x: Math.cos(a) * R2, y: Math.sin(a) * R2, r: 0.13, dept: d.id, job: w.job || "", tools: w.tools || [], desc: w.description || "" };
+      const wn = { id: "w:" + w.name, kind: "worker", name: w.name, label: w.name, x: Math.cos(a) * R2, y: Math.sin(a) * R2, th: a, dept: d.id, job: w.job || "", tools: w.tools || [], desc: w.description || "" };
       nodes.push(wn);
-      if (w.job) {
-        const jn = { id: "j:" + w.name, kind: "job", name: w.job, label: w.job, x: Math.cos(a) * RJ, y: Math.sin(a) * RJ, r: 0.075, dept: d.id, worker: wn };
-        nodes.push(jn); edges.push({ a: lead, b: jn, kind: "sop" }); edges.push({ a: jn, b: wn, kind: "does" });
-      } else edges.push({ a: lead, b: wn, kind: "member" });
+      if (w.job) { const jn = { id: "j:" + w.name, kind: "job", name: w.job, label: w.job, x: Math.cos(a) * RJ, y: Math.sin(a) * RJ, th: a, dept: d.id, worker: wn }; nodes.push(jn); edges.push({ a: lead, b: jn, kind: "sop" }); edges.push({ a: jn, b: wn, kind: "does" }); }
+      else edges.push({ a: lead, b: wn, kind: "member" });
       for (const t of wn.tools) { let e = tools.find(x => x.slug === t); if (!e) tools.push(e = { slug: t, users: [] }); e.users.push(wn); }
     });
     const k = tools.length, tspread = sector * 0.86;
     tools.forEach((t, j) => {
       const a = th + (k === 1 ? 0 : (j - (k - 1) / 2) * (tspread / Math.max(1, k - 1)));
-      const tn = { id: "t:" + d.id + ":" + t.slug, kind: "tool", name: t.slug, label: t.slug, x: Math.cos(a) * R3, y: Math.sin(a) * R3, r: 0.09, dept: d.id, desc: t.users.length + " user" + (t.users.length === 1 ? "" : "s") };
+      const tn = { id: "t:" + d.id + ":" + t.slug, kind: "tool", name: t.slug, label: t.slug, x: Math.cos(a) * R3, y: Math.sin(a) * R3, th: a, dept: d.id, desc: t.users.length + " user" + (t.users.length === 1 ? "" : "s") };
       nodes.push(tn); for (const u of t.users) edges.push({ a: u, b: tn, kind: "uses" });
     });
   });
-  // zoomed-out home for every node: a spot on the core shell (jobs ride with their worker)
-  const shell = fib(Math.max(8, nodes.length * 2), 0.4);
-  let si = 0;
-  for (const nd of nodes) {
-    if (nd.kind === "cmd") { nd.p3 = [0, 0, 0]; continue; }
-    if (nd.kind === "job") { nd.p3 = null; continue; }
-    const p = shell[(si++ * 7) % shell.length];
-    nd.p3 = [p[0], p[1], p[2]];
-    nd.shell = nd.kind === "lead" ? 0.99 : nd.kind === "worker" ? 0.93 : 0.86;
-  }
-  for (const nd of nodes) if (nd.kind === "job") nd.p3 = nd.worker.p3, nd.shell = nd.worker.shell;
 }
 async function loadTeam() {
-  try { const r = await fetch(DATA + "team.json", { cache: "no-store" }); if (!r.ok) throw 0; team = await r.json(); layout(); }
-  catch (e) { team = null; nodes = []; edges = []; }
-  paintStat();
+  try { const r = await fetch(DATA + "team.json", { cache: "no-store" }); if (!r.ok) throw 0; team = await r.json(); roster = "connected"; }
+  catch (e) { team = SAMPLE_TEAM; roster = AV.demo ? "demo" : "sample roster"; }
+  layout();
 }
 async function loadLive() {
-  try { const r = await fetch(DATA + "live.json", { cache: "no-store" }); if (r.ok) live = await r.json(); } catch (e) {}
-  if (!live || typeof live !== "object") live = { active: {}, command: "idle" };
-  live.active = live.active || {};
+  let l = null;
+  try { const r = await fetch(DATA + "live.json", { cache: "no-store" }); if (r.ok) l = await r.json(); } catch (e) {}
+  if (!l || typeof l !== "object") l = AV.demo ? { ...SAMPLE_LIVE } : { active: {}, command: "idle" };
+  l.active = l.active || {}; l.feed = Array.isArray(l.feed) ? l.feed : [];
   const now = Date.now() / 1000;
-  for (const [k, ts] of Object.entries(live.active)) if (now - ts > 3600) delete live.active[k];
-  paintStat();
+  for (const [k, ts] of Object.entries(l.active)) if (ts > 1000 && now - ts > 3600) delete l.active[k];
+  if (AV.demo && !l.feed.length) Object.assign(l, SAMPLE_LIVE, { active: l.active && Object.keys(l.active).length ? l.active : SAMPLE_LIVE.active });
+  live = l;
 }
 let viewTs = 0;
-async function loadView() {                       // the agent's own zoom control
+async function loadView() {                        // the agent's own zoom control
   try {
     const r = await fetch(DATA + "view.json", { cache: "no-store" }); if (!r.ok) return;
-    const v = await r.json();
-    if (!(v.ts > viewTs)) return;
-    viewTs = v.ts;
+    const v = await r.json(); if (!(v.ts > viewTs)) return;
+    const first = viewTs === 0; viewTs = v.ts;
+    if (first && Date.now() / 1000 - v.ts > 10) return;          // an old command from before this page opened: ignore it
     if (v.view === "team") { setZoom(1); if (v.focus) setTimeout(() => focusOn(v.focus), 900); }
     else if (v.view === "voice") setZoom(0);
   } catch (e) {}
 }
-function paintStat() {
-  const el = $("tstat");
-  if (!team) { el.textContent = "no roster"; el.className = ""; return; }
-  const l = nodes.filter(n => n.kind === "lead").length, w = nodes.filter(n => n.kind === "worker").length, a = Object.keys(live.active).length;
-  el.textContent = `${l} leads · ${w} workers` + (a ? ` · ${a} working` : "") + (zoomT ? "  ·  ESC BACK" : "  ·  Z TO ZOOM IN");
-  el.className = a ? "hot" : "";
-}
 const isActive = n => !n ? false : n.kind === "worker" ? !!live.active[n.name] :
   n.kind === "lead" ? (!!live.active[n.name] || nodes.some(w => w.kind === "worker" && w.dept === n.dept && live.active[w.name])) :
   n.kind === "job" ? !!live.active[n.worker.name] : false;
+const counts = () => ({ leads: nodes.filter(n => n.kind === "lead").length, workers: nodes.filter(n => n.kind === "worker").length, working: Object.keys(live.active || {}).length });
 
-/* ----------------------------------------------------------- zoom/view */
-let zoom = 0, zoomT = Q.get("view") === "team" ? 1 : 0;   // 0 = the sphere, 1 = the org chart
+/* ------------------------------------------------------- sparkline history */
+// four slow curves, one point every ten minutes, kept in this browser so a reload does not flatten them
+const HIST_KEY = "core.hist.v1", HIST_N = 28, HIST_MS = 600000;
+let hist = { t: 0, working: [], turns: [], five: [], seven: [] };
+try { const h = JSON.parse(localStorage.getItem(HIST_KEY) || "null"); if (h && h.working) hist = h; } catch (e) {}
+function sampleHist(now, vals) {
+  if (now - hist.t < HIST_MS) return;
+  hist.t = now;
+  for (const k of ["working", "turns", "five", "seven"]) { if (vals[k] == null) continue; hist[k].push(vals[k]); if (hist[k].length > HIST_N) hist[k].shift(); }
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(hist)); } catch (e) {}
+}
+const noise = (t) => { const i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f), h = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }; return h(i) * (1 - u) + h(i + 1) * u; };
+const demoSpark = sd => Array.from({ length: HIST_N }, (_, i) => .25 + .7 * noise(i * .55 + sd * 7));
+
+/* ------------------------------------------------------------- zoom/view */
+let zoom = Q.get("view") === "team" ? 1 : 0, zoomT = zoom;          // 0 = the orbits, 1 = the org chart
 const view = { x: 0, y: 0, s: 1 }, target = { x: 0, y: 0, s: 1 };
 let focusDept = null, hover = null, dragging = null, mouse = null;
-function setZoom(z) { zoomT = z; if (!z) { focusOn(null); $("detail").style.display = "none"; } paintStat(); $("hint").textContent = z ? "ESC BACK · WHEEL ZOOM · CLICK A LEAD" : "Z CORE · F FULLSCREEN"; }
+function setZoom(z) { zoomT = z; if (!z) { focusOn(null); $("detail").style.display = "none"; } }
 function focusOn(dept) {
   focusDept = dept;
   if (!dept) { target.x = 0; target.y = 0; target.s = 1; return; }
   const lead = nodes.find(n => n.kind === "lead" && n.dept === dept); if (!lead) { focusDept = null; return; }
-  const mid = (RJ + R2) / 2; target.s = 2.2; target.x = -Math.cos(lead.th) * mid * chartBase(); target.y = -Math.sin(lead.th) * mid * chartBase();
+  const mid = (RJ + R2) / 2; target.s = 2; target.x = -Math.cos(lead.th) * mid * chartBase(); target.y = -Math.sin(lead.th) * mid * chartBase();
 }
-const chartBase = () => Math.min(W, H) / 2 * 0.82 / R3;
-const cx = () => W / 2, cy = () => H / 2;
-const sx2 = x => cx() + (x * chartBase() + view.x) * view.s, sy2 = y => cy() + (y * chartBase() + view.y) * view.s;
-
-/* ----------------------------------------------------------- 3D helpers */
-let rotY = 0, rotX = 0.42, coreRot = 0;
-function rot(p, ay, ax) {
-  const cy_ = Math.cos(ay), sy_ = Math.sin(ay), cx_ = Math.cos(ax), sx_ = Math.sin(ax);
-  const x = p[0] * cy_ + p[2] * sy_, z = -p[0] * sy_ + p[2] * cy_;
-  const y = p[1] * cx_ - z * sx_, z2 = p[1] * sx_ + z * cx_;
-  return [x, y, z2];
-}
-function proj(p, R) {                        // perspective: nearer = bigger and brighter
-  const f = 1 / (1 - p[2] * 0.28);
-  return { x: cx() + p[0] * R * f, y: cy() + p[1] * R * f, f, d: (p[2] + 1) / 2 };
-}
-const glow = {};
-function sprite(col, size) { const k = col.join(",") + "/" + size; return glow[k] || (glow[k] = U.makeGlow(col, size)); }
-function dot(x, y, r, col, a) {
-  if (r > 1.6) { const s = sprite(col, 32); g.globalAlpha = a; g.drawImage(s, x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4); g.globalAlpha = 1; }
-  g.fillStyle = U.rgba(col, Math.min(1, a * 1.2)); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
-}
-function glyph(kind, x, y, r, col) {
-  g.strokeStyle = col; g.lineWidth = Math.max(1, r * 0.14);
-  if (kind === "job") { g.beginPath(); g.rect(x - r * 0.75, y - r, r * 1.5, r * 2); g.stroke(); g.beginPath(); g.moveTo(x - r * 0.4, y - r * 0.3); g.lineTo(x + r * 0.4, y - r * 0.3); g.moveTo(x - r * 0.4, y + r * 0.1); g.lineTo(x + r * 0.4, y + r * 0.1); g.stroke(); return; }
-  g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = "rgba(0,3,10,.85)"; g.fill(); g.stroke();
-  if (kind === "tool") { g.beginPath(); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; g.lineTo(x + Math.cos(a) * r * 0.42, y + Math.sin(a) * r * 0.42); } g.closePath(); g.stroke(); }
-  else if (kind === "lead") { g.beginPath(); g.arc(x - r * 0.22, y - r * 0.18, r * 0.2, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(x + r * 0.24, y - r * 0.14, r * 0.16, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(x, y + r * 0.42, r * 0.5, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); }
-  else { g.beginPath(); g.arc(x, y - r * 0.2, r * 0.24, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(x, y + r * 0.5, r * 0.5, Math.PI * 1.12, Math.PI * 1.88); g.stroke(); }
-}
-
-/* ---------------------------------------------------------------- frame */
-const pulses = [];                                   // travelling lights on the mesh while thinking
-let clock = 0, t0 = performance.now(), lastState = "";
+const chartBase = () => Math.min(W - px(792), H - px(180)) / 2 * 0.82 / R3;    // the room between the tiles
+const ocx = () => CX, ocy = () => CY - px(30);                                   // the orbits' centre = the chart's centre
 const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+/* ----------------------------------------------------------------- frame */
+const ORBITS = [[.35, .9, P.accent], [-.5, -.7, P.amber], [1.2, .55, P.text]];
+const DEMO_USAGE = [{ label: "5H", pct: 34, known: true, hot: false, text: "34%  2h" }, { label: "7D", pct: 61, known: true, hot: false, text: "61%  3d" }];
+let clock = 0, t0 = performance.now(), lastZ = -1;
 function frame(dt) {
   AV.tick(dt); clock += dt / 1000;
-  const st = AV.state, env = AV.env, mic = AV.micLevel || 0;
+  const st = AV.state, env = AV.env, mic = AV.micLevel || 0, samples = AV.samples;
   const tstate = st !== "idle" ? st : (live.command === "thinking" ? "thinking" : "idle");
-  if (tstate !== lastState) { lastState = tstate; $("statemode").textContent = tstate.toUpperCase(); }
-  $("clock").textContent = new Date().toLocaleTimeString([], { hour12: false });
-  // zoom eases toward its target; the view (pan/zoom of the chart) eases too
   zoom += (zoomT - zoom) * Math.min(1, dt / 420);
   const z = ease(Math.max(0, Math.min(1, zoom)));
-  const k = Math.min(1, dt / 220);
-  view.x += (target.x - view.x) * k; view.y += (target.y - view.y) * k; view.s += (target.s - view.s) * k;
-  // rotation speed follows the state
-  const spin = tstate === "thinking" ? 0.9 : tstate === "speaking" ? 0.28 : tstate === "listening" ? 0.2 : 0.11;
-  rotY += dt / 1000 * spin * (1 - z * 0.85); coreRot -= dt / 1000 * (spin * 0.6 + 0.05) * (1 - z);
-  rotX = 0.42 + Math.sin(clock * 0.23) * 0.06;
+  const k = Math.min(1, dt / 220); view.x += (target.x - view.x) * k; view.y += (target.y - view.y) * k; view.s += (target.s - view.s) * k;
+  const now = Date.now() / 1000, c = counts();
+  const usage = U.usageRows().length ? U.usageRows() : AV.demo ? DEMO_USAGE : [], five = usage.find(u => u.label === "5H"), seven = usage.find(u => u.label === "7D");
+  const turns = live.turns != null ? live.turns : (AV.demo ? SAMPLE_LIVE.turns : 0);
+  if (!AV.demo) sampleHist(Date.now(), { working: c.working, turns, five: five && five.known ? five.pct : null, seven: seven && seven.known ? seven.pct : null });
 
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
-  g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
-  const Ro = Math.min(W, H) * 0.36 * (1 + 2.4 * z);      // outer sphere opens past the edges when zoomed
-  const Rc = Math.min(W, H) * 0.36 * 0.37;
-  const outerA = 1 - z;                                    // and fades as it goes
+  g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
+  blob(CX, CY, M * .8, [90, 40, 30], .45);
+  for (const s of STARS) dot(s.x, s.y, s.r, [255, 225, 205], s.a * (.8 + .2 * Math.sin(clock * .8 + s.w)), 1.4);
 
-  /* scatter particles */
-  if (outerA > 0.02) for (const s of SCATTER) {
-    const p = rot(s.p, rotY * 0.55 + s.w * 0.02, rotX * 0.6), pr = proj(p, Ro * s.r * (1 + 0.02 * Math.sin(clock * 0.7 + s.w)));
-    const a = outerA * (0.25 + 0.75 * pr.d) * (s.bright ? 0.9 : 0.45);
-    dot(pr.x, pr.y, (s.bright ? 2.6 : 1.1) * s.s * pr.f, s.bright ? BLUE : CYAN, a);
-  }
-  /* the outer wireframe: vertices displaced by the voice */
-  if (outerA > 0.02) {
-    const P = MESH.map((p, i) => {
-      let d = 1;
-      if (st === "speaking") d += 0.16 * env * (AV.samples[i % 64] || 0) + 0.03 * env;
-      if (tstate === "thinking") d += 0.028 * Math.sin(clock * 6 + i * 1.37);
-      if (st === "listening") d -= 0.05 * mic * (0.5 + 0.5 * Math.sin(clock * 5 + i));
-      return proj(rot([p[0] * d, p[1] * d, p[2] * d], rotY, rotX), Ro);
-    });
-    const lineCol = st === "listening" ? AMBER : CYAN;
-    for (const [i, j] of MESH_E) {
-      const a = outerA * (0.12 + 0.42 * Math.min(P[i].d, P[j].d)) * (st === "speaking" ? 0.8 + env * 0.6 : 1);
-      g.strokeStyle = U.rgba(lineCol, a); g.lineWidth = 1;
-      g.beginPath(); g.moveTo(P[i].x, P[i].y); g.lineTo(P[j].x, P[j].y); g.stroke();
+  /* the outer layer: three orbits of particles, the voice */
+  const cx = ocx(), cy = ocy(), R0 = M * .3, R = R0 * (1 + 2.4 * z), oa = 1 - .82 * z;
+  const spd = tstate === "thinking" ? 2.4 : st === "speaking" ? 1 : st === "listening" ? .7 : .45;
+  ORBITS.forEach(([tilt, sp, col], kk) => {
+    const cc = st === "listening" ? (kk === 2 ? P.text : P.amber) : col;
+    g.save(); g.translate(cx, cy); g.rotate(tilt + Math.sin(clock * .05 + kk) * .05);
+    g.strokeStyle = rgba(cc, .35 * oa); g.lineWidth = 1; g.beginPath(); g.ellipse(0, 0, R, R * .38, 0, 0, 6.2832); g.stroke();
+    for (let i = 0; i < 40; i++) {
+      const a = clock * sp * spd + i * .157 * (kk + 1);
+      let s = .15 + .1 * Math.sin(clock * 1.3 + i);
+      if (st === "speaking") s = (samples[(i * 3 + kk * 11) % 64] || 0) * env;
+      else if (tstate === "thinking") s = .3 + .7 * Math.abs(Math.sin(clock * 4 + i * .9 + kk));
+      else if (st === "listening") s = .2 + mic * (.5 + .5 * Math.sin(clock * 6 + i));
+      dot(Math.cos(a) * R, Math.sin(a) * R * .38, (1 + 2.5 * s) * (i % 10 ? 1 : 1.8) * S, cc, oa * (.3 + .7 * s));
     }
-    P.forEach((pr, i) => {
-      const bump = st === "speaking" ? env * (AV.samples[i % 64] || 0) : 0;
-      dot(pr.x, pr.y, (1.6 + 2.4 * pr.d + bump * 3) * pr.f, pr.d > 0.6 ? WHITE : CYAN, outerA * (0.35 + 0.65 * pr.d));
-    });
-    // travelling pulses while thinking (and a few at idle)
-    const want = tstate === "thinking" ? 16 : tstate === "speaking" ? 6 : 3;
-    while (pulses.length < want) pulses.push({ e: MESH_E[Math.random() * MESH_E.length | 0], t: Math.random(), v: 0.4 + Math.random() * 0.9 });
-    while (pulses.length > want) pulses.pop();
-    for (const pl of pulses) {
-      pl.t += dt / 1000 * pl.v; if (pl.t > 1) { pl.t = 0; pl.e = MESH_E[Math.random() * MESH_E.length | 0]; }
-      const a = P[pl.e[0]], b = P[pl.e[1]];
-      dot(a.x + (b.x - a.x) * pl.t, a.y + (b.y - a.y) * pl.t, 2.2, WHITE, outerA * 0.9);
-    }
-  }
-  /* the core: a dense shell that becomes a faint halo when zoomed in */
-  const coreR = Rc * (1 + z * (Ro / Rc * 0.55));
-  const coreA = 1 - z * 0.85;
-  for (const c of CORE) {
-    const pr = proj(rot(c.p, coreRot, rotX * 0.8), coreR);
-    dot(pr.x, pr.y, (0.5 + 0.9 * pr.d) * c.s * pr.f, CYAN, coreA * (0.15 + 0.5 * pr.d));
-  }
-  /* command: the nucleus, glowing with the state */
-  const scol = tstate === "listening" ? AMBER : tstate === "thinking" || tstate === "speaking" ? GREEN : WHITE;
-  const glowA = st === "speaking" ? 0.5 + env * 0.5 : tstate === "thinking" ? 0.6 + 0.4 * Math.sin(clock * 5) : 0.45;
-  const nucR = Rc * 0.3 * (1 + (st === "speaking" ? env * 0.35 : 0)) * (1 - z * 0.6);
-  // once the chart is out the nucleus rides on the Command node (which pans with the chart) and fades away
-  const ncx = cx() + (sx2(0) - cx()) * z, ncy = cy() + (sy2(0) - cy()) * z, nucA = Math.max(0, 1 - z * 1.15);
-  if (nucA > 0.01) for (const q of NUCLEUS) {
-    const pr = proj(rot(q.p, -coreRot * 1.6, rotX), nucR * q.r);
-    dot(pr.x - cx() + ncx, pr.y - cy() + ncy, (0.9 + 1.4 * pr.d) * pr.f, pr.d > 0.5 ? WHITE : scol, nucA * (0.3 + 0.7 * pr.d) * glowA);
-  }
-  { const s = sprite(scol, 64); const rr = nucR * 2.4 * glowA; g.globalAlpha = nucA * 0.55 * glowA; g.drawImage(s, ncx - rr, ncy - rr, rr * 2, rr * 2); g.globalAlpha = 1; }
-  if (!team) return;
+    g.restore();
+  });
 
-  /* the team: from points on the core shell (z=0) to the org chart (z=1) */
-  const deptDim = d => focusDept && d && d !== focusDept ? 0.22 : 1;
-  const pulse = 0.55 + 0.45 * Math.sin(clock * 5);
+  /* the core: a warm glow and two faint rings that dissolve as the chart comes out */
+  const coreA = Math.max(0, 1 - z * 2.2);
+  if (coreA > 0) {
+    blob(cx, cy, R0 * .5, st === "listening" ? P.amber : tstate === "thinking" ? P.green : P.accent, .18 * coreA * (st === "speaking" ? .7 + env * .5 : 1));
+    for (const f of [.5, .34]) { g.strokeStyle = rgba(P.line, .1 * coreA); g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, R0 * f, 0, 6.2832); g.stroke(); }
+  }
+
+  /* the team: the compact core (z=0) grows into the org chart (z=1) */
+  const base0 = R0 * .2, base1 = chartBase() * view.s;
+  const c1x = cx + view.x * view.s, c1y = cy + view.y * view.s;
   const pos = new Map();
-  for (const n of nodes) {
-    let ox, oy, of = 1;
-    if (n.kind === "cmd") { ox = cx(); oy = cy(); }
-    else { const pr = proj(rot(n.p3, coreRot, rotX * 0.8), coreR * n.shell); ox = pr.x; oy = pr.y; of = pr.f; }
-    const tx = sx2(n.x), ty = sy2(n.y);
-    pos.set(n, { x: ox + (tx - ox) * z, y: oy + (ty - oy) * z, f: of });
-  }
-  // chart edges fade in
-  if (z > 0.05) for (const e of edges) {
-    const A = pos.get(e.a), B = pos.get(e.b), on = isActive(e.a) && (e.b.kind === "tool" || isActive(e.b)) || (e.kind === "pillar" && isActive(e.b));
-    const dim = Math.min(deptDim(e.a.dept), deptDim(e.b.dept));
-    g.strokeStyle = on ? U.rgba(GREEN, 0.6 * z * dim) : U.rgba(CYAN, 0.22 * z * dim); g.lineWidth = on ? 1.4 : 1;
-    g.beginPath(); g.moveTo(A.x, A.y); g.lineTo(B.x, B.y); g.stroke();
-    if (on) { const p = (clock * 0.6 + e.a.x * 0.13) % 1; dot(A.x + (B.x - A.x) * p, A.y + (B.y - A.y) * p, 2.2, GREEN, z * dim); }
-  }
-  g.font = `${Math.max(9, 10.5 * Math.min(1.4, view.s))}px ${getComputedStyle(document.body).fontFamily}`;
-  g.textAlign = "center"; g.textBaseline = "top";
-  const order = { tool: 0, job: 1, worker: 2, lead: 3, cmd: 4 };
-  for (const n of [...nodes].sort((a, b) => order[a.kind] - order[b.kind])) {
-    const P = pos.get(n), on = isActive(n), dim = deptDim(n.dept);
-    if (n.kind === "job" && z < 0.4) continue;              // jobs only exist in the chart
-    if (n.kind === "cmd") {
-      if (z < 0.15) continue;                                // the nucleus is command when zoomed out
-      const r = Math.max(8, n.r * chartBase() * view.s) * z;
-      g.shadowColor = U.rgba(scol, 0.9); g.shadowBlur = 18 * glowA * z;
-      if (st === "speaking") for (let i = 1; i <= 3; i++) { g.strokeStyle = U.rgba(scol, 0.35 * env / i * z); g.lineWidth = 1; g.beginPath(); g.arc(P.x, P.y, r * (1 + i * 0.45 * (0.5 + env)), 0, Math.PI * 2); g.stroke(); }
-      if (tstate === "thinking") { g.strokeStyle = U.rgba(scol, 0.9 * z); g.lineWidth = 2; g.beginPath(); g.arc(P.x, P.y, r * 1.35, clock * 3, clock * 3 + Math.PI * 0.7); g.stroke(); }
-      glyph("cmd", P.x, P.y, r, U.rgba(scol, z)); g.shadowBlur = 0;
-      g.fillStyle = U.rgba(WHITE, z); g.fillText(AV.name || n.label, P.x, P.y + r + 6);
-      continue;
-    }
-    // zoomed out: a bright point on the shell; zoomed in: the glyph
-    const zr = Math.max(6, n.r * chartBase() * view.s);
-    const outR = (n.kind === "lead" ? 2.6 : n.kind === "worker" ? 1.9 : 1.2) * P.f;
-    const col = on ? GREEN : n === hover ? AMBER : n.kind === "lead" ? WHITE : n.kind === "worker" ? CYAN : n.kind === "tool" ? BLUE : [140, 170, 200];
-    if (z < 0.6) {
-      const a = (1 - z) * (n.kind === "tool" ? 0.5 : 0.9) * (on ? 0.7 + 0.3 * pulse : 1);
-      dot(P.x, P.y, outR * (on ? 1.6 : 1) * (1 + z), col, a);
-      if (on && z < 0.3) { g.strokeStyle = U.rgba(GREEN, 0.5 * pulse * (1 - z)); g.lineWidth = 1; g.beginPath(); g.arc(P.x, P.y, outR * 3 + pulse * 3, 0, Math.PI * 2); g.stroke(); }
-    }
-    if (z > 0.4) {
-      const a = Math.min(1, (z - 0.4) / 0.4) * dim;
-      if (on) { g.shadowColor = U.rgba(GREEN, 0.9); g.shadowBlur = 14 * pulse * a; }
-      g.globalAlpha = a; glyph(n.kind, P.x, P.y, zr * z, U.rgba(col, 0.95)); g.globalAlpha = 1; g.shadowBlur = 0;
-      const showLabel = z > 0.85 && (n === hover || n.kind === "lead" || (on && n.kind !== "job") ||
-        (n.kind === "worker" && (view.s > 1.35 || focusDept === n.dept)) || (n.kind === "tool" && (view.s > 2.2 || focusDept === n.dept)));
-      if (showLabel) {
-        const outward = n.y < -0.05 ? -1 : 1;
-        g.textBaseline = outward < 0 ? "bottom" : "top";
-        g.fillStyle = n.kind === "lead" ? U.rgba(WHITE, a) : U.rgba(col, 0.85 * a);
-        g.fillText(n.label, P.x, P.y + outward * (zr * z + 5)); g.textBaseline = "top";
-      }
-    }
-  }
+  for (const n of nodes) pos.set(n, { x: (cx + n.x * base0) * (1 - z) + (c1x + n.x * base1) * z, y: (cy + n.y * base0) * (1 - z) + (c1y + n.y * base1) * z });
   frame.pos = pos;
+  const deptDim = d => focusDept && d && d !== focusDept ? .22 : 1;
+  const pulse = .55 + .45 * Math.sin(clock * 5), zf = Math.max(0, Math.min(1, (z - .5) / .35)), zc = Math.max(0, 1 - z * 2.2);
+  const scol = st === "listening" ? P.amber : tstate === "thinking" ? P.green : st === "speaking" ? P.accent : P.text;
+  const glowA = st === "speaking" ? .5 + env * .5 : tstate === "thinking" ? .6 + .4 * Math.sin(clock * 5) : .35;
+  // edges
+  for (const e of edges) {
+    const A = pos.get(e.a), B = pos.get(e.b), on = isActive(e.b) && e.b.kind !== "tool" || (e.kind === "uses" && isActive(e.a));
+    const dim = Math.min(deptDim(e.a.dept), deptDim(e.b.dept));
+    let a = e.kind === "pillar" ? .12 + .1 * z : e.kind === "uses" ? .25 * zf : .1 + .08 * z;
+    if (a <= 0) continue;
+    g.strokeStyle = on ? rgba(P.green, Math.max(a, .5) * dim) : rgba(e.kind === "uses" ? P.blue : P.line, a * dim); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(A.x, A.y); g.lineTo(B.x, B.y); g.stroke();
+    if (on && z > .3) { const p = (clock * .6 + e.a.x * .13) % 1; dot(A.x + (B.x - A.x) * p, A.y + (B.y - A.y) * p, 2.2 * S, P.green, zf * dim); }
+  }
+  // job glyphs
+  if (zf > 0) for (const n of nodes) if (n.kind === "job") {
+    const Pp = pos.get(n), on = isActive(n), a = zf * deptDim(n.dept), r = px(5) * Math.min(1.4, view.s);
+    g.strokeStyle = rgba(on ? P.green : P.muted, .8 * a); g.lineWidth = 1; g.strokeRect(Pp.x - r, Pp.y - r * 1.4, r * 2, r * 2.8);
+    g.beginPath(); g.moveTo(Pp.x - r * .6, Pp.y - r * .4); g.lineTo(Pp.x + r * .6, Pp.y - r * .4); g.moveTo(Pp.x - r * .6, Pp.y + r * .4); g.lineTo(Pp.x + r * .6, Pp.y + r * .4); g.stroke();
+  }
+  // tools
+  if (zf > 0) for (const n of nodes) if (n.kind === "tool") {
+    const Pp = pos.get(n), a = zf * deptDim(n.dept), r = px(6) * Math.min(1.4, view.s), hot = n === hover;
+    g.strokeStyle = rgba(hot ? P.amber : P.blue, .8 * a); g.lineWidth = 1; g.beginPath(); g.arc(Pp.x, Pp.y, r, 0, 6.2832); g.stroke();
+    if (zf > .6 && (view.s > 1.8 || focusDept === n.dept || hot || z > .97)) { const out = Math.sin(n.th) < -.05 ? -1 : 1; text(n.label, Pp.x, Pp.y + out * (r + px(10)), px(9), hot ? P.amber : P.blue, { align: "center", font: MONO, a }); }
+  }
+  // workers: points in the core, ringed nodes with name and job in the chart (labels avoid each other)
+  const placed = [];
+  const side = (wx, wy, name, pref, sz) => { g.font = `${sz}px ${MONO}`; const hw = g.measureText(name).width / 2 + 6; for (const [out, shift] of [[pref, 0], [-pref, 0], [pref, 34], [-pref, 34]]) { const y0 = out > 0 ? wy + px(14 + shift) : wy - px(46 + shift), r = { x0: wx - hw, x1: wx + hw, y0, y1: y0 + px(34) }; if (!placed.some(p => p.x0 < r.x1 && p.x1 > r.x0 && p.y0 < r.y1 && p.y1 > r.y0)) { placed.push(r); return [out, shift]; } } return [pref, 0]; };
+  for (const n of nodes) if (n.kind === "worker") {
+    const Pp = pos.get(n), on = isActive(n), dim = deptDim(n.dept), hot = n === hover, col = on ? P.green : hot ? P.amber : P.cyan;
+    dot(Pp.x, Pp.y, ((on ? 3 : 1.8) + (on ? 4 : 3) * z) * S, col, dim * (on ? .8 + .2 * pulse : 1), on ? 2.6 : 0);
+    if (on && z < .3) { g.strokeStyle = rgba(P.green, .5 * pulse * (1 - z)); g.lineWidth = 1; g.beginPath(); g.arc(Pp.x, Pp.y, px(9) + pulse * 3, 0, 6.2832); g.stroke(); }
+    if (zf > 0) {
+      const r = px(11) * Math.min(1.4, view.s), sz = px(11) * Math.min(1.3, view.s);
+      g.strokeStyle = rgba(col, .9 * zf * dim); g.lineWidth = 1; g.beginPath(); g.arc(Pp.x, Pp.y, r, 0, 6.2832); g.stroke();
+      const [out, shift] = side(Pp.x, Pp.y, n.label, Math.sin(n.th) < -.05 ? -1 : 1, sz);
+      text(n.label, Pp.x, Pp.y + out * (px(22 + shift)) * Math.min(1.4, view.s), sz, on ? P.green : hot ? P.amber : P.muted, { align: "center", font: MONO, a: zf * dim });
+      if (n.job) text(n.job, Pp.x, Pp.y + out * (px(38 + shift)) * Math.min(1.4, view.s), sz * .9, P.dim, { align: "center", a: zf * dim });
+    }
+  }
+  // leads
+  for (const n of nodes) if (n.kind === "lead") {
+    const Pp = pos.get(n), on = isActive(n), dim = deptDim(n.dept), hot = n === hover, col = on ? P.green : hot ? P.amber : P.text;
+    dot(Pp.x, Pp.y, ((on ? 4.5 : 3.2) + (on ? 6 : 5) * z) * S, col, dim * (on ? .85 + .15 * pulse : 1), on ? 2.8 : 1.6);
+    if (zf > 0) { const r = px(16) * Math.min(1.4, view.s); g.strokeStyle = rgba(col, .9 * zf * dim); g.lineWidth = 1.4; g.beginPath(); g.arc(Pp.x, Pp.y, r, 0, 6.2832); g.stroke();
+      const out = Math.sin(n.th) < -.05 ? -1 : 1; text(n.label.toUpperCase(), Pp.x, Pp.y + out * px(30) * Math.min(1.4, view.s), px(12), col, { align: "center", ls: px(2.6), font: MONO, a: zf * dim }); }
+    if (zc > 0) { const cs = Math.cos(n.th), sn = Math.sin(n.th), al = cs > .3 ? "left" : cs < -.3 ? "right" : "center"; text(n.label.toUpperCase(), Pp.x + cs * px(12), Pp.y + sn * px(al === "center" ? 16 : 12), px(8), col, { align: al, ls: px(2.6), font: MONO, a: .8 * zc }); }
+  }
+  // command: the nucleus, glowing with the state; a ring and a name once the chart is out
+  {
+    const n = nodes.find(x => x.kind === "cmd"), Pp = n ? pos.get(n) : { x: cx, y: cy }, nr = px(5 + 6 * z) * (st === "speaking" ? 1 + env * .25 : 1);
+    { const sp = sprite(scol), rr_ = nr * (3.2 + (st === "speaking" ? env * 2 : 0)) * glowA + px(6); g.globalAlpha = .55 * glowA; g.drawImage(sp, Pp.x - rr_, Pp.y - rr_, rr_ * 2, rr_ * 2); g.globalAlpha = 1; }
+    if (st === "speaking") for (let i = 1; i <= 3; i++) { g.strokeStyle = rgba(scol, .35 * env / i); g.lineWidth = 1; g.beginPath(); g.arc(Pp.x, Pp.y, nr * (1.6 + i * .6 * (.5 + env)), 0, 6.2832); g.stroke(); }
+    if (tstate === "thinking") { g.strokeStyle = rgba(scol, .9); g.lineWidth = 1.5; g.beginPath(); g.arc(Pp.x, Pp.y, nr * 1.9, clock * 3, clock * 3 + Math.PI * .7); g.stroke(); }
+    if (st === "listening") { g.strokeStyle = rgba(scol, .5 + mic * .5); g.lineWidth = 1; g.beginPath(); g.arc(Pp.x, Pp.y, nr * (1.8 + mic * 1.5), 0, 6.2832); g.stroke(); }
+    dot(Pp.x, Pp.y, nr, P.text, 1, 3);
+    if (zf > 0) { const r = px(22) * Math.min(1.4, view.s); g.strokeStyle = rgba(P.text, .9 * zf); g.lineWidth = 1.5; g.beginPath(); g.arc(Pp.x, Pp.y, r, 0, 6.2832); g.stroke();
+      text((AV.name || n.label).toUpperCase() + " · COMMAND", Pp.x, Pp.y + px(40) * Math.min(1.4, view.s), px(11), P.text, { align: "center", ls: px(3), font: MONO, a: zf }); }
+  }
+  /* around the core: the count line, then the name and the state word */
+  if (zc > 0) {
+    label(`the core · ${c.leads} leads · ${c.workers} workers · ${c.working} working`, cx, cy + R0 * .56 + px(22), { align: "center", a: .8 * zc });
+    const word = st !== "idle" ? st : tstate === "thinking" ? "thinking" : "idle";
+    text(AV.name ? AV.name[0] + AV.name.slice(1).toLowerCase() : "Flint", cx, cy + R0 + px(70), px(48), P.text, { font: SERIF, style: "italic", align: "center", a: zc });
+    text(word, cx, cy + R0 + px(104), px(12), scol, { align: "center", ls: px(5), a: zc });
+  }
+
+  /* the data: four tiles above, the conversation and the activity below */
+  const name = AV.name || "FLINT";
+  text(name[0] + name.slice(1).toLowerCase(), px(56), px(64), px(32), P.text, { font: SERIF, style: "italic" });
+  label("orbitals · " + roster, px(56), px(92));
+  { const w = px(160), h = px(36), xx = W - px(56) - w, y = px(64), sc = tstate === "idle" ? P.dim : scol;
+    rr(xx, y - h / 2, w, h, h / 2); g.fillStyle = rgba(sc, .12); g.fill(); g.strokeStyle = rgba(sc, .3); g.stroke(); dot(xx + px(20), y, px(4), sc, 1, 2.5);
+    text(tstate[0].toUpperCase() + tstate.slice(1), xx + px(34), y + .5, px(13), P.text, { weight: "600" });
+    text(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }), xx + w - px(16), y + .5, px(11), P.muted, { align: "right", font: MONO }); }
+  const kw = px(300), kh = px(100), ky = px(116), kx2 = W - px(56) - kw;
+  const sp = k => AV.demo ? demoSpark({ working: 1, turns: 2, five: 3, seven: 4 }[k]) : hist[k];
+  kpi(px(56), ky, kw, kh, { value: String(c.working), label: "agents working", color: c.working ? P.green : P.text, spark: sp("working") });
+  kpi(px(56), ky + px(116), kw, kh, { value: String(turns), label: "turns today", color: P.text, spark: sp("turns") });
+  if (five || seven) {
+    kpi(kx2, ky, kw, kh, { value: five && five.known ? five.pct + "%" : "—", label: "5-hour window", color: five && five.hot ? P.accent : P.blue, spark: sp("five"), sub: five && five.text.includes("  ") ? "resets " + five.text.split("  ")[1] : "" });
+    kpi(kx2, ky + px(116), kw, kh, { value: seven && seven.known ? seven.pct + "%" : "—", label: "7-day window", color: seven && seven.hot ? P.accent : P.amber, spark: sp("seven"), sub: seven && seven.text.includes("  ") ? "resets " + seven.text.split("  ")[1] : "" });
+  } else {
+    kpi(kx2, ky, kw, kh, { value: "—", label: "5-hour window", color: P.blue, sub: "usage off" });
+    kpi(kx2, ky + px(116), kw, kh, { value: "—", label: "7-day window", color: P.amber, sub: "show_usage in backtalk.json" });
+  }
+  { const tw = px(380), th = px(330), ty = H - px(56) - th, x = px(56), tx = x + px(22), mw = tw - px(44);
+    tile(x, ty, tw, th, { title: "conversation" });
+    let y = ty + px(66);
+    if (live.you && live.you.text) {
+      label("you" + (live.you.ts ? " · " + fmtTime(live.you.ts) : ""), tx, y - px(14));
+      g.font = `${px(12)}px ${SANS}`; const l1 = wrap(live.you.text, mw).slice(0, 3); l1.forEach((s, i) => text(s, tx, y + px(8) + i * px(17), px(12), P.muted)); y += px(8) + l1.length * px(17) + px(20);
+    } else { text(AV.demo ? "" : "nothing said yet", tx, y, px(12), P.dim); y += px(30); }
+    if (live.said && live.said.text) {
+      label(name.toLowerCase() + (live.said.ts ? " · " + fmtTime(live.said.ts) : ""), tx, y, { c: scol });
+      g.font = `500 ${px(15)}px ${SANS}`; wrap(live.said.text, mw).slice(0, 4).forEach((s, i) => text(s, tx, y + px(26) + i * px(22), px(15), P.text, { weight: "500" }));
+    }
+    // the live waveform along the bottom of the tile
+    const wy = ty + th - px(60), wh = px(40);
+    g.strokeStyle = rgba(st === "speaking" ? P.accent : st === "listening" ? P.amber : P.dim, st === "idle" && tstate !== "thinking" ? .5 : .9); g.lineWidth = 1.5; g.beginPath();
+    for (let i = 0; i < 64; i++) { const v = st === "speaking" ? (samples[i] || 0) * env : st === "listening" ? mic * .6 * Math.abs(Math.sin(i * .5 + clock * 7)) : tstate === "thinking" ? .25 * Math.abs(Math.sin(i * .3 + clock * 3)) : .04; const X = tx + i / 63 * mw, Y = wy + wh / 2 - Math.sin(i * .7 + clock * 9) * v * wh / 2; i ? g.lineTo(X, Y) : g.moveTo(X, Y); } g.stroke();
+  }
+  { const tw = px(380), th = px(330), ty = H - px(56) - th, x = W - px(56) - tw, tx = x + px(22);
+    tile(x, ty, tw, th, { title: "activity" });
+    const feed = (live.feed || []).slice(0, 5);
+    if (!feed.length) text("no activity yet", tx, ty + px(66), px(12), P.dim);
+    feed.forEach((f, i) => { const y = ty + px(66) + i * px(50), who = f.who || "", cc = who === name || who.toLowerCase() === name.toLowerCase() ? P.accent : who === "You" ? P.text : live.active[who] ? P.green : P.muted;
+      text(f.ts ? fmtTime(f.ts) : "", tx, y, px(10), P.dim, { font: MONO });
+      text(clip(who, 26), tx + px(74), y - px(8), px(12), cc, { weight: "600" });
+      g.font = `${px(11)}px ${SANS}`; text(wrap(clip(f.what, 120), tw - px(120))[0] || "", tx + px(74), y + px(9), px(11), P.muted); });
+  }
+  label(z > .5 ? "esc  back to the voice   ·   click a lead to focus   ·   wheel zoom" : "z  zoom into the core   ·   " + name.toLowerCase() + " can zoom it too", CX, H - px(56), { align: "center", c: z > .5 ? P.accent : P.dim });
+  grain();
+  if ((z > .5) !== (lastZ > .5)) { lastZ = z; cv.style.cursor = z > .5 ? "grab" : "default"; }
 }
 function loop() { const now = performance.now(), dt = Math.min(100, now - t0); t0 = now; frame(dt); requestAnimationFrame(loop); }
 if (AV.shot) AV.shotRun(frame); else requestAnimationFrame(loop);
-AV.ready(a => { $("name").textContent = a.label; });
 
-/* ---------------------------------------------------------- interaction */
-function nodeAt(px, py) {
-  if (!frame.pos || zoom < 0.9) return null;
+/* ----------------------------------------------------------- interaction */
+function nodeAt(x, y) {
+  if (!frame.pos || zoom < .9) return null;
   let best = null, bd = 1e9;
-  for (const n of nodes) { const P = frame.pos.get(n); if (!P) continue; const rr = Math.max(8, n.r * chartBase() * view.s) + 4, d = Math.hypot(P.x - px, P.y - py); if (d < rr && d < bd) { best = n; bd = d; } }
+  for (const n of nodes) { const Pp = frame.pos.get(n); if (!Pp) continue; const rr_ = px(n.kind === "cmd" ? 22 : n.kind === "lead" ? 16 : n.kind === "worker" ? 11 : 7) * Math.min(1.4, view.s) + 4, d = Math.hypot(Pp.x - x, Pp.y - y); if (d < rr_ && d < bd) { best = n; bd = d; } }
   return best;
 }
 const tip = $("tip"), detail = $("detail");
@@ -393,9 +422,9 @@ cv.addEventListener("mousemove", e => {
     if (hover.tools && hover.tools.length) L.push(`<span class="k">tools</span> ${hover.tools.join(", ")}`);
     if (hover.desc) L.push(hover.desc);
     if (hover.kind === "job") L.push(`<span class="k">worker</span> ${hover.worker.name}`);
-    if (hover.kind === "worker" && live.active[hover.name]) L.push(`<span style="color:#3ddc84">working now</span>`);
+    if (hover.kind === "worker" && live.active[hover.name]) L.push(`<span class="on">working now</span>`);
     tip.innerHTML = L.join("<br>"); tip.style.display = "block";
-    tip.style.left = Math.min(mouse.x + 14, W - 310) + "px"; tip.style.top = Math.min(mouse.y + 14, H - 100) + "px";
+    tip.style.left = Math.min(mouse.x + 14, W - 330) + "px"; tip.style.top = Math.min(mouse.y + 14, H - 110) + "px";
   } else tip.style.display = "none";
 });
 cv.addEventListener("mousedown", e => { dragging = { mx: e.clientX, my: e.clientY, vx: view.x, vy: view.y, t: Date.now() }; });
@@ -403,28 +432,24 @@ addEventListener("mouseup", e => {
   if (!dragging) return;
   const quick = Date.now() - dragging.t < 300 && Math.hypot(e.clientX - dragging.mx, e.clientY - dragging.my) < 4;
   dragging = null; if (!quick) return;
-  if (zoom < 0.1) {                                    // click the core to zoom in
-    const Rc = Math.min(W, H) * 0.36 * 0.37;
-    if (Math.hypot(e.clientX - cx(), e.clientY - cy()) < Rc * 1.3) setZoom(1);
-    return;
-  }
-  if (zoom < 0.9) return;
+  if (zoom < .1) { if (Math.hypot(e.clientX - ocx(), e.clientY - ocy()) < M * .3 * .6) setZoom(1); return; }   // click the core to zoom in
+  if (zoom < .9) return;
   const n = nodeAt(e.clientX, e.clientY);
   if (!n) { detail.style.display = "none"; return; }
   if (n.kind === "lead") focusOn(focusDept === n.dept ? null : n.dept);
   if (n.kind !== "tool" && n.kind !== "cmd") {
-    const w = n.kind === "job" ? n.worker : n, rows = [`<b>${w.label}</b> <span class="k">${w.kind}${live.active[w.name] ? " · working now" : ""}</span>`];
-    if (w.job) rows.push(`job: ${w.job}`); if (w.tools && w.tools.length) rows.push(`tools: ${w.tools.join(", ")}`); if (w.desc) rows.push(w.desc);
-    if (w.kind === "worker") rows.push(`<span class="k">ask: @agent-${w.name} …  ·  memory: .claude/agent-memory/${w.name}/</span>`);
+    const w = n.kind === "job" ? n.worker : n, rows = [`<b>${w.label}</b> <span class="k">${w.kind}${live.active[w.name] ? ' · <span class="on">working now</span>' : ""}</span>`];
+    if (w.job) rows.push(`<span class="k">job</span> ${w.job}`); if (w.tools && w.tools.length) rows.push(`<span class="k">tools</span> ${w.tools.join(", ")}`); if (w.desc) rows.push(w.desc);
+    if (w.kind === "worker") rows.push(`<span class="k">ask</span> <code>@agent-${w.name}</code> <span class="k">· memory</span> <code>.claude/agent-memory/${w.name}/</code>`);
     detail.innerHTML = rows.join("<br>"); detail.style.display = "block";
   }
 });
-cv.addEventListener("dblclick", () => { if (zoom > 0.9) { focusOn(null); detail.style.display = "none"; } });
+cv.addEventListener("dblclick", () => { if (zoom > .9) { focusOn(null); detail.style.display = "none"; } });
 cv.addEventListener("wheel", e => {
-  if (zoom < 0.9) { if (e.deltaY < 0) setZoom(1); return; }
+  if (zoom < .9) { if (e.deltaY < 0) setZoom(1); return; }
   e.preventDefault();
-  const mx = e.clientX - cx(), my = e.clientY - cy(), f = Math.exp(-e.deltaY * 0.0012), ns = Math.max(0.45, Math.min(6, view.s * f));
-  if (ns < 0.5 && e.deltaY > 0 && view.s <= 0.5) { setZoom(0); return; }   // keep zooming out: back to the sphere
+  const mx = e.clientX - ocx(), my = e.clientY - ocy(), f = Math.exp(-e.deltaY * .0012), ns = Math.max(.45, Math.min(6, view.s * f));
+  if (ns < .5 && e.deltaY > 0 && view.s <= .5) { setZoom(0); return; }        // keep zooming out: back to the voice
   target.x = view.x = mx / ns - (mx / view.s - view.x); target.y = view.y = my / ns - (my / view.s - view.y); target.s = view.s = ns;
 }, { passive: false });
 addEventListener("keydown", e => {
@@ -434,7 +459,6 @@ addEventListener("keydown", e => {
   else if (k === "f") { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
   else if (k === "r") loadTeam();
 });
-if (zoomT) setZoom(1);
 loadTeam(); loadLive(); loadView();
 setInterval(loadLive, 1000); setInterval(loadView, 500); setInterval(loadTeam, 30000);
 </script>

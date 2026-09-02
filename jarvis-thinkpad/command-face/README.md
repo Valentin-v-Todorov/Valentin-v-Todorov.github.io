@@ -3,19 +3,33 @@
 Both plug into Jared's ai-visualizer as extra faces and share one roster and one
 live-activity file. `install.sh` installs both; The Core is the default.
 
-## The Core (default): one sphere, the voice outside, the team inside
+## The Core (default): the voice outside, the team inside, the data around them
 
-A blue wireframe sphere with drifting particles is the voice and the personality:
-it turns slowly at idle, whirls and carries pulses along its edges while Flint
-thinks, and its vertices push outward with the waveform while he speaks
-(listening tints it amber and pulls it inward with the mic level). Inside it, a
-dense particle sphere is the team, zoomed out: leads and workers are the brighter
-points on the shell, Command is the glowing cluster at the very centre, and any
-agent that is working right now glows green even from out here.
+The chosen design from the mockup rounds (`mockups/r4-4-out.jpg` and `r4-4-in.jpg`),
+running for real: `core-out.jpg` (resting, speaking), `core-in.jpg` (zoomed into the
+core), `core-thinking.jpg`, `core-listening.jpg` (shot on the visualizer's mock bus
+with the example roster; the name reads Jarvis there because that is the mock's
+config, yours says Flint).
 
-Zoom in and the outer sphere opens past the edges of the screen while the core
-resolves into the org chart: Command, team leads, workers, each worker's Job,
-and their tools, lit live. Zoom back out and it folds into the sphere again.
+- **The outer layer is the voice.** Three tilted orbits of particles drift at
+  idle, whirl while Flint thinks, tint amber and follow the mic while he
+  listens, and their particles swell with the waveform while he speaks. Under
+  them, his name in serif and the state word.
+- **The core is the team, zoomed out.** Command glows at the centre with the
+  state, the five leads sit around it, the workers are points, and whoever is
+  working right now is green. A line under it counts leads, workers, working.
+- **The data sits around them.** Agents working and turns today (top left), the
+  plan's 5-hour and 7-day usage windows with when they reset (top right; backtalk
+  publishes them when `"show_usage": true` is in `backtalk.json`, otherwise the
+  tiles say so), the conversation with the live waveform (bottom left: what you
+  said, typed or spoken, and what Flint answered), and the activity feed (bottom
+  right: agents starting and finishing, what they reported, your turns).
+  The four sparklines fill in over the first hours (one point every ten minutes,
+  kept in the browser).
+
+Zoom in and the orbits open past the edges of the screen while the core grows
+into the org chart: Command, team leads, workers, each worker's Job, and their
+tools, lit live. The tiles stay where they are. Zoom out and it folds back.
 
 | Key | Does |
 | --- | --- |
@@ -25,6 +39,7 @@ and their tools, lit live. Zoom back out and it folds into the sphere again.
 | click a worker or job | detail card: job, tools, how to address it, where its memory lives |
 | `F` | browser full screen; `R` reloads the roster |
 | `?view=team` | open already zoomed in |
+| `?demo=1` | performs with a sample roster, conversation and numbers (no voice line, no hooks needed) |
 
 **Flint zooms it himself.** `~/my-agent/bin/core-view.sh team finance` zooms
 in and focuses Finance; `core-view.sh team` zooms in; `core-view.sh voice` goes
@@ -76,6 +91,8 @@ pulling a newer copy of this repo.
 
 Try it with no voice line: `cd ~/my-agent/ai-visualizer && ./run.sh --mock speaking`,
 or open `http://127.0.0.1:8790/faces/core/?demo=1` (and `/faces/command/?demo=1`).
+The usage tiles need `"show_usage": true` in `~/my-agent/backtalk/backtalk.json`
+(off by default in backtalk; it is your own plan's usage, shown on your own screen).
 
 ## Keys and mouse
 
@@ -102,7 +119,16 @@ focus; moving the mouse into the team pane gives the keys back to the Command pa
 - **Workers and leads** turn green and pulse while a subagent with that name is
   running (`SubagentStart` / `SubagentStop` hooks). Their edges carry a moving
   pulse. A worker that never reported stop clears after an hour.
-- The header counts leads, workers and how many are working right now.
+- **The conversation and the feed** come from the same hooks: `UserPromptSubmit`
+  carries what you said, `Stop` reads Flint's answer from the session transcript,
+  `SubagentStop` reads what a worker reported. The voice session is a Claude
+  Agent SDK session in `~/my-agent`, so it fires them too. All of it stays in
+  `live.json` on this machine, served to 127.0.0.1 only. To keep the words out of
+  the file (only who is working), give the hooks `COMMAND_FACE_WORDS=0`:
+  `"command": "COMMAND_FACE_WORDS=0 python3 ~/my-agent/bin/team-live.py"`.
+- **Usage** (5-hour and 7-day windows) is the visualizer's own readout, published
+  by backtalk when `"show_usage": true`.
+- The core's count line shows leads, workers and how many are working right now.
 
 ## Files
 
@@ -112,7 +138,7 @@ focus; moving the mouse into the team pane gives the keys back to the Command pa
 | `face/index.html`, `face/face.json` | `ai-visualizer/faces/command/` | the Command face |
 | `core-view.sh` | `~/my-agent/bin/` | the agent's zoom control; writes `faces/command/view.json` |
 | `team-sync.py` | `~/my-agent/bin/` | `team.yaml` → `faces/command/team.json`; `--agents` creates missing `.claude/agents/<dept>/<name>.md` (never overwrites) |
-| `team-live.py` | `~/my-agent/bin/` | hook helper that writes `faces/command/live.json` |
+| `team-live.py` | `~/my-agent/bin/` | hook helper that writes `faces/command/live.json`: who works, the conversation, the feed, turns today |
 | `team.example.yaml` | `~/my-agent/team.yaml` (if missing) | the starter roster: Comms, Finance, Content, Knowledge, Automations |
 | `install.sh` | run from this folder | the whole install, idempotent |
 

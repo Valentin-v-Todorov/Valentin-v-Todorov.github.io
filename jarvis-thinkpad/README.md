@@ -19,7 +19,7 @@ Read this file first. It is the map. The other files are the detail.
 | `04-full-power-agent.md` | Giving Flint full control of the machine safely: permission modes, sandbox, Remote Control from the phone, MCP servers, app control, scheduled work |
 | `05-home-automation.md` | Home Assistant on the ThinkPad and wiring it into Flint through the Home Assistant MCP server |
 | `06-founder-os-and-brain.md` | What thefounderos.com and the `#brain` link are, the open-source FounderOS demo, and how it overlaps with the memory vault |
-| `command-face/` | Two ready-to-apply faces for the visualizer. The Core: a sphere whose outer wireframe is the voice and whose core is the team, zooming into the org chart on demand or on Flint's command. Command: the board with the team docked beside it. Plus the roster, hooks and helpers |
+| `command-face/` | Two ready-to-apply faces for the visualizer. The Core (Orbitals): the voice as three particle orbits, the team zoomed out at the centre, the numbers, the conversation and the activity around them; it zooms into the org chart on demand or on Flint's command. Command: the board with the team docked beside it. Plus the roster, hooks and helpers |
 | `07-agent-team.md` | The agent org chart from the Founder OS brain graph rebuilt with Claude Code: Flint as Command, lead subagents per department, worker subagents owning one Job each, schedules that run them on their own, and the FounderOS dashboard as an optional face |
 
 ---
@@ -180,7 +180,7 @@ phone or any browser. See `04-full-power-agent.md`.
 | Vault | Fresh vault at `~/Brain` | Home folder, not Documents, not cloud-synced. The installer registers it in `~/.config/obsidian/obsidian.json` so Obsidian opens straight into it |
 | Microphone | Push to talk, key `home` | Mic is closed unless the key is held. ThinkPads have a physical Home key. Say "go hands free" later to switch |
 | Voice engine | Kokoro `bm_lewis` (free, local) first | Zero cost, offline. Audition ElevenLabs later if you want the natural voice; the key goes in the GNOME keyring via `secret-tool`, never in a file |
-| Face | `board` (the circuit board) | The one from the videos. Switch by opening another page |
+| Face | `board` in the wizard, then `command-face/install.sh` makes **The Core** the default | The Core is the Orbitals design you picked: the voice as particle orbits, the team zoomed out at the centre, the numbers, the conversation and the activity around them, zooming into the org chart on `Z` or on Flint's command. The board stays one page away |
 | Hands | Yes, if the ThinkPad has a webcam | Needs Chrome; `bootstrap.sh` installs it |
 | Permissions (voice) | `ask` for the first day, then `bypassPermissions` | You want full power. Start with spoken checks so you hear what it wants to do, then say "stop asking for permission" and "confirm" |
 | Marketing skill | Yes | Free, useful for the personal business, installs as `~/.claude/skills/jaredrhod-marketing/` |

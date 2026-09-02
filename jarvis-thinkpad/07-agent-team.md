@@ -299,12 +299,14 @@ You asked for one main screen for Flint's voice, with the team structure there
 too, zoomable when you want it or when Flint wants to show it. Two faces ship
 ready to apply in `command-face/` (its README has the keys and screenshots):
 
-- **The Core** (default): one sphere. The blue wireframe outer layer is the
-  voice: slow turn at idle, a whirl with pulses while thinking, vertices pushed
-  out by the waveform while speaking. The dense core inside is the team zoomed
-  out, working agents glowing green. `Z` or a click on the core (or Flint's own
-  command) zooms in: the sphere opens past the screen edges and the core resolves
-  into the org chart from section 2b. `Esc` folds it back.
+- **The Core** (default), the Orbitals design you picked: three orbits of
+  particles are the voice (drifting at idle, whirling while thinking, swelling
+  with the waveform while speaking); the team sits zoomed out at the centre,
+  working agents glowing green; around them the numbers (agents working, turns
+  today, the plan's usage windows), the conversation and the activity feed. `Z`
+  or a click on the core (or Flint's own command) zooms in: the orbits open past
+  the screen edges and the core grows into the org chart from section 2b while
+  the tiles stay put. `Esc` folds it back.
 - **Command**: the circuit board full screen with the org chart docked beside it,
   `T` to swap focus, `G` for the team full screen.
 

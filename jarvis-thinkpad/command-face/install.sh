@@ -21,7 +21,7 @@ cp "$HERE/face/index.html" "$HERE/face/face.json" "$VIS/faces/command/"
 cp "$HERE/core/index.html" "$HERE/core/face.json" "$VIS/faces/core/"
 [ -f "$VIS/faces/command/view.json" ] || printf '{"view": "voice", "focus": "", "ts": 0}\n' > "$VIS/faces/command/view.json"
 echo "   command: the board with the team docked beside it   -> $VIS/faces/command/"
-echo "   core:    the sphere that zooms into the team        -> $VIS/faces/core/"
+echo "   core:    the orbits, the team, the data; zooms in   -> $VIS/faces/core/"
 echo "   (both untracked by ai-visualizer's git, so update.sh leaves them alone)"
 
 echo "== helpers"
@@ -94,6 +94,7 @@ done. Restart the stack (Ctrl-C, then ./fullstack-agent/start.sh); the browser o
   In the team view: wheel zoom, drag pan, click a lead to focus its department, R reload the roster.
 The agent zooms it himself:  ~/my-agent/bin/core-view.sh team [department-id]   |   core-view.sh voice
 Try it with no voice line:   cd ~/my-agent/ai-visualizer && ./run.sh --mock speaking
+Usage tiles on the face:     "show_usage": true in ~/my-agent/backtalk/backtalk.json
 Agent files from the roster: uv run ~/my-agent/bin/team-sync.py --agents
 Other default face:          install.sh --default=command
 NEXT

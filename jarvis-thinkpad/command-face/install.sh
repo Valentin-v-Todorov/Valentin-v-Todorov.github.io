@@ -8,21 +8,26 @@
 # replaced), and makes "command" the default face in ai-visualizer.json (backup kept).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-HOME_DIR="${1:-$HOME/my-agent}"
+HOME_DIR="$HOME/my-agent"; DEFAULT_FACE="core"
+for a in "$@"; do case "$a" in --default=*) DEFAULT_FACE="${a#--default=}" ;; *) HOME_DIR="$a" ;; esac; done
 VIS="$HOME_DIR/ai-visualizer"
 export PATH="$HOME/.local/bin:$PATH"
 [ -f "$HOME_DIR/CLAUDE.md" ] || { echo "no CLAUDE.md in $HOME_DIR: install Flint first (02-flint-install.md)" >&2; exit 1; }
 [ -f "$VIS/server.py" ] || { echo "no ai-visualizer in $HOME_DIR: install the face piece first" >&2; exit 1; }
 
-echo "== face"
-mkdir -p "$VIS/faces/command"
+echo "== faces"
+mkdir -p "$VIS/faces/command" "$VIS/faces/core"
 cp "$HERE/face/index.html" "$HERE/face/face.json" "$VIS/faces/command/"
-echo "   $VIS/faces/command/ (untracked by ai-visualizer's git, so update.sh leaves it alone)"
+cp "$HERE/core/index.html" "$HERE/core/face.json" "$VIS/faces/core/"
+[ -f "$VIS/faces/command/view.json" ] || printf '{"view": "voice", "focus": "", "ts": 0}\n' > "$VIS/faces/command/view.json"
+echo "   command: the board with the team docked beside it   -> $VIS/faces/command/"
+echo "   core:    the sphere that zooms into the team        -> $VIS/faces/core/"
+echo "   (both untracked by ai-visualizer's git, so update.sh leaves them alone)"
 
 echo "== helpers"
 mkdir -p "$HOME_DIR/bin"
-cp "$HERE/team-sync.py" "$HERE/team-live.py" "$HOME_DIR/bin/"
-chmod +x "$HOME_DIR/bin/team-sync.py" "$HOME_DIR/bin/team-live.py"
+cp "$HERE/team-sync.py" "$HERE/team-live.py" "$HERE/core-view.sh" "$HOME_DIR/bin/"
+chmod +x "$HOME_DIR/bin/team-sync.py" "$HOME_DIR/bin/team-live.py" "$HOME_DIR/bin/core-view.sh"
 
 echo "== roster"
 if [ ! -f "$HOME_DIR/team.yaml" ] && [ ! -f "$HOME_DIR/team.json" ]; then
@@ -63,30 +68,32 @@ if added:
 print("   hooks added:", ", ".join(added) if added else "none (already wired)")
 PY
 
-echo "== default face"
-python3 - "$VIS" <<'PY'
+echo "== default face: $DEFAULT_FACE"
+python3 - "$VIS" "$DEFAULT_FACE" <<'PY'
 import json, os, shutil, sys
-vis = sys.argv[1]
+vis, want = sys.argv[1], sys.argv[2]
 p = os.path.join(vis, "ai-visualizer.json")
 if not os.path.exists(p):
     shutil.copy(os.path.join(vis, "ai-visualizer.json.example"), p)
 cfg = json.load(open(p))
-if cfg.get("face") != "command":
+if cfg.get("face") != want:
     if not os.path.exists(p + ".bak"):
         shutil.copy(p, p + ".bak")
-    cfg["face"] = "command"
+    cfg["face"] = want
     json.dump(cfg, open(p, "w"), indent=2)
-    print("   ai-visualizer.json: face = command (previous copy in ai-visualizer.json.bak)")
+    print(f"   ai-visualizer.json: face = {want} (previous copy in ai-visualizer.json.bak)")
 else:
-    print("   ai-visualizer.json already opens the command face")
+    print(f"   ai-visualizer.json already opens the {want} face")
 PY
 
 cat <<'NEXT'
 
-done. Restart the stack (Ctrl-C, then ./fullstack-agent/start.sh) and the browser opens
-http://127.0.0.1:8790/faces/command/  ->  the board full screen, the team on the right.
-  T  focus team / voice     G  team full screen     Esc  back     H  hide the team pane
-  R  reload the roster      wheel zoom, drag pan, click a lead to zoom into its department
-Try it with no voice line:  cd ~/my-agent/ai-visualizer && ./run.sh --mock speaking
-Create the agent files from the roster:  uv run ~/my-agent/bin/team-sync.py --agents
+done. Restart the stack (Ctrl-C, then ./fullstack-agent/start.sh); the browser opens the default face.
+  The Core     http://127.0.0.1:8790/faces/core/      Z or click the core: zoom into the team; Esc back
+  Command      http://127.0.0.1:8790/faces/command/   T focus team / voice; G team full screen; H hide
+  In the team view: wheel zoom, drag pan, click a lead to focus its department, R reload the roster.
+The agent zooms it himself:  ~/my-agent/bin/core-view.sh team [department-id]   |   core-view.sh voice
+Try it with no voice line:   cd ~/my-agent/ai-visualizer && ./run.sh --mock speaking
+Agent files from the roster: uv run ~/my-agent/bin/team-sync.py --agents
+Other default face:          install.sh --default=command
 NEXT

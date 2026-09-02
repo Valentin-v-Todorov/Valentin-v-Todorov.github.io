@@ -293,24 +293,31 @@ spawning a `content-fact-checker`) within the three-layer default; raise the
 depth variable only if a real job needs a fourth layer. Deeper than that, the
 picture gets prettier and the work gets slower.
 
-## 2c. The Command screen: the voice in front, the team on the side
+## 2c. The screen: the voice outside, the team inside, zoom when you want it
 
-You asked for one main screen for Flint's voice with the team structure beside
-it, zoomable when you want it. That is the **Command face**, shipped ready to
-apply in `command-face/` (see its README). It is a plugin face for Jared's
-ai-visualizer: the circuit board runs full screen in the big pane, the org chart
-from section 2b is docked on the right, and `T` swaps the focus, `G` zooms the
-team full screen, `Esc` comes back. Click a lead to zoom into its department.
+You asked for one main screen for Flint's voice, with the team structure there
+too, zoomable when you want it or when Flint wants to show it. Two faces ship
+ready to apply in `command-face/` (its README has the keys and screenshots):
 
-It reads two small files next to it: `team.json`, generated from
-`~/my-agent/team.yaml` by `bin/team-sync.py`, and `live.json`, written by
-`bin/team-live.py` from the `SubagentStart` / `SubagentStop` / `UserPromptSubmit`
-/ `Stop` hooks, so leads and workers light up green while they actually run and
-Command breathes with the voice bus. Install with one command once Flint exists:
+- **The Core** (default): one sphere. The blue wireframe outer layer is the
+  voice: slow turn at idle, a whirl with pulses while thinking, vertices pushed
+  out by the waveform while speaking. The dense core inside is the team zoomed
+  out, working agents glowing green. `Z` or a click on the core (or Flint's own
+  command) zooms in: the sphere opens past the screen edges and the core resolves
+  into the org chart from section 2b. `Esc` folds it back.
+- **Command**: the circuit board full screen with the org chart docked beside it,
+  `T` to swap focus, `G` for the team full screen.
+
+Both read `team.json` (from `team.yaml` via `bin/team-sync.py`) and `live.json`
+(from the `SubagentStart` / `SubagentStop` / `UserPromptSubmit` / `Stop` hooks via
+`bin/team-live.py`), and both obey `view.json`, which `bin/core-view.sh` writes.
+That is how Flint shows you the team: he runs `core-view.sh team finance`, the
+screen zooms into Finance, he answers, then `core-view.sh voice`. The snippet
+that teaches him this is in the README; it goes into `~/my-agent/CLAUDE.md`.
 
 ```bash
-~/site/jarvis-thinkpad/command-face/install.sh
-uv run ~/my-agent/bin/team-sync.py --agents     # creates the agent files from the roster
+~/site/jarvis-thinkpad/command-face/install.sh          # both faces, helpers, hooks, default = core
+uv run ~/my-agent/bin/team-sync.py --agents               # creates the agent files from the roster
 ```
 
 The same `team.yaml` is the roster for sections 2b and 4, so the picture on the

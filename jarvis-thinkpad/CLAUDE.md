@@ -38,9 +38,12 @@ already made. Every other file here is a detail you read when its phase comes.
      return here when the installer has said its first hello.
 4. **Flint installed** (`~/my-agent/CLAUDE.md` exists and `~/my-agent/backtalk` exists):
    - Run `./make-launchers.sh` so the Desktop gets working Linux launchers.
-   - Run `./command-face/install.sh` so the visualizer opens on the Command face (voice
-     full screen, the agent team docked beside it). Seed `~/my-agent/team.yaml` from the
-     example if none exists; Flint refines it later in `07-agent-team.md`.
+   - Run `./command-face/install.sh` so the visualizer opens on The Core (the sphere that
+     is the voice outside and the team inside, zooming into the org chart on demand). Seed
+     `~/my-agent/team.yaml` from the example if none exists; Flint refines it later in
+     `07-agent-team.md`. Append the "Showing the team on screen" snippet from
+     `command-face/README.md` to `~/my-agent/CLAUDE.md` (show it to Valentin first) so
+     Flint can zoom the screen himself with `bin/core-view.sh`.
    - Apply the checks in `03-linux-quirks.md` (Obsidian registry path, Python pin,
      mic pinned, keyring unlocked, ports free) and fix anything that fails.
    - Then send them to Flint for the rest, because the power-user wiring must be

@@ -148,6 +148,15 @@ async function loadLive() {
   for (const [k, ts] of Object.entries(live.active)) if (now - ts > 3600) delete live.active[k];
   paintStat();
 }
+let viewTs = 0;
+async function loadView() {                       // the agent's own focus control (bin/core-view.sh)
+  try {
+    const r = await fetch("view.json", { cache: "no-store" }); if (!r.ok) return;
+    const v = await r.json(); if (!(v.ts > viewTs)) return; viewTs = v.ts;
+    if (v.view === "team") { setMode("team"); setTimeout(resize, 520); if (v.focus) setTimeout(() => focusOn(v.focus), 600); }
+    else if (v.view === "voice") { setMode("voice"); focusOn(null); setTimeout(resize, 520); }
+  } catch (e) {}
+}
 function paintStat() {
   if (!team) { tstat.textContent = "no roster"; tstat.className = "n"; return; }
   const w = nodes.filter(n => n.kind === "worker").length;
@@ -441,8 +450,8 @@ addEventListener("keydown", e => {
 });
 addEventListener("resize", () => setTimeout(resize, 50));
 
-loadTeam(); loadLive();
-setInterval(loadLive, 1000);
+loadTeam(); loadLive(); loadView();
+setInterval(loadLive, 1000); setInterval(loadView, 500);
 setInterval(loadTeam, 30000);
 </script>
 </body>

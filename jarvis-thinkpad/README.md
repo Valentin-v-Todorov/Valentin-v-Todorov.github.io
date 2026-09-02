@@ -19,7 +19,7 @@ Read this file first. It is the map. The other files are the detail.
 | `04-full-power-agent.md` | Giving Flint full control of the machine safely: permission modes, sandbox, Remote Control from the phone, MCP servers, app control, scheduled work |
 | `05-home-automation.md` | Home Assistant on the ThinkPad and wiring it into Flint through the Home Assistant MCP server |
 | `06-founder-os-and-brain.md` | What thefounderos.com and the `#brain` link are, the open-source FounderOS demo, and how it overlaps with the memory vault |
-| `command-face/` | Ready-to-apply fifth face for the visualizer: the voice full screen, the agent team docked beside it, live, zoomable (`install.sh`, roster `team.example.yaml`, helpers) |
+| `command-face/` | Two ready-to-apply faces for the visualizer. The Core: a sphere whose outer wireframe is the voice and whose core is the team, zooming into the org chart on demand or on Flint's command. Command: the board with the team docked beside it. Plus the roster, hooks and helpers |
 | `07-agent-team.md` | The agent org chart from the Founder OS brain graph rebuilt with Claude Code: Flint as Command, lead subagents per department, worker subagents owning one Job each, schedules that run them on their own, and the FounderOS dashboard as an optional face |
 
 ---

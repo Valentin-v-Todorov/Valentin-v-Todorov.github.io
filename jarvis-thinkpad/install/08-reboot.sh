@@ -25,7 +25,9 @@ DESK
   touch "$STATE_DIR/stop"
   warn "Rebooting in 20 seconds. After the automatic login a terminal opens and the setup continues on its own."
   warn "Ctrl-C now to reboot later by hand (then just log in; the setup continues by itself)."
+  trap 'echo; warn "reboot postponed: run  sudo reboot  when ready; the setup continues after the login"; exit 0' INT
   sleep 20
+  trap - INT
   sudo systemctl reboot
 }
 

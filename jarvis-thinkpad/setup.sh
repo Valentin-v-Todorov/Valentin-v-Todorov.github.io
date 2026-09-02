@@ -41,8 +41,9 @@ while [ $# -gt 0 ]; do
   esac; shift
 done
 
-# the post-reboot autostart entry, if we came back through it, is single-use
-rm -f "$HOME/.config/autostart/flint-setup-continue.desktop"
+# the post-reboot autostart entry, if we came back through it, is single-use; a stop
+# marker left by the reboot stage belongs to the run that rebooted, not to this one
+rm -f "$HOME/.config/autostart/flint-setup-continue.desktop" "$STATE/stop"
 
 mapfile -t STAGES < <(ls "$INSTALL" | grep -E '^[0-9]{2}-.*\.sh$' | sort)
 stage_num() { printf '%s' "$1" | cut -c1-2; }

@@ -30,9 +30,10 @@ run() {
     fi
     if [ -z "$(git config --global user.email || true)" ] && gh auth status >/dev/null 2>&1; then
       local em; em="$(gh api user -q '.email // empty' 2>/dev/null || true)"
-      [ -n "$em" ] && git config --global user.email "$em" && ok "git email from GitHub: $em"
+      [ -n "$em" ] && git config --global user.email "$em" && ok "git email from GitHub: $em" || true
     fi
   fi
+  return 0
 }
 
 check() {

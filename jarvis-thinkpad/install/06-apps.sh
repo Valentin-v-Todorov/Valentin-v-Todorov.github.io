@@ -6,13 +6,17 @@ ARCH="$(dpkg --print-architecture)"
 pick_asset() {  # pick_asset <json> <prefix> <suffix> [exclude]
   printf '%s' "$1" | python3 -c "
 import json,sys
-rels=json.load(sys.stdin)
+pre, suf, exc = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    rels=json.load(sys.stdin)
+except Exception:
+    rels=[]
 for r in rels:
     for a in r.get('assets',[]):
         n=a['name']
-        if n.startswith('$2') and n.endswith('$3') and ('$4'=='' or '$4' not in n):
+        if n.startswith(pre) and n.endswith(suf) and (exc=='' or exc not in n):
             print(a['browser_download_url']); sys.exit()
-print('')"
+print('')" "$2" "$3" "${4:-}"
 }
 
 run() {

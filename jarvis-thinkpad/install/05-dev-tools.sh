@@ -7,7 +7,7 @@ run() {
   if ! has uv; then curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1; fi
   ok "uv $(uv --version 2>/dev/null | awk '{print $2}')"
   local pyv; pyv="$(python3 -c 'import sys;print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
-  case "$pyv" in 3.11|3.12) ;; *) uv python install 3.12 >/dev/null 2>&1 && ok "uv-managed python 3.12 for backtalk" ;; esac
+  case "$pyv" in 3.11|3.12) ;; *) uv python install 3.12 >/dev/null 2>&1 && ok "uv-managed python 3.12 for backtalk" || warn "uv could not fetch python 3.12; backtalk's install will try again" ;; esac
 
   log "Claude Code (native installer, auto-updates)"
   if ! has claude; then curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1; fi

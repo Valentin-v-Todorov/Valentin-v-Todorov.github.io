@@ -13,7 +13,8 @@ run() {
   [ -f "$AGENT_HOME/CLAUDE.md" ] || die "no agent in $AGENT_HOME (stage 09 first)"
 
   log "launchers (.desktop) and bin/launch.sh"
-  "$GUIDE_DIR/make-launchers.sh" "$AGENT_HOME" "$AGENT_NAME" >/dev/null && ok "launchers on the Desktop and in the app grid"
+  "$GUIDE_DIR/make-launchers.sh" "$AGENT_HOME" "$AGENT_NAME" >/dev/null
+  ok "launchers on the Desktop and in the app grid"
 
   log "the Orbitals face, the roster, the live hooks"
   "$GUIDE_DIR/command-face/install.sh" "$AGENT_HOME" "--default=$FACE" >"$LOG_DIR/command-face-install.log" 2>&1 && ok "faces core + command installed; default $FACE; hooks wired" || { cat "$LOG_DIR/command-face-install.log"; die "command-face/install.sh failed"; }
@@ -113,7 +114,7 @@ RandomizedDelaySec=5m
 [Install]
 WantedBy=timers.target
 EOF
-    systemctl --user daemon-reload && systemctl --user enable --now flint-vault-backup.timer >/dev/null 2>&1 && ok "hourly vault commits (push to a private GitHub repo: ask $AGENT_NAME, section 7 of 04-full-power-agent.md)"
+    systemctl --user daemon-reload && systemctl --user enable --now flint-vault-backup.timer >/dev/null 2>&1 && ok "hourly vault commits (push to a private GitHub repo: ask $AGENT_NAME, section 7 of 04-full-power-agent.md)" || warn "could not enable the vault backup timer (systemctl --user); the check below will say so"
   fi
 
   if [ "$REMOTE_CONTROL" = 1 ]; then
@@ -136,9 +137,9 @@ RestartSec=30
 [Install]
 WantedBy=default.target
 EOF
-    systemctl --user daemon-reload && systemctl --user enable flint-rc.service >/dev/null 2>&1 && ok "flint-rc.service enabled (starts at login; scan the QR: tmux attach -t flint, then space)"
+    systemctl --user daemon-reload && systemctl --user enable flint-rc.service >/dev/null 2>&1 && ok "flint-rc.service enabled (starts at login; scan the QR: tmux attach -t flint, then space)" || warn "could not enable flint-rc.service"
   fi
-  sudo loginctl enable-linger "$USER" >/dev/null 2>&1 && ok "user services and timers run whether or not you are logged in"
+  sudo loginctl enable-linger "$USER" >/dev/null 2>&1 && ok "user services and timers run whether or not you are logged in" || warn "loginctl enable-linger failed (timers then run only while logged in; auto-login covers it)"
 
   if [ "$AUTOSTART_STACK" = 1 ]; then
     log "the stack at every login (voice + face + hands in a terminal window)"

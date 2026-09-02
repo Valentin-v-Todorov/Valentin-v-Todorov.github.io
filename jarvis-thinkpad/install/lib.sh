@@ -3,6 +3,8 @@
 # Stages define run() and check(); stage_main dispatches "run" | "check" | both.
 set -euo pipefail
 
+: "${USER:=$(id -un)}"; export USER            # not set in every context (autostart, systemd)
+: "${HOME:=$(getent passwd "$USER" | cut -d: -f6)}"; export HOME
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GUIDE_DIR="$(cd "$INSTALL_DIR/.." && pwd)"
 STATE_DIR="$HOME/.flint-setup"
@@ -134,11 +136,15 @@ chk_warn() {              # like chk, but a failure is only a warning (optional 
 }
 checks_done() { if [ "$CHECK_FAILS" = 0 ]; then ok "all $CHECK_TOTAL checks passed"; return 0; else err "$CHECK_FAILS of $CHECK_TOTAL checks failed"; return 1; fi; }
 
+# run() stops at the first real failure (errexit). check() must run every check and
+# report all of them, so errexit is off while it runs; checks_done decides the verdict.
 stage_main() {
+  local rc=0
   case "${1:-both}" in
     run)   run ;;
-    check) check ;;
-    both)  run; check ;;
+    check) set +e; check; rc=$?; set -e ;;
+    both)  run; set +e; check; rc=$?; set -e ;;
     *) die "usage: $0 run|check" ;;
   esac
+  return $rc
 }

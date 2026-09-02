@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<!-- Mockup lab, round two: ten design-led directions. lab2.html?v=1..10 -->
+<html lang="en"><head><meta charset="UTF-8"><title>Flint face mockups, round two</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+"use strict";
+const Q = new URLSearchParams(location.search), V = +(Q.get("v") || 1), T = +(Q.get("t") || 3.2);
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+const W = innerWidth, H = innerHeight, DPR = Math.min(2, devicePixelRatio || 1);
+cv.width = W * DPR; cv.height = H * DPR; g.setTransform(DPR, 0, 0, DPR, 0, 0);
+const CX = W / 2, CY = H / 2, M = Math.min(W, H);
+const NAME = Q.get("name") || "FLINT", ENV = 0.7;
+let seed = 11; const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+const SAMPLES = Array.from({ length: 64 }, (_, i) => Math.abs(Math.sin(i * .55 + T * 9) * .6 + Math.sin(i * 1.7 - T * 13) * .4) * (.35 + .65 * Math.abs(Math.sin(T * 2.6 + i * .1))));
+const TEAM = [
+  { id: "comms", name: "Comms", workers: ["comms-inbox-triage", "comms-reply-drafter", "comms-crm-pipeline"], tools: 3 },
+  { id: "finance", name: "Finance", workers: ["finance-ledger", "finance-invoices", "finance-weekly-review"], tools: 3 },
+  { id: "content", name: "Content", workers: ["content-writer", "content-scheduler", "content-lead-magnets"], tools: 4 },
+  { id: "knowledge", name: "Knowledge", workers: ["knowledge-librarian", "knowledge-researcher"], tools: 3 },
+  { id: "automations", name: "Automations", workers: ["automations-home", "automations-machine", "automations-timers"], tools: 4 },
+];
+const ACTIVE = new Set(["comms-inbox-triage", "finance-ledger"]);
+const YOU = "Get the inbox sorted and the ledger, then tell me what finance looks like.";
+const FLINT_SAYS = "Comms is on the inbox, Finance is reading September. Two things need your call, sir.";
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const SANS = '"Inter","Helvetica Neue",Helvetica,Arial,"DejaVu Sans",sans-serif', MONO = '"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace', SERIF = 'Georgia,"Times New Roman","DejaVu Serif",serif';
+const glows = {};
+function sprite(c, s = 64) { const k = c.join() + s; if (glows[k]) return glows[k]; const o = document.createElement("canvas"); o.width = o.height = s; const x = o.getContext("2d"); const gr = x.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2); gr.addColorStop(0, rgba(c, 1)); gr.addColorStop(.3, rgba(c, .5)); gr.addColorStop(1, rgba(c, 0)); x.fillStyle = gr; x.fillRect(0, 0, s, s); return glows[k] = o; }
+function dot(x, y, r, c, a = 1, halo = 2.4) { if (r > 1.2 && halo) { g.globalAlpha = a; g.drawImage(sprite(c), x - r * halo, y - r * halo, r * halo * 2, r * halo * 2); g.globalAlpha = 1; } g.fillStyle = rgba(c, Math.min(1, a * 1.2)); g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill(); }
+function text(s, x, y, size, c, { a = 1, align = "left", ls = 0, font = MONO, weight = "", base = "middle", style = "" } = {}) { g.font = `${style} ${weight} ${size}px ${font}`.trim(); g.textBaseline = base; g.fillStyle = rgba(c, a); if (ls) { const chars = [...s]; const w = chars.reduce((t, ch) => t + g.measureText(ch).width + ls, 0) - ls; let x0 = align === "center" ? x - w / 2 : align === "right" ? x - w : x; g.textAlign = "left"; for (const ch of chars) { g.fillText(ch, x0, y); x0 += g.measureText(ch).width + ls; } } else { g.textAlign = align; g.fillText(s, x, y); } }
+function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function glass(x, y, w, h, r = 16, tint = [255, 255, 255], a = .06, border = .16) { rr(x, y, w, h, r); g.fillStyle = rgba(tint, a); g.fill(); g.strokeStyle = `rgba(255,255,255,${border})`; g.lineWidth = 1; g.stroke(); const gr = g.createLinearGradient(x, y, x + w, y); gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(.5, "rgba(255,255,255,.45)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.strokeStyle = gr; g.beginPath(); g.moveTo(x + r, y + .5); g.lineTo(x + w - r, y + .5); g.stroke(); }
+function grain(a = .06) { const s = 3, w = Math.ceil(W / s), h = Math.ceil(H / s), o = document.createElement("canvas"); o.width = w; o.height = h; const x = o.getContext("2d"), id = x.createImageData(w, h); for (let i = 0; i < id.data.length; i += 4) { const v = 128 + (rnd() - .5) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } x.putImageData(id, 0, 0); g.globalAlpha = a; g.globalCompositeOperation = "overlay"; g.drawImage(o, 0, 0, W, H); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; }
+function vignette(a = .6, inner = .45) { const gr = g.createRadialGradient(CX, CY, M * inner, CX, CY, M * 1.05); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, `rgba(0,0,0,${a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function blob(x, y, r, c, a) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgba(c, a)); gr.addColorStop(1, rgba(c, 0)); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function fib(n, j = 0) { const p = [], ga = Math.PI * (3 - Math.sqrt(5)); for (let i = 0; i < n; i++) { const y = 1 - i / (n - 1) * 2, r = Math.sqrt(1 - y * y), a = ga * i + j * Math.sin(i * 12.9898) * .6; p.push([Math.cos(a) * r, y, Math.sin(a) * r]); } return p; }
+function rot(p, ay, ax) { const cy = Math.cos(ay), sy = Math.sin(ay), cx = Math.cos(ax), sx = Math.sin(ax); const x = p[0] * cy + p[2] * sy, z = -p[0] * sy + p[2] * cy; return [x, p[1] * cx - z * sx, p[1] * sx + z * cx]; }
+function proj(p, R, ox = CX, oy = CY) { const f = 1 / (1 - p[2] * .28); return { x: ox + p[0] * R * f, y: oy + p[1] * R * f, f, d: (p[2] + 1) / 2 }; }
+function knn(P, k) { const E = [], seen = new Set(); P.forEach((p, i) => { P.map((q, j) => [Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]), j]).sort((a, b) => a[0] - b[0]).slice(1, k + 1).forEach(([, j]) => { const key = i < j ? i + ":" + j : j + ":" + i; if (!seen.has(key)) { seen.add(key); E.push([i, j]); } }); }); return E; }
+function stars(n, c, maxr = 1.4) { for (let i = 0; i < n; i++) dot(rnd() * W, rnd() * H, rnd() * maxr, c, .2 + rnd() * .6, 1.5); }
+function noise1(t) { const i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f); const h = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }; return h(i) * (1 - u) + h(i + 1) * u; }
+const WHITE = [240, 244, 250], GREEN = [70, 225, 140], CYAN = [70, 200, 255], ICE = [150, 210, 255], AMBER = [255, 190, 90], CORAL = [255, 120, 95], GOLD = [232, 196, 118], MAG = [255, 90, 190], VIOLET = [140, 100, 255], DIM = [120, 135, 160], INK = [16, 20, 28];
+g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+const isActiveDept = d => d.workers.some(w => ACTIVE.has(w));
+
+/* ================================================================ 1. MONOLITH */
+function v1() {
+  g.fillStyle = "#050505"; g.fillRect(0, 0, W, H);
+  g.strokeStyle = "rgba(255,255,255,.14)"; g.lineWidth = 1; g.strokeRect(40.5, 40.5, W - 81, H - 81);
+  text(NAME, 88, 128, 92, WHITE, { font: SANS, weight: "200", ls: 26 });
+  text("OPERATING PARTNER", 92, 196, 11, DIM, { ls: 4 }); text("ONLINE", 92, 218, 11, GREEN, { ls: 4 });
+  text("SPEAKING", W - 88, 108, 13, WHITE, { align: "right", ls: 6 }); text("19:08:29", W - 88, 134, 11, DIM, { align: "right", ls: 3 });
+  g.fillStyle = rgba(GREEN, 1); g.fillRect(W - 96, 152, 8, 8);
+  const R = M * .27;
+  for (const [r, a] of [[R * .7, .06], [R * .85, .08], [R * 1.15, .05]]) { g.strokeStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(CX, CY - 30, r, 0, 6.2832); g.stroke(); }
+  g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 1; g.beginPath(); g.arc(CX, CY - 30, R, 0, 6.2832); g.stroke();
+  g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 1.2; g.beginPath(); for (let i = 0; i <= 256; i++) { const a = i / 256 * 6.2832 - 1.5708, s = SAMPLES[i % 64] * ENV, r = R * (1 + .03 + s * .16); i ? g.lineTo(CX + Math.cos(a) * r, CY - 30 + Math.sin(a) * r) : g.moveTo(CX + Math.cos(a) * r, CY - 30 + Math.sin(a) * r); } g.closePath(); g.stroke();
+  dot(CX, CY - 30, 3, WHITE, 1, 0); text("COMMAND", CX, CY - 8, 9, DIM, { align: "center", ls: 4 });
+  const y0 = H - 250, colW = (W - 176) / 5;
+  g.strokeStyle = "rgba(255,255,255,.14)"; g.beginPath(); g.moveTo(88, y0 - 24); g.lineTo(W - 88, y0 - 24); g.stroke();
+  TEAM.forEach((d, i) => { const x = 88 + i * colW; if (i) { g.beginPath(); g.moveTo(x - 16, y0 - 12); g.lineTo(x - 16, H - 100); g.stroke(); } text(String(i + 1).padStart(2, "0"), x, y0, 10, DIM, { ls: 2 }); text(d.name.toUpperCase(), x + 34, y0, 12, WHITE, { ls: 4, font: SANS, weight: "500" }); d.workers.forEach((w, j) => { const a = ACTIVE.has(w), yy = y0 + 34 + j * 26; dot(x + 4, yy, 2.5, a ? GREEN : [80, 80, 80], 1, 0); text(w, x + 18, yy, 11, a ? WHITE : DIM, { font: SANS }); text(a ? "RUNNING" : "IDLE", x + colW - 36, yy, 9, a ? GREEN : [70, 70, 70], { align: "right", ls: 2 }); }); });
+  text("5 DEPARTMENTS · 14 AGENTS · 2 RUNNING", 88, H - 62, 10, DIM, { ls: 3 }); text("Z  STRUCTURE", W - 88, H - 62, 10, DIM, { align: "right", ls: 3 });
+  grain(.035);
+}
+
+/* ================================================================ 2. AURORA GLASS */
+function v2() {
+  g.fillStyle = "#070b1c"; g.fillRect(0, 0, W, H);
+  blob(W * .2, H * .25, M * .9, [20, 180, 200], .45); blob(W * .8, H * .35, M * .8, [120, 60, 220], .4); blob(W * .5, H * 1.05, M * .9, [40, 90, 255], .45); blob(W * .85, H * .95, M * .6, [255, 90, 170], .25);
+  const R = M * .15; const orb = CY - 110;
+  for (const [r, a] of [[R * 2.6, .05], [R * 2.0, .08], [R * 1.5, .12]]) { g.strokeStyle = `rgba(255,255,255,${a})`; g.lineWidth = 1; g.beginPath(); g.arc(CX, orb, r * (1 + ENV * .06), 0, 6.2832); g.stroke(); }
+  blob(CX, orb, R * 2.4, [120, 220, 255], .5);
+  { const gr = g.createRadialGradient(CX - R * .3, orb - R * .35, 0, CX, orb, R); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(.35, "rgba(170,235,255,.95)"); gr.addColorStop(.8, "rgba(60,140,255,.6)"); gr.addColorStop(1, "rgba(60,140,255,0)"); g.fillStyle = gr; g.beginPath(); g.arc(CX, orb, R, 0, 6.2832); g.fill(); }
+  g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 2; g.beginPath(); g.arc(CX, orb, R * 1.25, T * .6, T * .6 + 2.2); g.stroke(); g.strokeStyle = "rgba(255,255,255,.4)"; g.beginPath(); g.arc(CX, orb, R * 1.4, -T * .4, -T * .4 + 1.1); g.stroke();
+  g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 1.5; g.beginPath(); SAMPLES.forEach((s, i) => { const x = CX - 220 + i / 63 * 440, y = orb + R * 1.75 - s * ENV * 22; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  glass(CX - 420, 96, 840, 64, 32, [255, 255, 255], .07); text("YOU · 19:07", CX - 388, 128, 10, [200, 215, 240], { ls: 3 }); text(YOU, CX - 250, 128, 15, WHITE, { font: SANS });
+  const fy = orb + R * 1.95; glass(CX - 460, fy, 920, 78, 22, [120, 200, 255], .09, .22); dot(CX - 428, fy + 39, 5, GREEN, 1, 2); text(NAME + " · SPEAKING", CX - 412, fy + 26, 10, [200, 235, 255], { ls: 3 }); text(FLINT_SAYS, CX - 412, fy + 50, 16, WHITE, { font: SANS, weight: "500" });
+  const cw = 336, gap = 18, x0 = CX - (5 * cw + 4 * gap) / 2, y0 = H - 210;
+  TEAM.forEach((d, i) => { const x = x0 + i * (cw + gap), on = isActiveDept(d); glass(x, y0, cw, 150, 18, on ? [120, 255, 190] : [255, 255, 255], on ? .09 : .05, on ? .3 : .14); dot(x + 24, y0 + 28, 4, on ? GREEN : [160, 170, 200], 1, on ? 2.5 : 0); text(d.name, x + 40, y0 + 28, 15, WHITE, { font: SANS, weight: "600" }); text(d.workers.length + " agents · " + d.tools + " tools", x + cw - 22, y0 + 28, 10, [180, 195, 225], { align: "right", font: SANS }); d.workers.forEach((w, j) => { const a = ACTIVE.has(w), yy = y0 + 62 + j * 26; text(w, x + 24, yy, 12, a ? WHITE : [170, 185, 215], { font: SANS }); rr(x + cw - 96, yy - 7, 74, 14, 7); g.fillStyle = a ? rgba(GREEN, .25) : "rgba(255,255,255,.08)"; g.fill(); text(a ? "running" : "idle", x + cw - 59, yy, 9, a ? GREEN : [150, 165, 195], { align: "center", font: SANS, weight: "600" }); }); });
+  text(NAME, 72, 64, 26, WHITE, { font: SANS, weight: "600", ls: 6 }); text("aurora · connected", 72, 92, 12, [180, 195, 225], { font: SANS });
+  glass(W - 236, 44, 164, 40, 20, [255, 255, 255], .08); dot(W - 212, 64, 4, GREEN, 1, 2); text("Speaking", W - 196, 64, 13, WHITE, { font: SANS, weight: "500" }); text("19:08", W - 92, 64, 11, [190, 205, 235], { align: "right", font: SANS });
+  grain(.05);
+}
+
+/* ================================================================ 3. REACTOR */
+function v3() {
+  g.fillStyle = "#020408"; g.fillRect(0, 0, W, H); blob(CX, CY, M * .7, [40, 110, 220], .35); stars(300, ICE, 1);
+  const R = M * .3, C = ICE;
+  for (let i = 0; i < 90; i++) { const a = i / 90 * 6.2832 + T * .05, s = SAMPLES[i % 64] * ENV, on = s > .3; g.save(); g.translate(CX + Math.cos(a) * R, CY + Math.sin(a) * R); g.rotate(a); g.fillStyle = rgba(on ? WHITE : C, .25 + s * .75); g.fillRect(-4, -2.5, 14 + s * 22, 5); g.restore(); }
+  g.strokeStyle = rgba(C, .9); g.lineWidth = 2; g.beginPath(); g.arc(CX, CY, R * .93, 0, 6.2832); g.stroke(); g.strokeStyle = rgba(C, .35); g.lineWidth = 1; g.beginPath(); g.arc(CX, CY, R * 1.1, 0, 6.2832); g.stroke();
+  for (let i = 0; i < 10; i++) { const a0 = i / 10 * 6.2832 - T * .3, a1 = a0 + .5; g.strokeStyle = rgba(C, .95); g.lineWidth = 10; g.beginPath(); g.arc(CX, CY, R * .74, a0, a1); g.stroke(); g.strokeStyle = rgba(WHITE, .5); g.lineWidth = 1; g.beginPath(); g.arc(CX, CY, R * .68, a0, a1); g.stroke(); }
+  for (let i = 0; i < 24; i++) { const a = i / 24 * 6.2832 + T * .5; g.strokeStyle = rgba(C, .6); g.lineWidth = 2; g.beginPath(); g.moveTo(CX + Math.cos(a) * R * .48, CY + Math.sin(a) * R * .48); g.lineTo(CX + Math.cos(a) * R * .58, CY + Math.sin(a) * R * .58); g.stroke(); }
+  g.strokeStyle = rgba(WHITE, .9); g.lineWidth = 1.5; g.beginPath(); g.arc(CX, CY, R * .44, 0, 6.2832); g.stroke();
+  { g.save(); g.translate(CX, CY); g.rotate(-T * .2); g.beginPath(); for (let i = 0; i < 3; i++) { const a = i * 2.0944 - 1.5708; g.lineTo(Math.cos(a) * R * .33, Math.sin(a) * R * .33); } g.closePath(); g.strokeStyle = rgba(WHITE, .9); g.lineWidth = 2; g.stroke(); g.restore(); }
+  blob(CX, CY, R * .55, [200, 235, 255], .5 + ENV * .3); blob(CX, CY, R * .22, WHITE, .9);
+  for (const len of [W * .42, W * .2]) { const gr = g.createLinearGradient(CX - len, CY, CX + len, CY); gr.addColorStop(0, "rgba(180,220,255,0)"); gr.addColorStop(.5, `rgba(220,240,255,${len > W * .3 ? .35 : .8})`); gr.addColorStop(1, "rgba(180,220,255,0)"); g.fillStyle = gr; g.fillRect(CX - len, CY - (len > W * .3 ? 1 : 2), len * 2, len > W * .3 ? 2 : 4); }
+  TEAM.forEach((d, i) => { const a = -1.5708 + i / 5 * 6.2832 + .2, px = CX + Math.cos(a) * R * 1.55, py = CY + Math.sin(a) * R * 1.55 * .95, on = isActiveDept(d); g.strokeStyle = rgba(C, .45); g.lineWidth = 1; g.beginPath(); g.moveTo(CX + Math.cos(a) * R * 1.12, CY + Math.sin(a) * R * 1.12); g.lineTo(px, py); g.stroke(); dot(CX + Math.cos(a) * R * 1.12, CY + Math.sin(a) * R * 1.12, 3, C, 1, 0); const bw = 176, bh = 56, bx = px - bw / 2, by = py - bh / 2; g.fillStyle = "rgba(4,12,30,.85)"; g.fillRect(bx, by, bw, bh); g.strokeStyle = rgba(on ? GREEN : C, .8); g.strokeRect(bx + .5, by + .5, bw - 1, bh - 1); g.fillStyle = rgba(on ? GREEN : C, 1); g.fillRect(bx, by, 3, bh); text(d.name.toUpperCase(), bx + 16, by + 20, 11, WHITE, { ls: 3 }); text(d.workers.length + " AGENTS · " + (on ? "ACTIVE" : "STANDBY"), bx + 16, by + 40, 9, on ? GREEN : DIM, { ls: 2 }); d.workers.forEach((w, j) => { g.fillStyle = ACTIVE.has(w) ? rgba(GREEN, 1) : rgba(C, .3); g.fillRect(bx + bw - 18 - j * 10, by + 14, 6, 6); }); });
+  const tele = (x, y, rows, align) => { rows.forEach(([k, v, c], i) => { if (align === "right") { text(k, x - 110, y + i * 18, 9, DIM, { ls: 2, align: "right" }); text(v, x, y + i * 18, 10, c || C, { align: "right", ls: 1 }); } else { text(k, x, y + i * 18, 9, DIM, { ls: 2 }); text(v, x + 90, y + i * 18, 10, c || C, { ls: 1 }); } }); };
+  tele(56, 120, [["PWR", "98%"], ["LAT", "412 MS"], ["MEM", "61%"], ["LINK", "STABLE", GREEN]], "left"); tele(W - 56, 120, [["5H", "34%"], ["7D", "61%"], ["TURNS", "142"], ["MODE", "AUTO", GREEN]], "right");
+  text(NAME.split("").join(".") + ".", 56, 52, 22, WHITE, { ls: 3 }); text("REACTOR  ·  CONNECTED", 56, 80, 10, DIM, { ls: 2 }); text("SPEAKING", W - 56, 52, 18, WHITE, { align: "right", ls: 5 }); text("19:08:29", W - 56, 80, 10, DIM, { align: "right", ls: 2 });
+  text("Z  OPEN THE CORE", W - 56, H - 56, 10, DIM, { align: "right", ls: 2 }); text("5 DEPARTMENTS · 14 AGENTS · 2 ACTIVE", 56, H - 56, 10, DIM, { ls: 2 }); vignette(.55, .5);
+}
+
+/* ================================================================ 4. TERMINAL NOIR */
+function v4() {
+  const P = [120, 255, 150], A = [255, 200, 90];
+  g.fillStyle = "#020502"; g.fillRect(0, 0, W, H); blob(CX, CY, M * .8, [20, 60, 30], .5);
+  const line = (x, y, s, c, size = 14, ls = 0) => { g.shadowColor = rgba(c, .8); g.shadowBlur = 8; text(s, x, y, size, c, { ls }); g.shadowBlur = 0; };
+  line(72, 72, `valentin@thinkpad  ·  ~/my-agent  ·  voice session  ·  19:08:29`, DIM, 12);
+  g.strokeStyle = rgba(P, .25); g.beginPath(); g.moveTo(72, 92); g.lineTo(W * .58, 92); g.stroke();
+  const log = [["> you", YOU.toLowerCase(), A], ["flint", "on it. comms-lead → comms-inbox-triage · finance-lead → finance-ledger", P], ["[19:08:12] comms-inbox-triage", "14 threads · 3 need a reply · draft in 00 - Inbox/Drafts", DIM], ["[19:08:29] finance-ledger", "reading Finance/exports/09.csv · 212 rows", DIM], ["flint", FLINT_SAYS.toLowerCase(), P]];
+  let y = 128; log.forEach(([who, what, c]) => { line(72, y, who, c, 14); line(72, y + 24, what, c === DIM ? [90, 140, 110] : WHITE, 14); y += 62; });
+  line(72, y, "▌", P, 16);
+  SAMPLES.forEach((s, i) => { const h = 6 + s * ENV * 120, x = 72 + i * 15.5; g.fillStyle = rgba(P, .15 + s * .8); g.fillRect(x, H - 140 - h, 10, h); g.fillStyle = rgba(P, .08); g.fillRect(x, H - 132, 10, 24 * s); });
+  line(72, H - 100, "AUDIO OUT ·  kokoro bm_lewis  ·  " + Math.round(ENV * 100) + "%", DIM, 11, 2);
+  const tx = W * .62, ty = 72; line(tx, ty, "┌─ TEAM ─────────────────────────────────────────┐", P, 13);
+  let yy = ty + 26; TEAM.forEach((d, i) => { const on = isActiveDept(d), last = i === TEAM.length - 1; line(tx, yy, `│ ${last ? "└" : "├"}─ ${d.name.toUpperCase().padEnd(12)} ${on ? "●" : "○"} ${d.workers.filter(w => ACTIVE.has(w)).length}/${d.workers.length}`, on ? P : [120, 180, 140], 13); yy += 22; d.workers.forEach((w, j) => { const a = ACTIVE.has(w), lastw = j === d.workers.length - 1; line(tx, yy, `│ ${last ? " " : "│"}  ${lastw ? "└" : "├"}─ ${w.padEnd(24)} ${a ? "RUN 02:14" : "idle"}`, a ? WHITE : [80, 120, 95], 13); yy += 22; }); yy += 6; });
+  line(tx, yy, "└─────────────────────────────────────────────────┘", P, 13);
+  g.shadowColor = rgba(P, .8); g.shadowBlur = 8; text("[ SPEAKING ]", W - 72, 72, 20, P, { align: "right", ls: 4 }); g.shadowBlur = 0;
+  [["19:08:31", "comms-reply-drafter", "queued · waiting for triage"], ["19:08:33", "finance-lead", "checking the ledger against 08.csv"], ["19:08:35", "you", "▌"]].forEach(([t, w, x2], i) => { line(72, y + 44 + i * 26, `[${t}] ${w}  ${x2}`, i === 2 ? A : [90, 140, 110], 13); });
+  line(tx, H - 100, NAME + "  ·  the fast tier  ·  effort low  ·  5H 34%  7D 61%", DIM, 11, 2);
+  for (let y2 = 0; y2 < H; y2 += 3) { g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(0, y2, W, 1); }
+  vignette(.7, .35);
+}
+
+/* ================================================================ 5. TOPOGRAPHY */
+function v5() {
+  const C = [232, 178, 96], P = [255, 226, 180];
+  g.fillStyle = "#15110c"; g.fillRect(0, 0, W, H); blob(CX, CY, M * .8, [60, 40, 20], .5);
+  const cx = CX, cy = CY + 20;
+  for (let k = 22; k >= 1; k--) { const base = M * .02 * k * 1.05; g.strokeStyle = rgba(C, .12 + (22 - k) / 22 * .55); g.lineWidth = k % 5 ? 1 : 1.8; g.beginPath(); for (let i = 0; i <= 200; i++) { const a = i / 200 * 6.2832; const n = noise1(a * 2.2 + k * .7) * .35 + noise1(a * 5 + k * 1.3) * .12; const v = k < 9 ? SAMPLES[(i * 64 / 200 | 0) % 64] * ENV * (9 - k) / 9 * .5 : 0; const r = base * (1 + n * (k / 22) + v); const x = cx + Math.cos(a) * r * 1.35, y2 = cy + Math.sin(a) * r * .8; i ? g.lineTo(x, y2) : g.moveTo(x, y2); } g.closePath(); g.stroke(); if (!(k % 5)) text((k * 40) + " M", cx + base * 1.35 * .72 + 6, cy - base * .8 * .72, 9, C, { a: .8 }); }
+  blob(cx, cy, M * .08, P, .8); dot(cx, cy, 4, WHITE, 1, 3); text(NAME, cx, cy + 26, 12, WHITE, { align: "center", ls: 5 }); text("SUMMIT · COMMAND", cx, cy + 44, 8, C, { align: "center", ls: 3 });
+  TEAM.forEach((d, i) => { const a = -1.5708 + i / 5 * 6.2832 + .35, x = cx + Math.cos(a) * M * .46 * 1.35, y2 = cy + Math.sin(a) * M * .46 * .8, on = isActiveDept(d); g.setLineDash([3, 6]); g.strokeStyle = rgba(on ? GREEN : C, .6); g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy); g.quadraticCurveTo(cx + (x - cx) * .5 + 40, cy + (y2 - cy) * .5 - 40, x, y2); g.stroke(); g.setLineDash([]); g.fillStyle = rgba(on ? GREEN : P, 1); g.beginPath(); g.moveTo(x, y2 - 12); g.lineTo(x + 8, y2 + 4); g.lineTo(x - 8, y2 + 4); g.closePath(); g.fill(); if (on) { g.strokeStyle = rgba(GREEN, .5); g.beginPath(); g.arc(x, y2, 22, 0, 6.2832); g.stroke(); } text(d.name.toUpperCase(), x + 16, y2 - 10, 12, WHITE, { ls: 3 }); text(`${d.workers.filter(w => ACTIVE.has(w)).length} of ${d.workers.length} on the move · ${d.tools} tools`, x + 16, y2 + 8, 9, on ? GREEN : C, { ls: 1 }); d.workers.forEach((w, j) => dot(x + 18 + j * 12, y2 + 24, ACTIVE.has(w) ? 3 : 2, ACTIVE.has(w) ? GREEN : C, .9, 0)); });
+  for (let x = 60; x < W; x += 120) { text(String(Math.round(x / 3)).padStart(3, "0"), x, 44, 8, C, { align: "center", a: .6 }); g.strokeStyle = rgba(C, .3); g.beginPath(); g.moveTo(x, 52); g.lineTo(x, 62); g.stroke(); }
+  for (let y2 = 120; y2 < H - 60; y2 += 120) { text(String(Math.round(y2 / 3)).padStart(3, "0"), 44, y2, 8, C, { align: "center", a: .6 }); g.beginPath(); g.moveTo(52, y2); g.lineTo(62, y2); g.stroke(); }
+  g.strokeStyle = rgba(C, .5); g.strokeRect(60.5, 60.5, W - 121, H - 121);
+  text(NAME, 90, 100, 30, WHITE, { font: SERIF, style: "italic" }); text("SESSION MAP  ·  SHEET 09 / 02  ·  SPEAKING", 90, 130, 9, C, { ls: 3 });
+  { const x = W - 120, y2 = 130; g.strokeStyle = rgba(C, .7); g.beginPath(); g.arc(x, y2, 26, 0, 6.2832); g.stroke(); g.fillStyle = rgba(P, 1); g.beginPath(); g.moveTo(x, y2 - 26); g.lineTo(x + 5, y2); g.lineTo(x - 5, y2); g.closePath(); g.fill(); text("N", x, y2 - 38, 10, WHITE, { align: "center" }); }
+  g.strokeStyle = rgba(P, .9); g.lineWidth = 2; g.beginPath(); g.moveTo(90, H - 96); g.lineTo(290, H - 96); g.stroke(); for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(90 + i * 50, H - 102); g.lineTo(90 + i * 50, H - 90); g.stroke(); } text("0", 90, H - 78, 8, C, { align: "center" }); text("2 KM", 290, H - 78, 8, C, { align: "center" }); text("CONTOURS RISE WITH THE VOICE · Z DESCEND INTO A CAMP", W - 90, H - 90, 9, C, { align: "right", ls: 2 });
+  grain(.05);
+}
+
+/* ================================================================ 6. LATTICE (isometric) */
+function v6() {
+  g.fillStyle = "#06070f"; g.fillRect(0, 0, W, H); blob(CX, CY + 200, M * .9, [30, 20, 80], .6);
+  const S = 56, ox = CX, oy = CY + 120; const iso = (x, y, z = 0) => ({ x: ox + (x - y) * S * .866, y: oy + (x + y) * S * .5 - z * S });
+  const N = 12; g.strokeStyle = rgba(CYAN, .14); g.lineWidth = 1; for (let i = -N; i <= N; i++) { let p = iso(i, -N), q = iso(i, N); g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); p = iso(-N, i); q = iso(N, i); g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); }
+  SAMPLES.forEach((s, i) => { const t = -N + i / 63 * 2 * N, h = .2 + s * ENV * 3; const b = iso(t, -N), tp = iso(t, -N, h); const gr = g.createLinearGradient(b.x, b.y, tp.x, tp.y); gr.addColorStop(0, rgba(MAG, .15)); gr.addColorStop(1, rgba(CYAN, .95)); g.strokeStyle = gr; g.lineWidth = 6; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(tp.x, tp.y); g.stroke(); });
+  const tower = (x, y, w, h, edge, faces, label, sub, windows) => { const p = [iso(x, y, h), iso(x + w, y, h), iso(x + w, y + w, h), iso(x, y + w, h)], b = [iso(x, y), iso(x + w, y), iso(x + w, y + w), iso(x, y + w)]; blob(b[2].x, b[2].y, 90, edge, .25); g.fillStyle = faces[1]; g.beginPath(); g.moveTo(p[3].x, p[3].y); g.lineTo(p[2].x, p[2].y); g.lineTo(b[2].x, b[2].y); g.lineTo(b[3].x, b[3].y); g.closePath(); g.fill(); g.fillStyle = faces[2]; g.beginPath(); g.moveTo(p[2].x, p[2].y); g.lineTo(p[1].x, p[1].y); g.lineTo(b[1].x, b[1].y); g.lineTo(b[2].x, b[2].y); g.closePath(); g.fill(); g.fillStyle = faces[0]; g.beginPath(); p.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.closePath(); g.fill(); g.strokeStyle = rgba(edge, .95); g.lineWidth = 1.2; g.beginPath(); p.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.closePath(); g.stroke(); [[p[1], b[1]], [p[2], b[2]], [p[3], b[3]]].forEach(([a, c]) => { g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(c.x, c.y); g.stroke(); }); windows.forEach((on, i) => { const lvl = .5 + i * (h - 1) / Math.max(1, windows.length); const q = iso(x + w * .5, y + w + .02, lvl); g.fillStyle = on ? rgba(GREEN, 1) : rgba(CYAN, .35); g.fillRect(q.x - 3, q.y - 4, 7, 5); if (on) blob(q.x, q.y, 22, GREEN, .5); }); const t = iso(x + w / 2, y + w / 2, h + .55); text(label, t.x, t.y, 12, WHITE, { align: "center", ls: 3 }); text(sub, t.x, t.y + 16, 9, edge, { align: "center", ls: 1 }); };
+  const spots = [[-7, -2], [-3, 5], [4, 5], [7, -3], [1, -7]];
+  const order = spots.map((s, i) => [s[0] + s[1], i]).sort((a, b) => a[0] - b[0]);
+  tower(-1, -1, 2, 5.2 + ENV * 1.2, WHITE, ["rgba(210,225,255,.5)", "rgba(80,110,170,.75)", "rgba(40,60,110,.85)"], NAME, "COMMAND", []);
+  order.forEach(([, i]) => { const d = TEAM[i], on = isActiveDept(d), [x, y] = spots[i]; tower(x, y, 2, 1.6 + d.workers.length * .8, on ? GREEN : CYAN, on ? ["rgba(70,225,140,.35)", "rgba(20,90,60,.8)", "rgba(10,50,35,.9)"] : ["rgba(70,200,255,.28)", "rgba(20,60,110,.8)", "rgba(10,35,70,.9)"], d.name.toUpperCase(), d.workers.length + " AGENTS", d.workers.map(w => ACTIVE.has(w))); });
+  text(NAME, 72, 70, 30, WHITE, { font: SANS, weight: "700", ls: 8 }); text("LATTICE  ·  CONNECTED", 72, 100, 11, DIM, { ls: 3 }); text("SPEAKING", W - 72, 70, 18, CYAN, { align: "right", ls: 5 }); text("19:08:29", W - 72, 100, 11, DIM, { align: "right", ls: 3 });
+  text("TOWER HEIGHT = AGENTS · LIT WINDOWS = WORKING · THE WALL = THE VOICE", 72, H - 60, 10, DIM, { ls: 2 }); text("Z  WALK THE GRID", W - 72, H - 60, 10, DIM, { align: "right", ls: 2 }); vignette(.5, .55);
+}
+
+/* ================================================================ 7. SIGNAL */
+function v7() {
+  g.fillStyle = "#050a10"; g.fillRect(0, 0, W, H);
+  text(NAME, 72, 84, 44, WHITE, { font: SANS, weight: "800", ls: 10 }); text("SIGNAL  ·  SESSION 09-02  ·  KOKORO BM_LEWIS", 74, 122, 10, DIM, { ls: 3 });
+  text("SPEAKING", W - 72, 84, 16, CYAN, { align: "right", ls: 6 }); text("19:08:29", W - 72, 110, 11, DIM, { align: "right", ls: 3 });
+  const sx = 168, sy = 160, sw = 1264, sh = 380, cols = 160, rows = 56, cw = sw / cols, rh = sh / rows;
+  for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) { const t = c / cols, f = r / rows, base = SAMPLES[(c * 3 + r) % 64] * (1 - f) * (.4 + .6 * noise1(t * 30 + f * 9)) * (c > cols * .5 ? ENV + .3 : .5); const v = Math.min(1, base * 1.6); const col = v < .35 ? [10 + v * 100, 40 + v * 200, 60 + v * 300] : v < .7 ? [60, 180 + (v - .35) * 200, 230] : [200 + (v - .7) * 180, 240, 255]; g.fillStyle = rgba(col, .25 + v * .75); g.fillRect(sx + c * cw, sy + (rows - 1 - r) * rh, cw + .5, rh + .5); }
+  g.strokeStyle = "rgba(255,255,255,.15)"; g.strokeRect(sx + .5, sy + .5, sw, sh); g.strokeStyle = rgba(WHITE, .9); g.beginPath(); g.moveTo(sx + sw * .82, sy); g.lineTo(sx + sw * .82, sy + sh + 250); g.stroke(); text("NOW", sx + sw * .82, sy - 12, 9, WHITE, { align: "center", ls: 3 });
+  ["8K", "4K", "2K", "1K", "500", "0"].forEach((l, i) => text(l, sx - 10, sy + i / 5 * sh, 9, DIM, { align: "right" }));
+  const ly = sy + sh + 40, lh = 40; TEAM.forEach((d, i) => { const y = ly + i * lh, on = isActiveDept(d); g.fillStyle = i % 2 ? "rgba(255,255,255,.025)" : "rgba(255,255,255,.05)"; g.fillRect(sx, y, sw, lh); text(d.name.toUpperCase(), sx - 10, y + lh / 2, 10, on ? WHITE : DIM, { align: "right", ls: 2 }); seed = 40 + i; for (let k = 0; k < 6; k++) { const a = rnd() * .78, b = a + .03 + rnd() * .1; g.fillStyle = rgba(CYAN, .35); g.fillRect(sx + a * sw, y + 12, (b - a) * sw, lh - 24); } if (on) { g.fillStyle = rgba(GREEN, .9); g.shadowColor = rgba(GREEN, .9); g.shadowBlur = 12; g.fillRect(sx + sw * .74, y + 10, sw * .08, lh - 20); g.shadowBlur = 0; text(d.workers.find(w => ACTIVE.has(w)), sx + sw * .74 + 8, y + lh / 2, 10, INK, { weight: "600" }); } });
+  g.strokeStyle = "rgba(255,255,255,.15)"; g.beginPath(); g.moveTo(sx, ly + 5 * lh + 8); g.lineTo(sx + sw, ly + 5 * lh + 8); g.stroke(); for (let i = 0; i <= 8; i++) text(`19:0${i}`, sx + i / 8 * sw, ly + 5 * lh + 26, 9, DIM, { align: "center" });
+  const tx = sx + sw + 44, tiles = [["2", "AGENTS WORKING", GREEN], ["142", "TURNS TODAY", WHITE], ["34%", "5H WINDOW", CYAN], ["61%", "7D WINDOW", AMBER]];
+  tiles.forEach(([n, l, c], i) => { const y = sy + i * 118; g.fillStyle = "rgba(255,255,255,.04)"; g.fillRect(tx, y, W - 72 - tx, 100); g.fillStyle = rgba(c, 1); g.fillRect(tx, y, 3, 100); text(n, tx + 22, y + 44, 40, c, { font: SANS, weight: "700" }); text(l, tx + 22, y + 80, 9, DIM, { ls: 3 }); g.strokeStyle = rgba(c, .7); g.beginPath(); for (let k = 0; k < 24; k++) { const x = tx + 200 + k / 23 * 150, yy = y + 70 - noise1(k * .7 + i * 9) * 40; k ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); });
+  text("YOU", 72, H - 176, 9, DIM, { ls: 3 }); text(YOU, 140, H - 176, 15, [200, 212, 230], { font: SANS }); text(NAME, 72, H - 136, 9, CYAN, { ls: 3 }); text(FLINT_SAYS, 140, H - 136, 17, WHITE, { font: SANS, weight: "500" });
+  text("SPECTROGRAM OF THE VOICE · LANES ARE THE TEAM'S DAY · Z OPENS THE STRUCTURE", 72, H - 48, 10, DIM, { ls: 2 });
+}
+
+/* ================================================================ 8. HALO */
+function v8() {
+  g.fillStyle = "#000"; g.fillRect(0, 0, W, H); blob(CX, CY, M * .8, [60, 30, 25], .5); stars(200, [255, 220, 200], 1);
+  const R = M * .27, cy = CY - 40;
+  g.globalCompositeOperation = "lighter";
+  [[[255, 60, 40], -2.5, 0], [[60, 255, 120], 0, 0], [[60, 120, 255], 2.5, 0]].forEach(([c, dx]) => { g.beginPath(); for (let i = 0; i <= 256; i++) { const a = i / 256 * 6.2832, s = SAMPLES[i % 64] * ENV, r = R * (1 + s * .06); i ? g.lineTo(CX + dx + Math.cos(a) * r, cy + Math.sin(a) * r) : g.moveTo(CX + dx + Math.cos(a) * r, cy + Math.sin(a) * r); } g.closePath(); g.strokeStyle = rgba(c, .6); g.lineWidth = 2.2; g.stroke(); });
+  for (let i = 0; i < 256; i++) { const a = i / 256 * 6.2832, s = SAMPLES[i % 64] * ENV; if (s < .25) continue; g.strokeStyle = rgba([255, 200, 170], (s - .25) * .9); g.lineWidth = 1; g.beginPath(); g.moveTo(CX + Math.cos(a) * R, cy + Math.sin(a) * R); g.lineTo(CX + Math.cos(a) * R * (1 + s * .12), cy + Math.sin(a) * R * (1 + s * .12)); g.stroke(); }
+  blob(CX, cy, R * 1.25, [255, 160, 120], .18); g.globalCompositeOperation = "source-over";
+  g.strokeStyle = "rgba(255,255,255,.95)"; g.lineWidth = 1.5; g.beginPath(); g.arc(CX, cy, R, 0, 6.2832); g.stroke();
+  fib(36, .2).forEach(p => { const q = proj(rot(p, T * .1, .3), R * .32, CX, cy); dot(q.x, q.y, .9 + q.d, [255, 225, 205], .3 + .6 * q.d, 1.5); });
+  text(NAME.charAt(0) + NAME.slice(1).toLowerCase(), CX, cy + R + 84, 76, [252, 240, 230], { font: SERIF, style: "italic", align: "center" });
+  text("speaking", CX, cy + R + 138, 14, CORAL, { font: SANS, align: "center", ls: 6 });
+  const y0 = H - 92, cw = 250; TEAM.forEach((d, i) => { const x = CX + (i - 2) * cw, on = isActiveDept(d); text(d.name.toUpperCase(), x, y0, 9, on ? [255, 235, 225] : [150, 130, 125], { align: "center", ls: 4 }); d.workers.forEach((w, j) => dot(x + (j - (d.workers.length - 1) / 2) * 14, y0 + 20, ACTIVE.has(w) ? 3 : 1.8, ACTIVE.has(w) ? CORAL : [140, 120, 115], 1, ACTIVE.has(w) ? 2.5 : 0)); });
+  text(NAME, 72, 64, 12, [200, 180, 170], { ls: 6 }); text("halo · connected", 72, 88, 11, [130, 110, 105], { font: SANS, style: "italic" });
+  text("19:08", W - 72, 64, 12, [200, 180, 170], { align: "right", ls: 4 });
+  grain(.07); vignette(.55, .5);
+}
+
+/* ================================================================ 9. CIRCUIT NEXUS */
+function v9() {
+  const CU = [214, 176, 104], CUD = [120, 96, 50];
+  g.fillStyle = "#0a120e"; g.fillRect(0, 0, W, H); blob(CX, CY, M * .8, [20, 50, 35], .5);
+  for (let x = 40; x < W; x += 24) for (let y = 40; y < H; y += 24) { g.fillStyle = "rgba(255,255,255,.035)"; g.fillRect(x, y, 1, 1); }
+  const trace = (pts, on) => { g.strokeStyle = rgba(on ? GREEN : CU, on ? .95 : .75); g.lineWidth = 3; g.lineJoin = "round"; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.strokeStyle = rgba(WHITE, .25); g.lineWidth = 1; g.stroke(); pts.slice(1, -1).forEach(p => { dot(p[0], p[1], 4, CUD, 1, 0); dot(p[0], p[1], 1.8, [10, 18, 14], 1, 0); }); if (on) for (let k = 0; k < 3; k++) { const t = ((T * .5 + k / 3) % 1) * (pts.length - 1), i = Math.floor(t), f = t - i, a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)]; dot(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, 3, WHITE, 1, 3); } };
+  const chip = (x, y, w, h, label, sub, on, leds, pins) => { for (let i = 0; i < pins; i++) { const px = x + 14 + i * (w - 28) / (pins - 1); g.fillStyle = rgba(CU, .9); g.fillRect(px - 3, y - 8, 6, 8); g.fillRect(px - 3, y + h, 6, 8); } rr(x, y, w, h, 6); g.fillStyle = "#101a14"; g.fill(); g.strokeStyle = rgba(on ? GREEN : CU, .8); g.lineWidth = 1.2; g.stroke(); dot(x + 12, y + 12, 3, CUD, 1, 0); text(label, x + 16, y + h / 2 - 8, 12, WHITE, { ls: 3 }); text(sub, x + 16, y + h / 2 + 12, 8, on ? GREEN : CUD, { ls: 2 }); leds.forEach((l, i) => { const lx = x + w - 20 - i * 16; g.fillStyle = l ? rgba(GREEN, 1) : "rgba(60,80,70,1)"; g.fillRect(lx - 4, y + 12, 8, 5); if (l) blob(lx, y + 14, 16, GREEN, .8); }); };
+  const cw = 168, ch = 74, spots = [[CX - 620, CY - 300], [CX + 460, CY - 300], [CX + 520, CY + 220], [CX - 80, CY + 330], [CX - 680, CY + 180]];
+  TEAM.forEach((d, i) => { const [x, y] = spots[i], on = isActiveDept(d), mx = x + cw / 2, my = y + ch / 2; const via = [Math.round((CX + mx) / 2 / 40) * 40, Math.round((CY + my) / 2 / 40) * 40]; trace([[CX, CY], [via[0], CY], via, [via[0], my], [mx, my]], on); });
+  TEAM.forEach((d, i) => { const [x, y] = spots[i]; chip(x, y, cw, ch, d.name.toUpperCase(), d.workers.length + " AGENTS · " + d.tools + " TOOLS", isActiveDept(d), d.workers.map(w => ACTIVE.has(w)), 7); text(["U2", "U3", "U4", "U5", "U6"][i], x - 2, y - 18, 8, CU, { a: .7 }); });
+  const cpu = 190; for (let i = 0; i < 12; i++) { const p = CX - cpu / 2 + 14 + i * (cpu - 28) / 11, py = CY - cpu / 2 + 14 + i * (cpu - 28) / 11; g.fillStyle = rgba(CU, .9); g.fillRect(p - 3, CY - cpu / 2 - 10, 6, 10); g.fillRect(p - 3, CY + cpu / 2, 6, 10); g.fillRect(CX - cpu / 2 - 10, py - 3, 10, 6); g.fillRect(CX + cpu / 2, py - 3, 10, 6); }
+  blob(CX, CY, cpu * .9, GREEN, .25 + ENV * .3); rr(CX - cpu / 2, CY - cpu / 2, cpu, cpu, 10); g.fillStyle = "#0c1611"; g.fill(); g.strokeStyle = rgba(GREEN, .9); g.lineWidth = 1.5; g.stroke(); rr(CX - cpu / 2 + 18, CY - cpu / 2 + 18, cpu - 36, cpu - 36, 6); g.strokeStyle = rgba(CU, .5); g.lineWidth = 1; g.stroke();
+  text(NAME, CX, CY - 12, 24, WHITE, { align: "center", ls: 8 }); text("COMMAND · U1", CX, CY + 16, 9, GREEN, { align: "center", ls: 3 }); text("SPEAKING", CX, CY + 40, 9, CU, { align: "center", ls: 3 });
+  g.strokeStyle = rgba(GREEN, .9); g.lineWidth = 1.5; g.beginPath(); SAMPLES.forEach((s, i) => { const x = CX - cpu / 2 + 24 + i / 63 * (cpu - 48), y = CY + cpu / 2 - 30 - s * ENV * 22; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  text(NAME.split("").join(".") + ".", 56, 52, 20, WHITE, { ls: 3 }); text("NEXUS  ·  BOARD REV 2.1  ·  5 CHIPS · 14 LEDS", 56, 80, 10, CU, { ls: 2 }); text("SPEAKING", W - 56, 52, 16, GREEN, { align: "right", ls: 5 }); text("19:08:29", W - 56, 80, 10, CU, { align: "right", ls: 2 });
+  text("Z  PROBE A CHIP", W - 56, H - 56, 10, CU, { align: "right", ls: 2 }); vignette(.5, .55);
+}
+
+/* ================================================================ 10. COMMAND DECK */
+function v10() {
+  g.fillStyle = "#0a0e17"; g.fillRect(0, 0, W, H);
+  const tile = (x, y, w, h) => { rr(x, y, w, h, 14); g.fillStyle = "#111827"; g.fill(); g.strokeStyle = "rgba(255,255,255,.08)"; g.lineWidth = 1; g.stroke(); };
+  const B = [90, 150, 255], O = [255, 150, 60];
+  text(NAME, 56, 56, 22, WHITE, { font: SANS, weight: "700", ls: 5 }); text("Command deck", 56, 84, 12, DIM, { font: SANS });
+  rr(W - 236, 40, 180, 36, 18); g.fillStyle = rgba(GREEN, .15); g.fill(); dot(W - 214, 58, 4, GREEN, 1, 2); text("Speaking", W - 200, 58, 13, WHITE, { font: SANS, weight: "600" }); text("19:08", W - 72, 58, 11, DIM, { align: "right", font: SANS });
+  const lx = 56, ly = 112, lw = W * .58, lh = H - 112 - 132; tile(lx, ly, lw, lh);
+  const cx = lx + lw / 2, cy = ly + lh / 2, R = lh * .36, P = fib(110, .3).map((p, i) => proj(rot([p[0] * (1 + .1 * ENV * SAMPLES[i % 64]), p[1] * (1 + .1 * ENV * SAMPLES[i % 64]), p[2]], T * .12, .35), R, cx, cy));
+  blob(cx, cy, R * 1.3, B, .25); for (const [i, j] of knn(fib(110, .3), 3)) { g.strokeStyle = rgba(B, .18 + .5 * Math.min(P[i].d, P[j].d)); g.lineWidth = 1; g.beginPath(); g.moveTo(P[i].x, P[i].y); g.lineTo(P[j].x, P[j].y); g.stroke(); } P.forEach(p => dot(p.x, p.y, (1 + 1.8 * p.d) * p.f, p.d > .6 ? WHITE : B, .3 + .7 * p.d));
+  g.strokeStyle = rgba(B, .5); g.setLineDash([2, 6]); g.beginPath(); g.arc(cx, cy, R * 1.25, 0, 6.2832); g.stroke(); g.setLineDash([]); { const a = T * .9; const gr = g.createConicGradient ? g.createConicGradient(a, cx, cy) : null; if (gr) { gr.addColorStop(0, rgba(B, 0)); gr.addColorStop(.12, rgba(B, .35)); gr.addColorStop(.125, rgba(B, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, R * 1.25, 0, 6.2832); g.fill(); } }
+  TEAM.forEach((d, i) => { const a = i / 5 * 6.2832 + T * .12, p = proj(rot([Math.cos(a) * .8, Math.sin(a * 1.3) * .3, Math.sin(a) * .8], 0, .35), R, cx, cy), on = isActiveDept(d); dot(p.x, p.y, on ? 5 : 3.5, on ? GREEN : WHITE, .5 + .5 * p.d); text(d.name, p.x + 10, p.y, 11, on ? GREEN : WHITE, { font: SANS, a: .5 + .5 * p.d }); });
+  text("LIVE MESH · 110 NODES · ROTATION 0.12 RAD/S", lx + 22, ly + 26, 9, DIM, { ls: 2 }); text("VOICE ENVELOPE " + Math.round(ENV * 100) + "%", lx + lw - 22, ly + 26, 9, B, { align: "right", ls: 2 });
+  g.strokeStyle = rgba(B, .9); g.lineWidth = 1.5; g.beginPath(); SAMPLES.forEach((s, i) => { const x = lx + 22 + i / 63 * (lw - 44), y = ly + lh - 30 - s * ENV * 40; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  const rx = lx + lw + 20, rw = W - 56 - rx, tw = (rw - 16) / 2;
+  [["2", "agents working", GREEN, .3], ["14", "agents in the team", WHITE, .5], ["34%", "5-hour window", B, .34], ["61%", "7-day window", O, .61]].forEach(([n, l, c, v], i) => { const x = rx + (i % 2) * (tw + 16), y = ly + Math.floor(i / 2) * 136; tile(x, y, tw, 120); text(n, x + 20, y + 46, 40, c, { font: SANS, weight: "700" }); text(l, x + 20, y + 84, 12, DIM, { font: SANS }); rr(x + 20, y + 100, tw - 40, 5, 3); g.fillStyle = "rgba(255,255,255,.08)"; g.fill(); rr(x + 20, y + 100, (tw - 40) * v, 5, 3); g.fillStyle = rgba(c, 1); g.fill(); });
+  const dy = ly + 288; tile(rx, dy, rw, lh - 288); text("DEPARTMENTS", rx + 20, dy + 26, 10, DIM, { ls: 3 });
+  TEAM.forEach((d, i) => { const y = dy + 60 + i * 52, on = isActiveDept(d); text(d.name, rx + 20, y, 14, WHITE, { font: SANS, weight: "600" }); text(d.workers.length + " agents · " + d.tools + " tools", rx + 20, y + 18, 10, DIM, { font: SANS }); rr(rx + rw - 210, y - 6, 110, 6, 3); g.fillStyle = "rgba(255,255,255,.08)"; g.fill(); rr(rx + rw - 210, y - 6, 110 * (on ? .7 : .12), 6, 3); g.fillStyle = rgba(on ? GREEN : B, 1); g.fill(); rr(rx + rw - 84, y - 11, 64, 22, 11); g.fillStyle = on ? rgba(GREEN, .2) : "rgba(255,255,255,.06)"; g.fill(); text(on ? "active" : "idle", rx + rw - 52, y, 10, on ? GREEN : DIM, { align: "center", font: SANS, weight: "600" }); if (i < 4) { g.strokeStyle = "rgba(255,255,255,.06)"; g.beginPath(); g.moveTo(rx + 20, y + 32); g.lineTo(rx + rw - 20, y + 32); g.stroke(); } });
+  const ty = H - 108; tile(56, ty, W - 112, 64); text("ACTIVITY", 78, ty + 32, 10, DIM, { ls: 3 });
+  [["19:08:29", "finance-ledger", "reading Finance/exports/09.csv", GREEN], ["19:08:12", "comms-inbox-triage", "14 threads · 3 need a reply", GREEN], ["19:07:40", NAME, "dispatched comms-lead and finance-lead", WHITE], ["19:06:01", "automations-machine", "backup pushed · disk 61%", DIM]].forEach(([t, w, s, c], i) => { const x = 170 + i * 420; text(t, x, ty + 32, 10, DIM); text(w, x + 70, ty + 24, 11, c, { font: SANS, weight: "600" }); text(s, x + 70, ty + 42, 10, DIM, { font: SANS }); });
+}
+[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10][V - 1]();
+document.title = "ready";
+</script></body></html>

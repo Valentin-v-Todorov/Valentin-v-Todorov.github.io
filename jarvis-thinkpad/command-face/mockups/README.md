@@ -18,3 +18,18 @@ part and the honeycomb expands into the chart); 3 flies into a planet's system;
 4 already shows everything, and Z swaps the globe for the chart.
 
 Pick a number and Flint gets that face; the other four stay here as options.
+
+## Round two: ten design-led directions (`lab2.html?v=1..10`, previews `r2-1.jpg` to `r2-10.jpg`)
+
+| # | Name | What it is | Feel |
+| --- | --- | --- | --- |
+| 1 | **Monolith** | Pure black, hairlines, a thin white ring the voice draws around; the team as an editorial five-column index at the bottom. Colour only for status | luxury, typographic, quiet |
+| 2 | **Aurora Glass** | Aurora gradients, frosted glass cards, a breathing orb; the conversation as chat bubbles; the team as five glass cards | Apple-grade, soft, premium |
+| 3 | **Reactor** | Arc-reactor rings and segments, lens flares, telemetry; departments as bracketed callouts with LEDs | Iron Man, cinematic HUD |
+| 4 | **Terminal Noir** | A designed phosphor terminal: transcript, block-character equaliser, box-drawn team tree, CRT scanlines | retro-future, hacker |
+| 5 | **Topography** | A contour map whose summit is the voice; departments as camps with dashed paths, map margins, compass, scale | warm, cartographic, unusual |
+| 6 | **Lattice** | Isometric city: departments as towers, workers as lit windows, a waveform wall behind | architectural, neon |
+| 7 | **Signal** | A spectrogram waterfall of the voice, the team as timeline lanes, stat tiles with sparklines, the transcript | data-designer, editorial |
+| 8 | **Halo** | One chromatic ring that flexes with the voice, a serif italic name, five tiny constellations | intimate, cinematic, "Her" |
+| 9 | **Circuit Nexus** | Gold traces on a dark board, department chips with LEDs, a CPU labelled with the agent, pulses on the traces | refined PCB, tactile |
+| 10 | **Command Deck** | A product dashboard: live mesh tile, stat tiles, department rows, activity ticker, rounded glass tiles | bridge console, product UI |

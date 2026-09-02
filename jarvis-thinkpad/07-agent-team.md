@@ -152,6 +152,147 @@ it learns; the vault stays the shared memory.
 (dispatch, peek, reply, stop). `claude --bg "prompt"` starts a background
 session from the shell.
 
+## 2b. The hierarchy in the picture: Command → team leads → workers → tools and tasks
+
+The `#brain` graph on thefounderos.com (and the demo's `/brain` and `/org`
+pages, built by `lib/knowledge-graph.ts` and `lib/hierarchy.ts`) has five rings:
+
+| Ring | On the site | In the demo's data | In our Jarvis build |
+| --- | --- | --- | --- |
+| Core | "Obsidian" (the vault) | `self`, the operator | `~/Brain`, the vault; Valentin at the centre |
+| Command | "Command" node above the core | the Conductor agent (router) | **Jarvis**, the main session in `~/my-agent` |
+| Team leads | Comms, Finance, Content, Knowledge, Automations (group icons) | `Department`; "the pillar node IS the department-head agent", `tier: lead` | **Lead subagents**, one per department |
+| Tasks | grey clipboard icons | `SopTask`: title, summary, at least 3 steps, exactly one assignee (the monogamy rule) | **Job notes** in the vault (`<Dept>/Jobs/*.md`), one worker per Job |
+| Workers | green person icons | `Agent` with `parentId` pointing at its lead, `tier: worker` or `specialist` | **Worker subagents** that a lead delegates to |
+| Tools | blue wrench icons | `tools: [slug, ...]` on each worker | skills, MCP servers and CLI tools listed in each worker's `tools:` / `mcpServers:` / `skills:` |
+
+Claude Code supports exactly this nesting: a subagent can spawn its own
+subagents, three layers deep by default (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`
+raises it). Jarvis → lead → worker is three layers. Subagent folders are scanned
+recursively, so the tree on disk can mirror the org chart:
+
+```
+~/my-agent/
+  team.yaml                          <- the roster: single source of truth (below)
+  .claude/agents/
+    comms/
+      comms-lead.md                  <- team lead: owns "02 - <Business>/Comms", routes to its workers
+      comms-inbox-triage.md          <- worker: one Job each
+      comms-reply-drafter.md
+      comms-crm-pipeline.md
+    finance/
+      finance-lead.md
+      finance-ledger.md
+      finance-invoices.md
+      finance-weekly-review.md
+    content/
+      content-lead.md
+      content-writer.md              <- skills: [jaredrhod-marketing]
+      content-scheduler.md
+      content-lead-magnets.md
+    knowledge/
+      knowledge-lead.md
+      knowledge-librarian.md         <- vault hygiene: indexes, frontmatter, links, archive
+      knowledge-researcher.md
+    automations/
+      automations-lead.md
+      automations-home.md            <- mcpServers: [home-assistant]
+      automations-machine.md         <- the ThinkPad (the sysadmin from section 2)
+      automations-timers.md          <- owns the systemd timers from section 3
+```
+
+A lead's file names its workers and the department's Jobs, so delegation is
+explicit and the picture stays true:
+
+`~/my-agent/.claude/agents/comms/comms-lead.md`
+
+```markdown
+---
+name: comms-lead
+description: Team lead for communications (email, messages, CRM pipeline). Use proactively for anything about inbox, replies, leads, follow-ups. Delegates to the comms workers and reports back in one summary.
+model: fable
+permissionMode: acceptEdits
+memory: project
+background: true
+---
+You lead the Comms department. Your department folder is `02 - <Business>/Comms/`
+in the vault, and its Jobs live in `02 - <Business>/Comms/Jobs/`. Read the folder
+index first. You do not do the work yourself: split the request into the Jobs it
+touches and delegate each to its owner:
+- inbox triage → the `comms-inbox-triage` subagent
+- reply drafts → the `comms-reply-drafter` subagent
+- pipeline / CRM updates → the `comms-crm-pipeline` subagent
+Run independent pieces in parallel. Check each result against the Job's quality
+bar before accepting it. Reply to Command (Jarvis) with one summary: done, open,
+decisions needed. Log the run in today's daily note. Never send email yourself;
+drafts go to `00 - Inbox/Drafts/` for Valentin.
+```
+
+`~/my-agent/.claude/agents/comms/comms-inbox-triage.md`
+
+```markdown
+---
+name: comms-inbox-triage
+description: Worker. Triages the inbox into reply-today / this-week / FYI / spam and writes the triage note. Called by comms-lead.
+model: sonnet
+tools: Read, Glob, Grep, Write, Edit, Bash
+permissionMode: acceptEdits
+memory: project
+maxTurns: 30
+---
+Your Job note is `02 - <Business>/Comms/Jobs/Triage the inbox.md`. Read it end to
+end and follow its boot chain, procedure and quality bar. Output: today's triage
+note in the Comms folder plus a three-line summary for your lead. Fold every
+correction into your memory.
+```
+
+The Job note is the demo's SOP task, and it already exists in Jared's memory
+system: one note per recurring task with the boot chain, the procedure, the
+quality bar and the lessons. Rule to keep the graph honest, borrowed from the
+demo's seed tests: **every worker owns exactly one Job, and every Job has
+exactly one worker.** New recurring task → new Job note → new worker file →
+one line in the lead.
+
+**The roster file.** Keep `~/my-agent/team.yaml` as the single source of truth
+and let Jarvis generate the agent files from it (and, in section 4, the
+dashboard's seed). Shape:
+
+```yaml
+operator: Valentin
+command: jarvis
+departments:
+  - id: comms
+    name: Comms
+    lead: comms-lead
+    folder: "02 - <Business>/Comms"
+    workers:
+      - name: comms-inbox-triage
+        job: "Triage the inbox"
+        tools: [gmail, vault]
+      - name: comms-reply-drafter
+        job: "Draft replies"
+        tools: [vault]
+      - name: comms-crm-pipeline
+        job: "Keep the pipeline current"
+        tools: [vault, sheets]
+  - id: automations
+    name: Automations
+    lead: automations-lead
+    folder: "05 - Home and Machine"
+    workers:
+      - name: automations-home
+        job: "Run the house"
+        tools: [home-assistant]
+      - name: automations-machine
+        job: "Keep the ThinkPad healthy"
+        tools: [bash, docker, systemd]
+```
+
+"And so on" deeper: a worker can have its own helpers (a `content-writer`
+spawning a `content-fact-checker`) within the three-layer default; raise the
+depth variable only if a real job needs a fourth layer. Deeper than that, the
+picture gets prettier and the work gets slower.
+
 ## 3. Layer 2: working on their own (schedules)
 
 A subagent definition can be the whole session with `--agent <name>`, and `-p`
@@ -225,9 +366,22 @@ echo "OBSIDIAN_VAULT=$HOME/Brain" >> .env.local
 npm run dev            # http://localhost:4100  (the /brain graph now reads your vault)
 ```
 
-The three changes, for Jarvis (TDD: failing test first, `npm test` and
+**Change 0, data only, and it draws the picture from the screenshot with YOUR
+team:** a script `scripts/seed-from-jarvis.ts` that reads `~/my-agent/team.yaml`
+and writes the demo's tables in the shape `lib/seed.ts` uses: one `Department`
+per department (`id: dept-comms`, name, slug, tagline, color, order), one
+`Agent` per lead (`tier: lead`, `parentId: null`) and per worker (`tier: worker`,
+`parentId: <lead id>`, `tools: [slugs]`), one `SopTask` per Job (title, summary,
+the Job note's procedure as `steps`, `assigneeKind: agent`, `assigneeId: <worker>`).
+Change the core label from `Alex` to `Valentin` in `lib/knowledge-graph.ts`.
+No model key needed: `/brain` and `/org` then show Command, the leads, the
+workers, their Jobs and their tools, and the graph's directory lists them.
+
+The three code changes, for Jarvis (TDD: failing test first, `npm test` and
 `npm run typecheck` green before done; the repo's `CLAUDE.md` and `AGENTS.md`
-carry the house rules):
+carry the house rules; note `tests/seed.test.ts` enforces that every seeded
+agent has a runtime `run()` and the one-worker-one-task rule, so change 2 and
+change 0 land together):
 
 1. **A local LLM provider** in `lib/connectors/llm.ts`: alongside `gateway` and
    `stub`, add `local` that runs `claude -p --output-format json` (or the
@@ -253,8 +407,9 @@ Worth it if you like the visuals; the team works without it.
 
 ## 5. Recommended order
 
-1. Section 2: Jarvis writes the six agent files, then you test each with one
-   real task in a typed session. Half a day.
+1. Sections 2 and 2b: Jarvis writes `team.yaml` with you (departments, leads,
+   workers, Jobs), generates the agent files, and you test each lead with one
+   real request in a typed session. Half a day.
 2. Section 3: the morning timer first; add one timer per recurring job that has
    already gone right by hand three times.
 3. Section 4: only after the team is doing real work.

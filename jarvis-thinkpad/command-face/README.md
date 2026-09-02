@@ -1,7 +1,7 @@
 # The Command face: voice front and centre, the team on the side
 
 A fifth face for Jared's ai-visualizer, built for this ThinkPad setup. The circuit
-board (or any other face) runs full screen as Jarvis's voice, and the agent org
+board (or any other face) runs full screen as Flint's voice, and the agent org
 chart from `07-agent-team.md` sits docked beside it: Command at the centre, team
 leads around it, their workers, each worker's Job, and the tools they use. Agents
 light up while they work. One key swaps the focus; another zooms the team full
@@ -11,14 +11,14 @@ screen.
 +--------------------------------------------+-----------------+
 |                                            | TEAM 5 · 14 · 2 |
 |            the circuit board               |                 |
-|         (Jarvis speaking, live)            |    o   o   o    |
+|         (Flint speaking, live)            |    o   o   o    |
 |                                            |  o   (J)   o    |
 |                                            |    o   o   o    |
 +--------------------------------------------+-----------------+
    T -> the team takes 72% and the board 28%.  G -> team full screen.
 ```
 
-## Install (after Jarvis exists)
+## Install (after Flint exists)
 
 ```bash
 ~/site/jarvis-thinkpad/command-face/install.sh          # or: install.sh ~/my-agent

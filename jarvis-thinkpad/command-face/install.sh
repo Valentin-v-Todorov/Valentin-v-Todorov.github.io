@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh: put the Command face into the running Jarvis stack. Idempotent.
+# install.sh: put the Command face into the running Flint stack. Idempotent.
 #   ./install.sh                # agent home ~/my-agent
 #   ./install.sh ~/my-agent     # explicit
 # Does: copies the face into ai-visualizer/faces/command, the two helper scripts into
@@ -11,7 +11,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 HOME_DIR="${1:-$HOME/my-agent}"
 VIS="$HOME_DIR/ai-visualizer"
 export PATH="$HOME/.local/bin:$PATH"
-[ -f "$HOME_DIR/CLAUDE.md" ] || { echo "no CLAUDE.md in $HOME_DIR: install Jarvis first (02-jarvis-install.md)" >&2; exit 1; }
+[ -f "$HOME_DIR/CLAUDE.md" ] || { echo "no CLAUDE.md in $HOME_DIR: install Flint first (02-flint-install.md)" >&2; exit 1; }
 [ -f "$VIS/server.py" ] || { echo "no ai-visualizer in $HOME_DIR: install the face piece first" >&2; exit 1; }
 
 echo "== face"
@@ -27,7 +27,7 @@ chmod +x "$HOME_DIR/bin/team-sync.py" "$HOME_DIR/bin/team-live.py"
 echo "== roster"
 if [ ! -f "$HOME_DIR/team.yaml" ] && [ ! -f "$HOME_DIR/team.json" ]; then
   cp "$HERE/team.example.yaml" "$HOME_DIR/team.yaml"
-  echo "   seeded $HOME_DIR/team.yaml from the example; edit it (or let Jarvis interview you) and re-run team-sync"
+  echo "   seeded $HOME_DIR/team.yaml from the example; edit it (or let Flint interview you) and re-run team-sync"
 fi
 if command -v uv >/dev/null 2>&1; then
   uv run --quiet "$HOME_DIR/bin/team-sync.py" --home "$HOME_DIR"

@@ -1,4 +1,4 @@
-# 02. Installing Jarvis with Jared's fullstack-agent on Linux
+# 02. Installing Flint with Jared's fullstack-agent on Linux
 
 ## Pre-flight (two minutes, saves an hour)
 
@@ -35,7 +35,7 @@ keep going with the setup".
 | 0. Find home | Confirms `~/my-agent` is the agent's home. Looks for an existing `CLAUDE.md`, old Claude memory in `~/.claude/projects/*/memory/`, existing Obsidian vaults in the registry. | Say it is a fresh install. Allow it to migrate old Claude Code memory if any (it copies, never deletes). |
 | 1. Menu | Offers the stack (memory + voice + face) and the optional hands. | Take all four (hands only if a webcam exists). |
 | 2. Interview | Name, identity, vault, mic mode and key, voice engine, face, permissions. | The answer sheet below. |
-| 3. Install | Clones `ai-memory-vault`, `backtalk`, `ai-visualizer`, `barehands` next to `fullstack-agent`, then runs each wizard. backtalk's `install.sh` creates `.venv` and downloads about 1 GB of models. The memory wizard interviews you about your work (10 minutes) and builds the vault. | Answer the vault interview honestly; it becomes Jarvis's profile of you. Type your sudo password when `install.sh` installs `espeak-ng`/`portaudio` (already present, so it should skip). |
+| 3. Install | Clones `ai-memory-vault`, `backtalk`, `ai-visualizer`, `barehands` next to `fullstack-agent`, then runs each wizard. backtalk's `install.sh` creates `.venv` and downloads about 1 GB of models. The memory wizard interviews you about your work (10 minutes) and builds the vault. | Answer the vault interview honestly; it becomes Flint's profile of you. Type your sudo password when `install.sh` installs `espeak-ng`/`portaudio` (already present, so it should skip). |
 | 4. Wire | Writes `backtalk.json`, `ai-visualizer.json`, `barehands.json`, the barehands hooks in `~/my-agent/.claude/settings.json`, and appends "You are the mechanic" and "The barehands board" to `~/my-agent/CLAUDE.md`. | Nothing. Read the configs back if curious (reference below). |
 | 5. First hello | Runs `./fullstack-agent/start.sh`: the face opens in the browser, the voice says "Hello Valentin, what are we working on today?" | Hold the key, ask something, watch the face. |
 | 6. Hand over | Kills the test stack, offers the marketing skill, makes Desktop launchers, explains updates and `claude --continue`. | Say yes to the marketing skill. Then run `make-launchers.sh` from this folder because the wizard only knows macOS `.command` and Windows `.bat` files. |
@@ -45,7 +45,7 @@ keep going with the setup".
 | Question | Answer to give | Notes |
 | --- | --- | --- |
 | Your name | Valentin | Goes in the greeting. |
-| Identity: A Jarvis as-is / B Jarvis renamed / C build your own | **A** | Door A is Jared's real boot config: chief of staff, direct, curses freely, "sir"/"boss", pushes back. Want Jarvis without the swearing? Say **C**, name "Jarvis", role "chief of staff and operating partner", tone "direct, dry British butler wit, no profanity, pushes back hard when my ideas don't add up", welcome line "All systems online, sir. What are we working on today?" |
+| Identity: A Jarvis as-is / B Jarvis renamed / C build your own | **B**, name **Flint** | Door B keeps Jared's real boot config (chief of staff, direct, curses freely, "sir"/"boss", pushes back) and swaps only the name. Want Flint without the swearing? Say **C**, name "Flint", role "chief of staff and operating partner", tone "direct, dry British butler wit, no profanity, pushes back hard when my ideas don't add up", welcome line "All systems online, sir. What are we working on today?" |
 | Vault: existing or new | **New**, at `~/Brain` | Any name; keep it in the home folder. It says the full path aloud and registers it in Obsidian. |
 | Vault interview (memory wizard) | Your real answers | Name, what you do, projects (each becomes a numbered folder), key people, current priorities, recurring tasks (each becomes a "Job" note). Optional sections are optional. Mention the personal business, home automation, and this ThinkPad as projects so folders exist for them. |
 | Old Claude Code memory migration | Yes, migrate | Only if `~/.claude/projects/` has content on this machine (fresh machine: nothing). |
@@ -53,7 +53,7 @@ keep going with the setup".
 | Talk key | **home** | Physical Home key on ThinkPads (top right cluster; on some models it is Fn+Left). Alternatives: `end`, `right_ctrl`, `f12`. |
 | Voice engine: built-in / ElevenLabs | **Built-in (Kokoro)** | `bm_lewis`, free, offline. Audition ElevenLabs later; see `03-linux-quirks.md` section 6 for the keyring. |
 | Face | **board** | The circuit board. |
-| Permissions: ask / auto-approve | **ask** | Spoken permission checks. Once you trust it: say "stop asking for permission" then "confirm" in a voice session, or tell Jarvis to set `"permission_mode": "bypassPermissions"`. |
+| Permissions: ask / auto-approve | **ask** | Spoken permission checks. Once you trust it: say "stop asking for permission" then "confirm" in a voice session, or tell Flint to set `"permission_mode": "bypassPermissions"`. |
 | Marketing skill (phase 6) | **Yes** | Installs `~/.claude/skills/jaredrhod-marketing/`. |
 
 ## Where Linux differs from what the wizard expects
@@ -81,7 +81,7 @@ runs on Linux unchanged, whatever the READMEs say about "macOS".
 ```json
 {
   "agent_dir": "/home/valentin/my-agent",
-  "name": "Jarvis",
+  "name": "Flint",
   "ptt_key": "home",
   "mic_mode": "ptt",
   "voice": "bm_lewis",
@@ -105,14 +105,14 @@ The voice model is `claude-sonnet-5` on purpose; do not swap it for a slower one
 `~/my-agent/ai-visualizer/ai-visualizer.json`:
 
 ```json
-{ "name": "JARVIS", "badge": "", "face": "board", "port": 8790,
+{ "name": "FLINT", "badge": "", "face": "board", "port": 8790,
   "bus_dir": "/home/valentin/my-agent/backtalk", "thinking_sound": true }
 ```
 
 `~/my-agent/barehands/barehands.json`:
 
 ```json
-{ "name": "Jarvis", "port": 8794,
+{ "name": "Flint", "port": 8794,
   "orbs": [ { "title": "Brain", "path": "/home/valentin/Brain", "kind": "notes" },
             { "title": "Props", "path": "media", "kind": "media" } ] }
 ```
@@ -127,7 +127,7 @@ The voice model is `claude-sonnet-5` on purpose; do not swap it for a slower one
 
 `~/my-agent/CLAUDE.md`: the boot config from ai-memory-vault (identity, vault path,
 startup sequence, the rules that can't lapse) plus two appended sections: "The
-barehands board" (the `present` verb) and "You are the mechanic" (Jarvis fixes the
+barehands board" (the `present` verb) and "You are the mechanic" (Flint fixes the
 stack himself from each repo's `TROUBLESHOOTING.md`).
 
 ## Verify it works (backtalk's own checklist)
@@ -141,15 +141,15 @@ stack himself from each repo's `TROUBLESHOOTING.md`).
 7. "usage report" → speaks turns and tokens.
 8. "go hands free" → hands-free on; "push to talk mode" → back.
 9. Ask it to write a small note → hear the spoken permission check; "details"; "yes". Again with "no".
-10. "goodbye jarvis" → sign-off, clean exit. Ctrl-C in the terminal also stops everything.
+10. "goodbye flint" → sign-off, clean exit. Ctrl-C in the terminal also stops everything.
 
 Log: `~/my-agent/backtalk/logs/backtalk.log`. Every failure mode has an entry in
-`backtalk/TROUBLESHOOTING.md`; tell Jarvis "read your troubleshooting guide and fix it".
+`backtalk/TROUBLESHOOTING.md`; tell Flint "read your troubleshooting guide and fix it".
 
 ## Daily use
 
-- **Jarvis only exists in `~/my-agent`.** Open Claude Code there (the "Chat with
-  Jarvis" launcher, or `cd ~/my-agent && claude`). Anywhere else, Claude is a stranger.
+- **Flint only exists in `~/my-agent`.** Open Claude Code there (the "Chat with
+  Flint" launcher, or `cd ~/my-agent && claude`). Anywhere else, Claude is a stranger.
 - `claude --continue` in `~/my-agent` reopens the last session mid-thought.
 - `./fullstack-agent/start.sh` (voice + face + hands server), `start.sh voice`
   (voice + face), `start.sh hands` (voice + board). Ctrl-C stops all of it.
@@ -161,6 +161,6 @@ Log: `~/my-agent/backtalk/logs/backtalk.log`. Every failure mode has an entry in
   "stop asking for permission" (then "confirm"), "start asking again".
 - Updates: `~/my-agent/fullstack-agent/update.sh` pulls every piece and never
   touches your configs, vault or CLAUDE.md. Or say "update everything and tell me
-  what changed" to Jarvis.
-- Anything broken: tell Jarvis. Every repo ships a TROUBLESHOOTING.md written for
+  what changed" to Flint.
+- Anything broken: tell Flint. Every repo ships a TROUBLESHOOTING.md written for
   the agent to read.

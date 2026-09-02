@@ -47,7 +47,7 @@ Boot from the USB (F12 at the logo picks the device). In the installer:
   - **LVM with encryption (LUKS)** if theft matters more than unattended reboots.
     You will have to type the passphrase on a keyboard after every reboot; SSH and
     Tailscale are not up yet at that point.
-- Your name: Valentin. Computer name: `thinkpad` (or `jarvis`). Username:
+- Your name: Valentin. Computer name: `thinkpad` (or `flint`). Username:
   `valentin`. Password: a real one; it is also your sudo password. Do NOT tick
   "Log in automatically" here; we set that up properly in step F.
 - Timezone, then install and reboot. Remove the USB when asked.
@@ -170,8 +170,8 @@ sudo hostnamectl set-hostname thinkpad
 sudo apt-get install -y timeshift                # snapshots of the OS, not of your data
 ```
 
-Take a Timeshift snapshot after the Jarvis install works, so a bad update is a
-one-click rollback. The vault (`~/Brain`) is backed up separately: Jarvis can
+Take a Timeshift snapshot after the Flint install works, so a bad update is a
+one-click rollback. The vault (`~/Brain`) is backed up separately: Flint can
 push it to a private GitHub repo on a schedule (see `04-full-power-agent.md`).
 
 ## K. Now run the bootstrap
@@ -183,7 +183,7 @@ cd ~/site && git checkout claude/jarvis-thinkpad-setup-9a3aiv   # skip if alread
 cd jarvis-thinkpad && chmod +x *.sh && ./bootstrap.sh --all
 ```
 
-Log out and in, then continue with `02-jarvis-install.md`.
+Log out and in, then continue with `02-flint-install.md`.
 
 ## Known ThinkPad-on-Linux notes
 

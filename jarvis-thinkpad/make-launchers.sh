@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# make-launchers.sh: Linux desktop launchers for the Jarvis stack.
+# make-launchers.sh: Linux desktop launchers for the Flint stack.
 # The fullstack-agent wizard only knows macOS .command and Windows .bat files;
 # this writes .desktop entries that open a visible terminal, with the PATH the
 # launchers need (claude and uv live in ~/.local/bin, which a bare desktop
 # session does not have).
 #
 #   ./make-launchers.sh                 # agent home ~/my-agent, name read from backtalk.json
-#   ./make-launchers.sh ~/my-agent Jarvis
+#   ./make-launchers.sh ~/my-agent Flint
 set -euo pipefail
 HOME_DIR="${1:-$HOME/my-agent}"
 NAME="${2:-}"
-if [ ! -f "$HOME_DIR/CLAUDE.md" ]; then echo "no CLAUDE.md in $HOME_DIR; is Jarvis installed?" >&2; exit 1; fi
+if [ ! -f "$HOME_DIR/CLAUDE.md" ]; then echo "no CLAUDE.md in $HOME_DIR; is Flint installed?" >&2; exit 1; fi
 if [ -z "$NAME" ] && [ -f "$HOME_DIR/backtalk/backtalk.json" ]; then
-  NAME="$(python3 -c "import json;print(json.load(open('$HOME_DIR/backtalk/backtalk.json')).get('name','Jarvis'))")"
+  NAME="$(python3 -c "import json;print(json.load(open('$HOME_DIR/backtalk/backtalk.json')).get('name','Flint'))")"
 fi
-NAME="${NAME:-Jarvis}"
+NAME="${NAME:-Flint}"
 SLUG="$(printf '%s' "$NAME" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$//')"
 
 mkdir -p "$HOME_DIR/bin" "$HOME/.local/share/applications" "$HOME/Desktop"

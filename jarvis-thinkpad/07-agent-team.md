@@ -1,6 +1,6 @@
 # 07. A team of agents that work on their own (and the FounderOS dashboard on top)
 
-You asked: can Jarvis have different agents for different tasks, working on
+You asked: can Flint have different agents for different tasks, working on
 their own, like the Founder OS demo? Yes. But read what the demo's agents really
 are first, because the working-on-their-own part should be built with Claude
 Code's own features, not with the demo's code.
@@ -26,17 +26,17 @@ activity feed, task board, cron list, knowledge graph) with placeholder muscle.
 Claude Code has the muscle. The plan: build the team in Claude Code, and add the
 demo as the dashboard only if you want the visuals.
 
-## 2. Layer 1: named specialist agents inside Jarvis (subagents)
+## 2. Layer 1: named specialist agents inside Flint (subagents)
 
 Claude Code subagents are markdown files in `~/my-agent/.claude/agents/`. Each
 has its own system prompt, tool allowlist, model, permission mode, MCP servers,
-preloaded skills and **its own persistent memory**. Jarvis (the main session)
+preloaded skills and **its own persistent memory**. Flint (the main session)
 delegates to them by their `description`, or you address one directly with
 `@agent-<name>`. They run in the background, in parallel (up to 20), and they
 all read `~/my-agent/CLAUDE.md`, so they know the vault and its rules. This is
 the Conductor → departments → workers structure from the demo, with real hands.
 
-Jarvis writes these files; the set below is a starting roster for a personal
+Flint writes these files; the set below is a starting roster for a personal
 business plus the house plus the machine. Adjust names and models freely.
 
 `~/my-agent/.claude/agents/comms.md`
@@ -113,7 +113,7 @@ Locks, alarm and heating setpoints only on an explicit instruction from Valentin
 ```markdown
 ---
 name: sysadmin
-description: The ThinkPad itself. Use for disk, updates, Docker, services, backups, logs, the Jarvis stack's health, and the daily machine report.
+description: The ThinkPad itself. Use for disk, updates, Docker, services, backups, logs, the Flint stack's health, and the daily machine report.
 model: sonnet
 tools: Read, Glob, Grep, Bash, Edit, Write
 permissionMode: acceptEdits
@@ -141,8 +141,8 @@ You are the research agent. Every claim carries its source URL. Deliver a short
 brief with a recommendation, saved to the requesting project's folder.
 ```
 
-How it feels in use: in Jarvis you say "get the inbox triaged and draft the
-weekly finance review while I talk to you about the launch". Jarvis dispatches
+How it feels in use: in Flint you say "get the inbox triaged and draft the
+weekly finance review while I talk to you about the launch". Flint dispatches
 `comms` and `finance` in the background, keeps talking, and reports when they
 finish. `@agent-home-ops turn the office into evening mode` addresses one
 directly. Each agent's `.claude/agent-memory/<name>/MEMORY.md` accumulates what
@@ -157,10 +157,10 @@ session from the shell.
 The `#brain` graph on thefounderos.com (and the demo's `/brain` and `/org`
 pages, built by `lib/knowledge-graph.ts` and `lib/hierarchy.ts`) has five rings:
 
-| Ring | On the site | In the demo's data | In our Jarvis build |
+| Ring | On the site | In the demo's data | In our Flint build |
 | --- | --- | --- | --- |
 | Core | "Obsidian" (the vault) | `self`, the operator | `~/Brain`, the vault; Valentin at the centre |
-| Command | "Command" node above the core | the Conductor agent (router) | **Jarvis**, the main session in `~/my-agent` |
+| Command | "Command" node above the core | the Conductor agent (router) | **Flint**, the main session in `~/my-agent` |
 | Team leads | Comms, Finance, Content, Knowledge, Automations (group icons) | `Department`; "the pillar node IS the department-head agent", `tier: lead` | **Lead subagents**, one per department |
 | Tasks | grey clipboard icons | `SopTask`: title, summary, at least 3 steps, exactly one assignee (the monogamy rule) | **Job notes** in the vault (`<Dept>/Jobs/*.md`), one worker per Job |
 | Workers | green person icons | `Agent` with `parentId` pointing at its lead, `tier: worker` or `specialist` | **Worker subagents** that a lead delegates to |
@@ -168,7 +168,7 @@ pages, built by `lib/knowledge-graph.ts` and `lib/hierarchy.ts`) has five rings:
 
 Claude Code supports exactly this nesting: a subagent can spawn its own
 subagents, three layers deep by default (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`
-raises it). Jarvis → lead → worker is three layers. Subagent folders are scanned
+raises it). Flint → lead → worker is three layers. Subagent folders are scanned
 recursively, so the tree on disk can mirror the org chart:
 
 ```
@@ -223,7 +223,7 @@ touches and delegate each to its owner:
 - reply drafts → the `comms-reply-drafter` subagent
 - pipeline / CRM updates → the `comms-crm-pipeline` subagent
 Run independent pieces in parallel. Check each result against the Job's quality
-bar before accepting it. Reply to Command (Jarvis) with one summary: done, open,
+bar before accepting it. Reply to Command (Flint) with one summary: done, open,
 decisions needed. Log the run in today's daily note. Never send email yourself;
 drafts go to `00 - Inbox/Drafts/` for Valentin.
 ```
@@ -254,12 +254,12 @@ exactly one worker.** New recurring task → new Job note → new worker file �
 one line in the lead.
 
 **The roster file.** Keep `~/my-agent/team.yaml` as the single source of truth
-and let Jarvis generate the agent files from it (and, in section 4, the
+and let Flint generate the agent files from it (and, in section 4, the
 dashboard's seed). Shape:
 
 ```yaml
 operator: Valentin
-command: jarvis
+command: flint
 departments:
   - id: comms
     name: Comms
@@ -295,7 +295,7 @@ picture gets prettier and the work gets slower.
 
 ## 2c. The Command screen: the voice in front, the team on the side
 
-You asked for one main screen for Jarvis's voice with the team structure beside
+You asked for one main screen for Flint's voice with the team structure beside
 it, zoomable when you want it. That is the **Command face**, shipped ready to
 apply in `command-face/` (see its README). It is a plugin face for Jared's
 ai-visualizer: the circuit board runs full screen in the big pane, the org chart
@@ -306,7 +306,7 @@ It reads two small files next to it: `team.json`, generated from
 `~/my-agent/team.yaml` by `bin/team-sync.py`, and `live.json`, written by
 `bin/team-live.py` from the `SubagentStart` / `SubagentStop` / `UserPromptSubmit`
 / `Stop` hooks, so leads and workers light up green while they actually run and
-Command breathes with the voice bus. Install with one command once Jarvis exists:
+Command breathes with the voice bus. Install with one command once Flint exists:
 
 ```bash
 ~/site/jarvis-thinkpad/command-face/install.sh
@@ -321,28 +321,28 @@ disagree.
 
 A subagent definition can be the whole session with `--agent <name>`, and `-p`
 runs it headless. A systemd user timer in `~/my-agent` therefore runs any agent
-on a schedule, as Jarvis, with the vault, and puts the result in the vault plus
-a notification. Two examples; Jarvis creates the rest on request.
+on a schedule, as Flint, with the vault, and puts the result in the vault plus
+a notification. Two examples; Flint creates the rest on request.
 
-`~/.config/systemd/user/jarvis-morning.service`
+`~/.config/systemd/user/flint-morning.service`
 
 ```ini
 [Unit]
-Description=Jarvis morning brief
+Description=Flint morning brief
 [Service]
 Type=oneshot
 WorkingDirectory=%h/my-agent
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=%h/.local/bin/claude -p "Run the morning routine: sysadmin writes the machine report; comms triages the inbox; then write '00 - Inbox/Morning Brief.md' with priorities from Active Priorities, yesterday's daily note, the machine report and the inbox triage. Finish with notify-send 'Jarvis' 'Morning brief ready'." --permission-mode acceptEdits --max-turns 60
+ExecStart=%h/.local/bin/claude -p "Run the morning routine: sysadmin writes the machine report; comms triages the inbox; then write '00 - Inbox/Morning Brief.md' with priorities from Active Priorities, yesterday's daily note, the machine report and the inbox triage. Finish with notify-send 'Flint' 'Morning brief ready'." --permission-mode acceptEdits --max-turns 60
 StandardOutput=append:%h/my-agent/logs/morning.log
 StandardError=append:%h/my-agent/logs/morning.log
 ```
 
-`~/.config/systemd/user/jarvis-morning.timer`
+`~/.config/systemd/user/flint-morning.timer`
 
 ```ini
 [Unit]
-Description=Jarvis morning brief, weekdays 07:00
+Description=Flint morning brief, weekdays 07:00
 [Timer]
 OnCalendar=Mon..Fri 07:00
 Persistent=true
@@ -350,7 +350,7 @@ Persistent=true
 WantedBy=timers.target
 ```
 
-`~/.config/systemd/user/jarvis-finance.service` (weekly, Friday 18:00, timer analogous)
+`~/.config/systemd/user/flint-finance.service` (weekly, Friday 18:00, timer analogous)
 
 ```ini
 [Service]
@@ -360,7 +360,7 @@ Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=%h/.local/bin/claude -p "Produce this week's finance review from the Finance folder and update the ledger." --agent finance --permission-mode acceptEdits --max-turns 40
 ```
 
-Enable: `mkdir -p ~/my-agent/logs && systemctl --user daemon-reload && systemctl --user enable --now jarvis-morning.timer`.
+Enable: `mkdir -p ~/my-agent/logs && systemctl --user daemon-reload && systemctl --user enable --now flint-morning.timer`.
 List: `systemctl --user list-timers`. The user session must exist for user
 timers to fire when nobody is logged in: `sudo loginctl enable-linger valentin`
 (auto-login from `01` covers it too).
@@ -380,7 +380,7 @@ serves with the timer name and the log path.
 
 If you want the demo's screens (org chart, agent roster with Run buttons,
 activity feed, task board, cron list, brain graph) showing YOUR team, run it on
-the ThinkPad and have Jarvis make three changes. It is MIT licensed, so this is
+the ThinkPad and have Flint make three changes. It is MIT licensed, so this is
 allowed, and the code is clean TypeScript with a test per module.
 
 ```bash
@@ -391,7 +391,7 @@ npm run dev            # http://localhost:4100  (the /brain graph now reads your
 ```
 
 **Change 0, data only, and it draws the picture from the screenshot with YOUR
-team:** a script `scripts/seed-from-jarvis.ts` that reads `~/my-agent/team.yaml`
+team:** a script `scripts/seed-from-flint.ts` that reads `~/my-agent/team.yaml`
 and writes the demo's tables in the shape `lib/seed.ts` uses: one `Department`
 per department (`id: dept-comms`, name, slug, tagline, color, order), one
 `Agent` per lead (`tier: lead`, `parentId: null`) and per worker (`tier: worker`,
@@ -401,7 +401,7 @@ Change the core label from `Alex` to `Valentin` in `lib/knowledge-graph.ts`.
 No model key needed: `/brain` and `/org` then show Command, the leads, the
 workers, their Jobs and their tools, and the graph's directory lists them.
 
-The three code changes, for Jarvis (TDD: failing test first, `npm test` and
+The three code changes, for Flint (TDD: failing test first, `npm test` and
 `npm run typecheck` green before done; the repo's `CLAUDE.md` and `AGENTS.md`
 carry the house rules; note `tests/seed.test.ts` enforces that every seeded
 agent has a runtime `run()` and the one-worker-one-task rule, so change 2 and
@@ -426,16 +426,16 @@ the agents update through `POST /api/agents/work`, and `/brain` maps `~/Brain`.
 The G-Brain vector search stays unavailable (closed source); the local grep
 fallback and the vault's own indexes do the job.
 
-Honest sizing: an afternoon for Jarvis for changes 1 and 2, another for 3.
+Honest sizing: an afternoon for Flint for changes 1 and 2, another for 3.
 Worth it if you like the visuals; the team works without it.
 
 ## 5. Recommended order
 
-1. Sections 2 and 2b: Jarvis writes `team.yaml` with you (departments, leads,
+1. Sections 2 and 2b: Flint writes `team.yaml` with you (departments, leads,
    workers, Jobs), runs `command-face/install.sh` and `team-sync.py --agents`,
    and you test each lead with one real request in a typed session. Half a day.
 2. Section 3: the morning timer first; add one timer per recurring job that has
    already gone right by hand three times.
 3. Section 4: only after the team is doing real work.
 4. Vault: `Resources/Agent Team.md` (roster, what each may touch, its memory
-   path) and one note per timer. Jarvis keeps it current.
+   path) and one note per timer. Flint keeps it current.

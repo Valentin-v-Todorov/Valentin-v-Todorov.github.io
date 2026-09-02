@@ -72,7 +72,7 @@ def validate(team):
     if not isinstance(team, dict):
         return ["roster is not a mapping"]
     team.setdefault("operator", "Valentin")
-    team.setdefault("command", "jarvis")
+    team.setdefault("command", "flint")
     depts = team.get("departments") or []
     if not depts:
         problems.append("no departments")

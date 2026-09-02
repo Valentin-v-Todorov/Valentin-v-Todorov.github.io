@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bootstrap.sh: everything the Jarvis stack needs on Ubuntu/Debian, in one idempotent run.
+# bootstrap.sh: everything the Flint stack needs on Ubuntu/Debian, in one idempotent run.
 #
 #   ./bootstrap.sh            core only (apt deps, uv, Claude Code, sandbox deps)
 #   ./bootstrap.sh --all      core + Obsidian + Chrome + Docker + Tailscale + Node + Claude Desktop
@@ -249,5 +249,5 @@ NEXT STEPS
 2. claude            -> first-run login: "Claude account with subscription", then /exit
 3. In a NEW terminal, Jared's installer:
    mkdir -p ~/my-agent && cd ~/my-agent && git clone https://github.com/jaredrhod/fullstack-agent && cd fullstack-agent && claude "set me up"
-   Answers: 02-jarvis-install.md. Or let the conductor walk you: cd ~/site/jarvis-thinkpad && claude "set up my thinkpad"
+   Answers: 02-flint-install.md. Or let the conductor walk you: cd ~/site/jarvis-thinkpad && claude "set up my thinkpad"
 NEXTSTEPS

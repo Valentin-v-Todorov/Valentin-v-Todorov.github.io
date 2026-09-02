@@ -1,4 +1,4 @@
-# 06. thefounderos.com, the `#brain` link, and how it relates to Jarvis
+# 06. thefounderos.com, the `#brain` link, and how it relates to Flint
 
 ## What the site is
 
@@ -53,14 +53,14 @@ npm test && npm run typecheck                                 # the suite must s
 ```
 
 Point its Obsidian connector at `~/Brain` and the `/brain` page reads your real
-vault. It is a dashboard, not an agent: Jarvis stays the agent.
+vault. It is a dashboard, not an agent: Flint stays the agent.
 
-## How it overlaps with Jarvis, and the recommendation
+## How it overlaps with Flint, and the recommendation
 
 | | ai-memory-vault (Jared) | Founder OS (Bennett) |
 | --- | --- | --- |
 | Memory | Plain markdown in Obsidian, indexes and wikilinks, no database, any AI reads it | Markdown plus a vector index and a review-gated fact store (closed), surfaced in a web graph |
-| Agent | Claude Code in `~/my-agent`, one identity (Jarvis), voice and face | Named agent personas per department, run from a web app, LLM via Vercel AI Gateway |
+| Agent | Claude Code in `~/my-agent`, one identity (Flint), voice and face | Named agent personas per department, run from a web app, LLM via Vercel AI Gateway |
 | Business ops | "Jobs" notes per recurring task; the marketing skill | 20 "encoded tools" (CRM, finance, PM) taught live |
 | Cost | Free + your Claude plan | Cohort price (not listed) or $5,000 VIP + about $260/month runtime |
 
@@ -70,12 +70,12 @@ today, for free, and it is what this whole guide builds. The Founder OS demo
 is worth an evening for its UI and its connector list; the cohort is a
 teaching product, worth it only if you want the live sessions. The "encoded
 tools" (CRM-OS, Finance-OS) are exactly what Jared's "Jobs" and project folders
-become once Jarvis has your real business in the vault.
+become once Flint has your real business in the vault.
 
-Suggested first business "Jobs" for Jarvis, modelled on Founder OS's tool list:
+Suggested first business "Jobs" for Flint, modelled on Founder OS's tool list:
 CRM (contacts, deals, pipeline in `02 - <Business>/CRM/`), weekly finance
 review, content pipeline, client delivery checklist, and a `context.md`-style
-one-pager (offer, customers, calendar, how I decide) that Jarvis reads before
+one-pager (offer, customers, calendar, how I decide) that Flint reads before
 any business decision. The `ai-marketing-skills` files already cover funnels,
 copy, email and ads.
 

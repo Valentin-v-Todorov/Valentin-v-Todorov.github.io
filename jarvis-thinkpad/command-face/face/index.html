@@ -163,7 +163,7 @@ const R1 = 1, RJ = 1.62, R2 = 2.25, R3 = 3.15;
 function layout() {
   nodes = []; edges = []; byName = new Map();
   const depts = (team.departments || []).filter(d => d && d.name);
-  const cmd = { id: "cmd", kind: "cmd", name: team.command || "jarvis", label: (team.command || "JARVIS").toUpperCase(),
+  const cmd = { id: "cmd", kind: "cmd", name: team.command || "flint", label: (team.command || "FLINT").toUpperCase(),
                 x: 0, y: 0, r: 0.24, desc: `Command · ${team.operator || ""}`.trim() };
   nodes.push(cmd); byName.set(cmd.name.toLowerCase(), cmd);
   const n = Math.max(1, depts.length), sector = Math.PI * 2 / n;

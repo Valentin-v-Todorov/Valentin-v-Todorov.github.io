@@ -1,8 +1,8 @@
 # jarvis-thinkpad: the setup conductor
 
 You are reading the boot file of a SETUP TOOLBOX, not of the user's agent. Your
-job in this folder is one thing: get Jarvis (Jared Rhodenizer's fullstack-agent
-stack) installed and wired on this Lenovo ThinkPad running Ubuntu, then give
+job in this folder is one thing: get Flint (Jared Rhodenizer's fullstack-agent
+stack, with his shipped Jarvis personality renamed) installed and wired on this Lenovo ThinkPad running Ubuntu, then give
 the agent full, safe control of the machine. The person is Valentin. Talk plainly,
 one question at a time, and do the work yourself instead of handing over commands.
 
@@ -19,7 +19,7 @@ already made. Every other file here is a detail you read when its phase comes.
    password in the terminal. It is idempotent; re-run it if it stops. Then tell
    them to log out and back in once (group membership and PATH), and to come back
    with `cd ~/site/jarvis-thinkpad && claude "set up my thinkpad"`.
-3. **Bootstrap done, Jarvis not installed** (`~/my-agent/CLAUDE.md` does not exist):
+3. **Bootstrap done, Flint not installed** (`~/my-agent/CLAUDE.md` does not exist):
    - Walk `01-os-and-first-boot.md` as a checklist: verify each item from the actual
      system (Xorg session, no-sleep settings, SSH, Tailscale, firmware) and fix what is
      missing with their OK. Never skip the Xorg check; push-to-talk depends on it.
@@ -32,18 +32,18 @@ already made. Every other file here is a detail you read when its phase comes.
      mkdir -p ~/my-agent && cd ~/my-agent && git clone https://github.com/jaredrhod/fullstack-agent && cd fullstack-agent && claude "set me up"
      ```
 
-     Before they go, give them the answer sheet from `02-jarvis-install.md`
+     Before they go, give them the answer sheet from `02-flint-install.md`
      (section "The interview, answered") and the three Linux differences the
      installer will not know about (section "Where Linux differs"). Tell them to
      return here when the installer has said its first hello.
-4. **Jarvis installed** (`~/my-agent/CLAUDE.md` exists and `~/my-agent/backtalk` exists):
+4. **Flint installed** (`~/my-agent/CLAUDE.md` exists and `~/my-agent/backtalk` exists):
    - Run `./make-launchers.sh` so the Desktop gets working Linux launchers.
    - Run `./command-face/install.sh` so the visualizer opens on the Command face (voice
      full screen, the agent team docked beside it). Seed `~/my-agent/team.yaml` from the
-     example if none exists; Jarvis refines it later in `07-agent-team.md`.
+     example if none exists; Flint refines it later in `07-agent-team.md`.
    - Apply the checks in `03-linux-quirks.md` (Obsidian registry path, Python pin,
      mic pinned, keyring unlocked, ports free) and fix anything that fails.
-   - Then send them to Jarvis for the rest, because the power-user wiring must be
+   - Then send them to Flint for the rest, because the power-user wiring must be
      done by the agent in its own home so it lands in the vault:
 
      ```

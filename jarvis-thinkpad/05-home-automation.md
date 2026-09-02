@@ -1,8 +1,8 @@
-# 05. Home automation: Home Assistant on the ThinkPad, wired into Jarvis
+# 05. Home automation: Home Assistant on the ThinkPad, wired into Flint
 
-Home Assistant (HA) is the hub; Jarvis talks to it through HA's own **Model
+Home Assistant (HA) is the hub; Flint talks to it through HA's own **Model
 Context Protocol Server** integration, so "turn off the kitchen lights" from the
-voice line becomes a tool call, and Jarvis can also edit HA's YAML because he has
+voice line becomes a tool call, and Flint can also edit HA's YAML because he has
 the files.
 
 ## 1. Install Home Assistant Container (Docker)
@@ -47,23 +47,23 @@ ThinkPad's VT-x is on from `01` section C.
 ## 2. Turn on the MCP server in Home Assistant
 
 1. Settings → Devices & services → Add integration → **Model Context Protocol Server**.
-2. Settings → Voice assistants → **Expose**: tick every entity Jarvis may control.
+2. Settings → Voice assistants → **Expose**: tick every entity Flint may control.
    The MCP server only ever sees exposed entities. Start with lights, switches,
    climate, media players; leave locks and alarms unexposed until you trust it.
 3. Your profile (bottom left) → Security → **Long-lived access tokens** → create
-   one named `jarvis`. Copy it once; it is shown once.
-4. Store it outside any file Jarvis writes docs into:
+   one named `flint`. Copy it once; it is shown once.
+4. Store it outside any file Flint writes docs into:
    ```bash
-   mkdir -p ~/.config/jarvis && chmod 700 ~/.config/jarvis
-   printf 'HA_TOKEN=%s\n' '<paste>' > ~/.config/jarvis/ha.env && chmod 600 ~/.config/jarvis/ha.env
-   grep -q 'jarvis/ha.env' ~/.bashrc || echo 'set -a; . ~/.config/jarvis/ha.env; set +a' >> ~/.bashrc
+   mkdir -p ~/.config/flint && chmod 700 ~/.config/flint
+   printf 'HA_TOKEN=%s\n' '<paste>' > ~/.config/flint/ha.env && chmod 600 ~/.config/flint/ha.env
+   grep -q 'flint/ha.env' ~/.bashrc || echo 'set -a; . ~/.config/flint/ha.env; set +a' >> ~/.bashrc
    ```
-   (Valentin types the paste, not Jarvis. The token never goes in the chat.)
+   (Valentin types the paste, not Flint. The token never goes in the chat.)
 
-## 3. Connect Jarvis to it
+## 3. Connect Flint to it
 
 HA serves MCP at `http://127.0.0.1:8123/api/mcp` over streamable HTTP with a
-bearer token. In `~/my-agent/.mcp.json` (project scope, so only Jarvis has it),
+bearer token. In `~/my-agent/.mcp.json` (project scope, so only Flint has it),
 with the token pulled from the environment:
 
 ```json
@@ -93,7 +93,7 @@ this path): `uv tool install git+https://github.com/sparfenyuk/mcp-proxy`, then
 ```
 
 The voice session (backtalk) runs the Agent SDK in `~/my-agent`, so it loads the
-same `.mcp.json`: "Jarvis, kill the lights in the office" works by voice once the
+same `.mcp.json`: "Flint, kill the lights in the office" works by voice once the
 typed session works.
 
 ## 4. Beyond the MCP tools
@@ -101,11 +101,11 @@ typed session works.
 - **REST API** for anything the Assist tools do not cover:
   `curl -s -H "Authorization: Bearer $HA_TOKEN" http://127.0.0.1:8123/api/states | jq '.[].entity_id'`.
 - **Automations and dashboards as files**: `~/homeassistant/automations.yaml`,
-  `scripts.yaml`, `configuration.yaml`. Jarvis can write them, then reload with
+  `scripts.yaml`, `configuration.yaml`. Flint can write them, then reload with
   a REST call (`POST /api/services/automation/reload`). Validate first:
   `docker exec homeassistant python -m homeassistant --script check_config -c /config`.
 - **Presence and phone**: install the HA companion app on the phone for
-  location and notifications; Jarvis can `notify.mobile_app_<phone>` through the
+  location and notifications; Flint can `notify.mobile_app_<phone>` through the
   REST API.
 - **Vault**: a `Home Automation` project folder with an index, an inventory of
   entities (exposed vs not), and a Job note "Add a new device" with the procedure.
@@ -119,4 +119,4 @@ typed session works.
 - HA's own permission model is the backstop: an unexposed entity cannot be
   touched through MCP even in bypass mode.
 - Never put the token in the vault, a daily note, or `CLAUDE.md`. Reference
-  `~/.config/jarvis/ha.env` by name.
+  `~/.config/flint/ha.env` by name.

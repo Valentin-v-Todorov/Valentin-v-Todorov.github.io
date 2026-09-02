@@ -1,10 +1,10 @@
-# team.yaml: the roster of Jarvis's team. Single source of truth.
+# team.yaml: the roster of Flint's team. Single source of truth.
 #   uv run ~/my-agent/bin/team-sync.py            -> faces/command/team.json (the picture)
 #   uv run ~/my-agent/bin/team-sync.py --agents   -> creates missing .claude/agents/<dept>/<name>.md
 # Rules: worker names are lowercase-with-hyphens and unique; one worker owns one Job;
 # a Job is a note at "<department folder>/Jobs/<job>.md" in the vault.
 operator: Valentin
-command: jarvis
+command: flint
 
 departments:
   - id: comms
@@ -86,7 +86,7 @@ departments:
         tools: [home-assistant, vault]
       - name: automations-machine
         job: Keep the ThinkPad healthy
-        description: "Disk, updates, Docker, services, backups, the Jarvis stack."
+        description: "Disk, updates, Docker, services, backups, the Flint stack."
         tools: [bash, docker, systemd, vault]
       - name: automations-timers
         job: Own the scheduled jobs

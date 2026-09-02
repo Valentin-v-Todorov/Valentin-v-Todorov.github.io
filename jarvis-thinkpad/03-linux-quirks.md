@@ -109,7 +109,7 @@ ElevenLabs also needs `ffmpeg` (installed).
 ## 7. Spotify ducking is macOS only
 
 `backtalk/ducking.py` uses AppleScript; on Linux every call is a no-op, by
-design. If you want music to dip while Jarvis talks, ask him to add a `playerctl`
+design. If you want music to dip while Flint talks, ask him to add a `playerctl`
 equivalent (`playerctl volume 0.3` / restore) in `ducking.py`; the file invites
 that PR.
 
@@ -139,7 +139,7 @@ visualizer alone is harmless (it binds localhost):
 mkdir -p ~/.config/systemd/user
 cat > ~/.config/systemd/user/ai-visualizer.service <<'UNIT'
 [Unit]
-Description=Jarvis face (ai-visualizer)
+Description=Flint face (ai-visualizer)
 After=graphical-session.target
 [Service]
 WorkingDirectory=%h/my-agent/ai-visualizer
@@ -164,7 +164,7 @@ and by the two hooks in `~/my-agent/.claude/settings.json`.
 
 ## 11. The "mechanic" rule and where the guides live
 
-`~/my-agent/CLAUDE.md` tells Jarvis to fix the stack himself. The guides he reads:
+`~/my-agent/CLAUDE.md` tells Flint to fix the stack himself. The guides he reads:
 `fullstack-agent/TROUBLESHOOTING.md` (cross-piece), `backtalk/TROUBLESHOOTING.md`
 (voice, with the architecture and the five land mines), `ai-visualizer/TROUBLESHOOTING.md`,
 `barehands/TROUBLESHOOTING.md` (gesture tuning clinic), `ai-memory-vault/TROUBLESHOOTING.md`.
@@ -183,5 +183,5 @@ own permission mode (see `04`). The two are independent.
 ## 13. Firewall
 
 `ufw` from `01` allows only SSH (and 8123 if you open it for Home Assistant on
-the LAN). The Jarvis servers bind to localhost, so nothing else is exposed.
+the LAN). The Flint servers bind to localhost, so nothing else is exposed.
 Tailscale traffic bypasses `ufw` rules for its own interface.

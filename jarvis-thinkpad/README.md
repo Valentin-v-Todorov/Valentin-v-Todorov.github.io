@@ -1,7 +1,7 @@
-# Jarvis on the ThinkPad: the complete build
+# Flint on the ThinkPad: the complete build
 
 Everything needed to turn a Lenovo ThinkPad into an always-on Linux workstation
-running "Jarvis": a Claude Code agent with persistent memory, a voice, a face,
+running "Flint": a Claude Code agent with persistent memory, a voice, a face,
 optional hand tracking, and full control of the machine (apps, files, home
 automation). Researched on 2026-09-02 from the sources listed at the bottom.
 
@@ -9,29 +9,33 @@ Read this file first. It is the map. The other files are the detail.
 
 | File | What it is |
 | --- | --- |
-| `README.md` | This map: what Jarvis is, the OS decision, the install order, the quick start |
+| `README.md` | This map: what Flint is, the OS decision, the install order, the quick start |
 | `CLAUDE.md` | Boot file. Open Claude Code inside this folder on the ThinkPad and it becomes the setup conductor |
 | `01-os-and-first-boot.md` | Installing Ubuntu on the ThinkPad and the first-boot checklist (BIOS, Xorg, power, SSH, Tailscale) |
 | `bootstrap.sh` | One idempotent script: every system package, uv, Claude Code, Obsidian, Chrome, Docker, Tailscale, Node |
-| `02-jarvis-install.md` | Running Jared's `fullstack-agent` installer on Linux, with the interview answers pre-decided and every config file explained |
+| `02-flint-install.md` | Running Jared's `fullstack-agent` installer on Linux, with the interview answers pre-decided and every config file explained |
 | `make-launchers.sh` | Creates the Linux desktop launchers (Chat / Talk / Barehands / Update) the installer only knows how to make for macOS and Windows |
 | `03-linux-quirks.md` | Every Linux-specific trap found in the code: push-to-talk on Wayland, Obsidian registry path, Python version, audio, keyring, ports |
-| `04-full-power-agent.md` | Giving Jarvis full control of the machine safely: permission modes, sandbox, Remote Control from the phone, MCP servers, app control, scheduled work |
-| `05-home-automation.md` | Home Assistant on the ThinkPad and wiring it into Jarvis through the Home Assistant MCP server |
+| `04-full-power-agent.md` | Giving Flint full control of the machine safely: permission modes, sandbox, Remote Control from the phone, MCP servers, app control, scheduled work |
+| `05-home-automation.md` | Home Assistant on the ThinkPad and wiring it into Flint through the Home Assistant MCP server |
 | `06-founder-os-and-brain.md` | What thefounderos.com and the `#brain` link are, the open-source FounderOS demo, and how it overlaps with the memory vault |
 | `command-face/` | Ready-to-apply fifth face for the visualizer: the voice full screen, the agent team docked beside it, live, zoomable (`install.sh`, roster `team.example.yaml`, helpers) |
-| `07-agent-team.md` | The agent org chart from the Founder OS brain graph rebuilt with Claude Code: Jarvis as Command, lead subagents per department, worker subagents owning one Job each, schedules that run them on their own, and the FounderOS dashboard as an optional face |
+| `07-agent-team.md` | The agent org chart from the Founder OS brain graph rebuilt with Claude Code: Flint as Command, lead subagents per department, worker subagents owning one Job each, schedules that run them on their own, and the FounderOS dashboard as an optional face |
 
 ---
 
-## 1. What "Jarvis" actually is
+## 1. What "Flint" actually is
 
 Jared Rhodenizer (`jaredrhod`) publishes five open repos. "Jarvis" is his name for
-four of them assembled by the fifth. All code was read end to end for this guide.
+four of them assembled by the fifth, and the name of the personality that ships in
+the memory piece. Ours is called **Flint**: the installer's identity door B keeps
+Jared's personality and changes the name. (This folder and the git branch keep
+`jarvis-thinkpad` in their names; only the agent is renamed.) All code was read end
+to end for this guide.
 
 | Piece | Repo | What it is, literally | Runs on | License |
 | --- | --- | --- | --- | --- |
-| The mind | `jaredrhod/ai-memory-vault` | A wizard (`ai-memory-vault.md`) that Claude Code executes. It installs Obsidian, creates a vault of plain markdown, writes a `CLAUDE.md` boot config with Jared's actual Jarvis personality, a `VAULT-INDEX.md`, daily notes, `Active Priorities.md`, folder indexes and "Jobs". No vector database. | Any file-reading AI; built for Claude Code | CC BY-SA 4.0 |
+| The mind | `jaredrhod/ai-memory-vault` | A wizard (`ai-memory-vault.md`) that Claude Code executes. It installs Obsidian, creates a vault of plain markdown, writes a `CLAUDE.md` boot config with Jared's actual Flint personality, a `VAULT-INDEX.md`, daily notes, `Active Priorities.md`, folder indexes and "Jobs". No vector database. | Any file-reading AI; built for Claude Code | CC BY-SA 4.0 |
 | The mouth | `jaredrhod/backtalk` | A Python program. Hold a key, speak, release. faster-whisper transcribes locally, the text goes to a live Claude Agent SDK session running in your agent's folder, the reply streams to Kokoro TTS (local, free) or ElevenLabs. Spoken permission checks, voice console phrases, interrupt handling. | Claude Code only (Agent SDK) | AGPL-3.0 |
 | The face | `jaredrhod/ai-visualizer` | Four full-screen browser pages plus a stdlib Python server on port 8790. It reads three tiny files backtalk writes (`.voice_state`, `.voice_waveform`, `.voice_loading_pid`) and animates. Zero dependencies. | Any AI | AGPL-3.0 |
 | The hands (optional) | `jaredrhod/barehands` | One HTML page plus a stdlib Python server on port 8794. Webcam hand tracking (MediaPipe from CDN) moves notes, images and 3D models on screen. Your AI drives it with `bin/board.sh` and reads it with `bin/board-state.sh`. Needs Chrome. | Any AI | AGPL-3.0 |
@@ -51,7 +55,7 @@ Claude Code reads `~/my-agent/CLAUDE.md` when it starts in that folder, and that
 file points at the vault. That is the whole integration.
 
 ```
-~/my-agent/                     <- Jarvis's HOME. Open Claude Code HERE.
+~/my-agent/                     <- Flint's HOME. Open Claude Code HERE.
   CLAUDE.md                     <- identity + vault path + rules (survives compaction)
   .claude/settings.json         <- hooks that drive the barehands ring (optional)
   fullstack-agent/              <- the installer, start.sh, update.sh
@@ -121,9 +125,9 @@ laptop into a server that never sleeps with the lid closed.
    subscription", `/exit`).
 5. **Run Jared's installer** in a fresh terminal:
    `mkdir -p ~/my-agent && cd ~/my-agent && git clone https://github.com/jaredrhod/fullstack-agent && cd fullstack-agent && claude "set me up"`.
-   Answer the interview with the sheet in `02-jarvis-install.md`.
+   Answer the interview with the sheet in `02-flint-install.md`.
 6. **Run `make-launchers.sh`** for the Linux desktop icons.
-7. **Give Jarvis full power**: `04-full-power-agent.md` (permission mode,
+7. **Give Flint full power**: `04-full-power-agent.md` (permission mode,
    sandbox, Remote Control, MCP servers).
 8. **Home automation**: `05-home-automation.md`.
 9. **The agent team and the Command screen**: named specialists that work on
@@ -157,7 +161,7 @@ cd ~/site/jarvis-thinkpad && claude "set up my thinkpad"
 That second command opens Claude Code with `CLAUDE.md` in this folder as the
 boot file. It becomes the setup conductor: it verifies the bootstrap, walks the
 first-boot checklist with you, then hands you the exact fullstack-agent command
-and the answer sheet, and after Jarvis exists it wires the power-user pieces.
+and the answer sheet, and after Flint exists it wires the power-user pieces.
 
 **Important distinction.** claude.ai/code in a browser runs Claude in Anthropic's
 cloud, not on the ThinkPad. To control the ThinkPad, Claude Code must run ON the
@@ -172,7 +176,7 @@ phone or any browser. See `04-full-power-agent.md`.
 | Question the installer asks | Answer | Why |
 | --- | --- | --- |
 | Your name | Valentin | Used in the greeting "Hello Valentin, what are we working on today?" |
-| Agent identity | Door A: Jarvis as shipped | You asked for Jarvis. Door A is Jared's exact personality (direct, swears freely, calls you "sir"/"boss", pushes back). Pick door C if you want the Jarvis name with a calmer tone |
+| Agent identity | Door B: Jared's personality, renamed **Flint** | Door B keeps Jared's exact personality (direct, swears freely, calls you "sir"/"boss", pushes back) and changes only the name. Pick door C if you want Flint with a calmer tone |
 | Vault | Fresh vault at `~/Brain` | Home folder, not Documents, not cloud-synced. The installer registers it in `~/.config/obsidian/obsidian.json` so Obsidian opens straight into it |
 | Microphone | Push to talk, key `home` | Mic is closed unless the key is held. ThinkPads have a physical Home key. Say "go hands free" later to switch |
 | Voice engine | Kokoro `bm_lewis` (free, local) first | Zero cost, offline. Audition ElevenLabs later if you want the natural voice; the key goes in the GNOME keyring via `secret-tool`, never in a file |

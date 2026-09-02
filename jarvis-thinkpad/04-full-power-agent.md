@@ -43,10 +43,13 @@ reads it back):
     ],
     "additionalDirectories": ["/home/valentin/Brain"]
   },
-  "sandbox": { "enabled": true, "autoAllowBashIfSandboxed": true },
-  "env": { "CLAUDE_CODE_ENABLE_TELEMETRY": "0" }
+  "sandbox": { "enabled": true, "autoAllowBashIfSandboxed": true }
 }
 ```
+
+Do not add `DISABLE_TELEMETRY`, `DO_NOT_TRACK` or
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` to the `env` block: they switch off the
+feature-flag check that Remote Control (section 3) depends on.
 
 Deny rules apply in every mode including bypass. Add to them as you learn what
 you never want automated. Remove `shutdown`/`reboot` from the deny list if you

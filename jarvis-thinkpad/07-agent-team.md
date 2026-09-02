@@ -293,6 +293,30 @@ spawning a `content-fact-checker`) within the three-layer default; raise the
 depth variable only if a real job needs a fourth layer. Deeper than that, the
 picture gets prettier and the work gets slower.
 
+## 2c. The Command screen: the voice in front, the team on the side
+
+You asked for one main screen for Jarvis's voice with the team structure beside
+it, zoomable when you want it. That is the **Command face**, shipped ready to
+apply in `command-face/` (see its README). It is a plugin face for Jared's
+ai-visualizer: the circuit board runs full screen in the big pane, the org chart
+from section 2b is docked on the right, and `T` swaps the focus, `G` zooms the
+team full screen, `Esc` comes back. Click a lead to zoom into its department.
+
+It reads two small files next to it: `team.json`, generated from
+`~/my-agent/team.yaml` by `bin/team-sync.py`, and `live.json`, written by
+`bin/team-live.py` from the `SubagentStart` / `SubagentStop` / `UserPromptSubmit`
+/ `Stop` hooks, so leads and workers light up green while they actually run and
+Command breathes with the voice bus. Install with one command once Jarvis exists:
+
+```bash
+~/site/jarvis-thinkpad/command-face/install.sh
+uv run ~/my-agent/bin/team-sync.py --agents     # creates the agent files from the roster
+```
+
+The same `team.yaml` is the roster for sections 2b and 4, so the picture on the
+screen, the subagent files on disk and the demo dashboard (if you add it) never
+disagree.
+
 ## 3. Layer 2: working on their own (schedules)
 
 A subagent definition can be the whole session with `--agent <name>`, and `-p`
@@ -408,8 +432,8 @@ Worth it if you like the visuals; the team works without it.
 ## 5. Recommended order
 
 1. Sections 2 and 2b: Jarvis writes `team.yaml` with you (departments, leads,
-   workers, Jobs), generates the agent files, and you test each lead with one
-   real request in a typed session. Half a day.
+   workers, Jobs), runs `command-face/install.sh` and `team-sync.py --agents`,
+   and you test each lead with one real request in a typed session. Half a day.
 2. Section 3: the morning timer first; add one timer per recurring job that has
    already gone right by hand three times.
 3. Section 4: only after the team is doing real work.

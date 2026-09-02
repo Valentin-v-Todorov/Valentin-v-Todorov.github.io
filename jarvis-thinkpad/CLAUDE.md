@@ -38,6 +38,9 @@ already made. Every other file here is a detail you read when its phase comes.
      return here when the installer has said its first hello.
 4. **Jarvis installed** (`~/my-agent/CLAUDE.md` exists and `~/my-agent/backtalk` exists):
    - Run `./make-launchers.sh` so the Desktop gets working Linux launchers.
+   - Run `./command-face/install.sh` so the visualizer opens on the Command face (voice
+     full screen, the agent team docked beside it). Seed `~/my-agent/team.yaml` from the
+     example if none exists; Jarvis refines it later in `07-agent-team.md`.
    - Apply the checks in `03-linux-quirks.md` (Obsidian registry path, Python pin,
      mic pinned, keyring unlocked, ports free) and fix anything that fails.
    - Then send them to Jarvis for the rest, because the power-user wiring must be

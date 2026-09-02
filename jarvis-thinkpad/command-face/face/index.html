@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<!--
+Command face for ai-visualizer (github.com/jaredrhod/ai-visualizer, AGPL-3.0-or-later).
+Written for the jarvis-thinkpad build. Same license as the visualizer it plugs into.
+
+Layout: the real voice face (the circuit board by default) runs in the big pane,
+and the agent team graph sits in the side pane, reading two small JSON files
+that live next to this page:
+
+  team.json   the roster: command, departments (team leads), workers, jobs, tools
+              (generated from ~/my-agent/team.yaml by bin/team-sync.py)
+  live.json   who is working right now (written by bin/team-live.py from the
+              SubagentStart / SubagentStop / UserPromptSubmit / Stop hooks)
+
+Keys: T focus team / voice · G team full screen · Esc back to voice · H hide the
+team pane · R reload the roster · wheel zoom · drag pan · click a lead to zoom
+into its department · double-click to reset. ?voice=neural swaps the inner face.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Command</title>
+<style>
+  :root{--ink:#e8f0f2;--dim:#5a6a72;--dimmer:#39464e;--green:#3ddc84;--amber:#e7c368;
+        --blue:#5aa9ff;--red:#ff4d5e;--chrome:#1c2f26;--team-w:clamp(340px,30vw,540px);
+        --mono:"SF Mono",Menlo,Consolas,monospace}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;background:#020705;overflow:hidden}
+  body{font-family:var(--mono);color:var(--ink)}
+  #grid{position:fixed;inset:0;display:grid;grid-template-columns:1fr var(--team-w);
+        transition:grid-template-columns .5s cubic-bezier(.2,.8,.2,1)}
+  body.mode-team #grid{grid-template-columns:28% 1fr}
+  body.mode-full #team{position:fixed;inset:0;z-index:20;border-left:0}
+  body.mode-solo #grid{grid-template-columns:1fr 0px}
+  body.mode-solo #team{display:none}
+  #voice{position:relative;overflow:hidden;background:#020705;min-width:0}
+  #voice iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#020705}
+  #team{position:relative;overflow:hidden;min-width:0;display:flex;flex-direction:column;
+        background:#030906;border-left:1px solid var(--chrome)}
+  #thead,#tfoot{flex:0 0 auto;display:flex;align-items:center;gap:8px 10px;padding:8px 14px;flex-wrap:wrap;
+        font-size:10px;letter-spacing:.28em;color:var(--dim);white-space:nowrap}
+  #thead{border-bottom:1px solid #0d1a13}
+  #tfoot{border-top:1px solid #0d1a13;justify-content:space-between}
+  #thead .t{color:var(--ink);letter-spacing:.5em;text-shadow:0 0 12px rgba(120,255,190,.35)}
+  #thead .n{color:#8fe8b8}
+  #thead .n.hot{color:var(--green)}
+  #thead .btns{margin-left:auto;display:flex;gap:6px}
+  button{font:inherit;letter-spacing:.2em;color:#9fb4ac;background:#04100a;border:1px solid var(--chrome);
+         border-radius:3px;padding:4px 8px;cursor:pointer}
+  button:hover{border-color:var(--green);color:var(--ink)}
+  #gwrap{flex:1 1 0;min-height:0;position:relative}
+  #graph{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+  #graph.drag{cursor:grabbing}
+  .lg i{display:inline-block;width:8px;height:8px;border-radius:50%;border:1px solid;margin:0 5px 0 10px;vertical-align:-1px}
+  .lg i.cmd{border-color:#fff}.lg i.lead{border-color:#cfd8dc}.lg i.worker{border-color:var(--green)}
+  .lg i.job{border-color:#8a9aa2;border-radius:1px}.lg i.tool{border-color:var(--blue)}
+  #tip{position:absolute;pointer-events:none;display:none;max-width:280px;padding:8px 10px;
+       background:rgba(3,9,6,.94);border:1px solid var(--chrome);border-radius:4px;
+       font-size:11px;line-height:1.6;color:#c5dccf;z-index:5}
+  #tip b{color:var(--ink);font-weight:normal;letter-spacing:.15em}
+  #tip .k{color:var(--dim)}
+  #detail{position:absolute;left:14px;right:14px;bottom:46px;display:none;padding:10px 12px;
+       background:rgba(3,9,6,.92);border:1px solid var(--chrome);border-radius:4px;
+       font-size:11px;line-height:1.7;color:#c5dccf;z-index:4}
+  #detail b{color:var(--green);font-weight:normal;letter-spacing:.2em}
+  #detail .x{position:absolute;top:6px;right:10px;color:var(--dim);cursor:pointer}
+  #empty{position:absolute;inset:44px 0 40px 0;display:none;align-items:center;justify-content:center;
+       text-align:center;font-size:11px;line-height:2;letter-spacing:.2em;color:var(--dim);padding:20px}
+  body.mode-solo #team{border-left:0}
+</style>
+</head>
+<body class="mode-voice">
+<div id="grid">
+  <div id="voice"><iframe id="inner" allow="microphone; autoplay" title="voice face"></iframe></div>
+  <div id="team">
+    <div id="thead"><span class="t">TEAM</span><span id="tstat" class="n">loading</span>
+      <div class="btns">
+        <button data-act="focus" title="T">FOCUS TEAM</button>
+        <button data-act="full" title="G">FULL</button>
+        <button data-act="reset" title="double-click">RESET</button>
+      </div>
+    </div>
+    <div id="gwrap"><canvas id="graph"></canvas></div>
+    <div id="empty"></div>
+    <div id="tip"></div>
+    <div id="detail"></div>
+    <div id="tfoot">
+      <span class="lg"><i class="cmd"></i>command<i class="lead"></i>lead<i class="worker"></i>worker<i class="job"></i>job<i class="tool"></i>tool</span>
+      <span>T · G · ESC · H · R</span>
+    </div>
+  </div>
+</div>
+<script src="../../core.js"></script>
+<script>
+"use strict";
+/* ------------------------------------------------------------------ setup */
+const Q = new URLSearchParams(location.search);
+const INNER = (Q.get("voice") || "board").replace(/[^a-z0-9_-]/gi, "");
+const innerQ = new URLSearchParams(location.search); innerQ.delete("voice");
+document.getElementById("inner").src = "../" + INNER + "/index.html" +
+  (innerQ.toString() ? "?" + innerQ.toString() : "");
+
+AV.init({ sound: false });          // the inner face plays the thinking sound
+
+const $ = id => document.getElementById(id);
+const cv = $("graph"), g = cv.getContext("2d");
+const tip = $("tip"), detail = $("detail"), empty = $("empty"), tstat = $("tstat");
+const MODES = ["voice", "team", "full", "solo"];
+let mode = "voice";
+function setMode(m) {
+  mode = m;
+  document.body.className = "mode-" + m;
+  document.querySelector('[data-act="focus"]').textContent = m === "voice" ? "FOCUS TEAM" : "FOCUS VOICE";
+  try { localStorage.setItem("cmd_mode", m); } catch (e) {}
+}
+try { const m = localStorage.getItem("cmd_mode"); if (MODES.includes(m) && m !== "solo") setMode(m); } catch (e) {}
+
+/* ------------------------------------------------------------------- data */
+const C = { cmd: [255, 255, 255], lead: [207, 216, 220], worker: [61, 220, 132],
+            job: [138, 154, 162], tool: [90, 169, 255], amber: [231, 195, 104],
+            green: [61, 220, 132], red: [255, 77, 94] };
+let team = null, live = { active: {}, command: "idle" }, nodes = [], edges = [];
+let byName = new Map();
+
+async function loadTeam() {
+  try {
+    const r = await fetch("team.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    team = await r.json();
+    layout();
+    empty.style.display = "none";
+  } catch (e) {
+    team = null; nodes = []; edges = [];
+    empty.style.display = "flex";
+    empty.textContent = "no team.json here yet — describe the team in ~/my-agent/team.yaml, then run: uv run ~/my-agent/bin/team-sync.py";
+  }
+  paintStat();
+}
+async function loadLive() {
+  try {
+    const r = await fetch("live.json", { cache: "no-store" });
+    if (r.ok) live = await r.json();
+  } catch (e) { /* keep last */ }
+  if (!live || typeof live !== "object") live = { active: {}, command: "idle" };
+  live.active = live.active || {};
+  // a worker that never reported stop is treated as done after an hour
+  const now = Date.now() / 1000;
+  for (const [k, ts] of Object.entries(live.active)) if (now - ts > 3600) delete live.active[k];
+  paintStat();
+}
+function paintStat() {
+  if (!team) { tstat.textContent = "no roster"; tstat.className = "n"; return; }
+  const w = nodes.filter(n => n.kind === "worker").length;
+  const l = nodes.filter(n => n.kind === "lead").length;
+  const a = Object.keys(live.active).length;
+  tstat.textContent = `${l} leads · ${w} workers` + (a ? ` · ${a} working` : "");
+  tstat.className = "n" + (a ? " hot" : "");
+}
+
+/* ----------------------------------------------------------------- layout */
+// World units: command at the origin, leads on R1, jobs on RJ, workers on R2, tools on R3.
+const R1 = 1, RJ = 1.62, R2 = 2.25, R3 = 3.15;
+function layout() {
+  nodes = []; edges = []; byName = new Map();
+  const depts = (team.departments || []).filter(d => d && d.name);
+  const cmd = { id: "cmd", kind: "cmd", name: team.command || "jarvis", label: (team.command || "JARVIS").toUpperCase(),
+                x: 0, y: 0, r: 0.24, desc: `Command · ${team.operator || ""}`.trim() };
+  nodes.push(cmd); byName.set(cmd.name.toLowerCase(), cmd);
+  const n = Math.max(1, depts.length), sector = Math.PI * 2 / n;
+  depts.forEach((d, i) => {
+    const th = -Math.PI / 2 + i * sector;
+    const lead = { id: "lead:" + d.id, kind: "lead", name: d.lead || (d.id + "-lead"), label: d.name,
+                   x: Math.cos(th) * R1, y: Math.sin(th) * R1, r: 0.17, dept: d.id, th,
+                   desc: d.folder ? "folder: " + d.folder : "" };
+    nodes.push(lead); byName.set(lead.name.toLowerCase(), lead);
+    edges.push({ a: cmd, b: lead, kind: "pillar" });
+    const workers = d.workers || [], m = workers.length;
+    const spread = sector * 0.78;
+    const tools = [];
+    workers.forEach((w, j) => {
+      const a = th + (m === 1 ? 0 : (j - (m - 1) / 2) * (spread / Math.max(1, m - 1)));
+      const wn = { id: "w:" + w.name, kind: "worker", name: w.name, label: w.name,
+                   x: Math.cos(a) * R2, y: Math.sin(a) * R2, r: 0.13, dept: d.id,
+                   job: w.job || "", tools: w.tools || [], desc: w.description || "" };
+      nodes.push(wn); byName.set(wn.name.toLowerCase(), wn);
+      if (w.job) {
+        const jn = { id: "j:" + w.name, kind: "job", name: w.job, label: w.job,
+                     x: Math.cos(a) * RJ, y: Math.sin(a) * RJ, r: 0.075, dept: d.id, worker: wn };
+        nodes.push(jn);
+        edges.push({ a: lead, b: jn, kind: "sop" }); edges.push({ a: jn, b: wn, kind: "does" });
+      } else {
+        edges.push({ a: lead, b: wn, kind: "member" });
+      }
+      for (const t of wn.tools) if (!tools.some(x => x.slug === t)) tools.push({ slug: t, users: [] });
+      for (const t of wn.tools) tools.find(x => x.slug === t).users.push(wn);
+    });
+    const k = tools.length, tspread = sector * 0.86;
+    tools.forEach((t, j) => {
+      const a = th + (k === 1 ? 0 : (j - (k - 1) / 2) * (tspread / Math.max(1, k - 1)));
+      const tn = { id: "t:" + d.id + ":" + t.slug, kind: "tool", name: t.slug, label: t.slug,
+                   x: Math.cos(a) * R3, y: Math.sin(a) * R3, r: 0.09, dept: d.id,
+                   desc: t.users.length + " user" + (t.users.length === 1 ? "" : "s") };
+      nodes.push(tn);
+      for (const u of t.users) edges.push({ a: u, b: tn, kind: "uses" });
+    });
+  });
+}
+
+/* ------------------------------------------------------------------- view */
+let W = 0, H = 0, DPR = 1, base = 100;
+const view = { x: 0, y: 0, s: 1 }, target = { x: 0, y: 0, s: 1 };
+let focusDept = null, hover = null, dragging = null, mouse = null;
+function resize() {
+  const r = $("gwrap").getBoundingClientRect();
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = Math.max(1, r.width | 0); H = Math.max(1, r.height | 0);
+  cv.width = W * DPR; cv.height = H * DPR;
+  base = Math.min(W, H) / 2 * 0.86 / R3;
+}
+new ResizeObserver(resize).observe($("gwrap"));
+resize();
+const sx = x => W / 2 + (x * base + view.x) * view.s;
+const sy = y => H / 2 + (y * base + view.y) * view.s;
+function focusOn(dept) {
+  focusDept = dept;
+  if (!dept) { target.x = 0; target.y = 0; target.s = 1; return; }
+  const lead = nodes.find(n => n.kind === "lead" && n.dept === dept);
+  const mid = (RJ + R2) / 2;
+  target.s = 2.3;
+  target.x = -Math.cos(lead.th) * mid * base;
+  target.y = -Math.sin(lead.th) * mid * base;
+}
+function nodeAt(px, py) {
+  let best = null, bd = 1e9;
+  for (const n of nodes) {
+    const rr = Math.max(8, n.r * base * view.s) + 4;
+    const d = Math.hypot(sx(n.x) - px, sy(n.y) - py);
+    if (d < rr && d < bd) { best = n; bd = d; }
+  }
+  return best;
+}
+
+/* --------------------------------------------------------------- drawing */
+function glyph(kind, x, y, r, col, fill) {
+  g.strokeStyle = col; g.lineWidth = Math.max(1, r * 0.14);
+  if (kind === "job") {                       // a clipboard
+    g.beginPath(); g.rect(x - r * 0.75, y - r, r * 1.5, r * 2); g.stroke();
+    g.beginPath(); g.moveTo(x - r * 0.4, y - r * 0.3); g.lineTo(x + r * 0.4, y - r * 0.3);
+    g.moveTo(x - r * 0.4, y + r * 0.1); g.lineTo(x + r * 0.4, y + r * 0.1); g.stroke();
+    return;
+  }
+  g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2);
+  if (fill) { g.fillStyle = fill; g.fill(); }
+  g.stroke();
+  if (kind === "tool") {                      // a small hex bolt
+    g.beginPath();
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; g.lineTo(x + Math.cos(a) * r * 0.42, y + Math.sin(a) * r * 0.42); }
+    g.closePath(); g.stroke();
+  } else if (kind === "lead") {               // two heads: a team
+    g.beginPath(); g.arc(x - r * 0.22, y - r * 0.18, r * 0.2, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.arc(x + r * 0.24, y - r * 0.14, r * 0.16, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.arc(x, y + r * 0.42, r * 0.5, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+  } else {                                    // one head: a worker / command
+    g.beginPath(); g.arc(x, y - r * 0.2, r * 0.24, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.arc(x, y + r * 0.5, r * 0.5, Math.PI * 1.12, Math.PI * 1.88); g.stroke();
+  }
+}
+let t0 = performance.now(), clock = 0;
+function frame(dt) {
+  AV.tick(dt);
+  clock += dt / 1000;
+  // ease the view
+  const k = Math.min(1, dt / 220);
+  view.x += (target.x - view.x) * k; view.y += (target.y - view.y) * k; view.s += (target.s - view.s) * k;
+
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  g.clearRect(0, 0, W, H);
+  // faint grid, like the reference
+  g.strokeStyle = "rgba(61,220,132,.06)"; g.lineWidth = 1;
+  const step = 48 * view.s;
+  for (let x = (W / 2 + view.x * view.s) % step; x < W; x += step) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = (H / 2 + view.y * view.s) % step; y < H; y += step) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  if (!team) return;
+
+  const active = live.active || {};
+  const isActive = n => n.kind === "worker" ? !!active[n.name] :
+                        n.kind === "lead" ? (!!active[n.name] || nodes.some(w => w.kind === "worker" && w.dept === n.dept && active[w.name])) :
+                        n.kind === "job" ? !!active[n.worker.name] : false;
+  const deptDim = d => focusDept && d && d !== focusDept ? 0.22 : 1;
+  const pulse = 0.55 + 0.45 * Math.sin(clock * 5);
+
+  // rings
+  g.strokeStyle = "rgba(61,220,132,.07)";
+  for (const R of [R1, RJ, R2, R3]) { g.beginPath(); g.arc(sx(0), sy(0), R * base * view.s, 0, Math.PI * 2); g.stroke(); }
+  // edges
+  for (const e of edges) {
+    const on = isActive(e.a) && (e.b.kind === "tool" || isActive(e.b)) || (e.kind === "pillar" && isActive(e.b));
+    const dim = Math.min(deptDim(e.a.dept), deptDim(e.b.dept));
+    g.strokeStyle = on ? AV.util.rgba(C.green, 0.55 * dim) : `rgba(120,150,140,${0.22 * dim})`;
+    g.lineWidth = on ? 1.4 : 1;
+    g.beginPath(); g.moveTo(sx(e.a.x), sy(e.a.y)); g.lineTo(sx(e.b.x), sy(e.b.y)); g.stroke();
+    if (on) {                                  // a travelling pulse on live edges
+      const p = (clock * 0.6 + e.a.x * 0.13) % 1;
+      const px = sx(e.a.x + (e.b.x - e.a.x) * p), py = sy(e.a.y + (e.b.y - e.a.y) * p);
+      g.fillStyle = AV.util.rgba(C.green, 0.9 * dim); g.beginPath(); g.arc(px, py, 2.2, 0, Math.PI * 2); g.fill();
+    }
+  }
+  // nodes, outer first so the centre draws on top
+  const order = { tool: 0, job: 1, worker: 2, lead: 3, cmd: 4 };
+  const sorted = [...nodes].sort((a, b) => order[a.kind] - order[b.kind]);
+  g.font = `${Math.max(9, 10 * Math.min(1.4, view.s))}px ${getComputedStyle(document.body).fontFamily}`;
+  g.textAlign = "center"; g.textBaseline = "top";
+  for (const n of sorted) {
+    const x = sx(n.x), y = sy(n.y);
+    const dim = deptDim(n.dept);
+    let r = Math.max(6, n.r * base * view.s);
+    const on = isActive(n);
+    let col = C[n.kind] || C.job, fill = null;
+    if (n === hover) col = C.amber;
+    if (n.kind === "cmd") {
+      // the command node mirrors the voice bus, or the typed session's hook state
+      const st = AV.state !== "idle" ? AV.state : (live.command === "thinking" ? "thinking" : "idle");
+      const scol = st === "listening" ? C.amber : st === "speaking" || st === "thinking" ? C.green : C.cmd;
+      const glow = st === "speaking" ? 0.35 + AV.env * 0.65 : st === "idle" ? 0.25 : pulse;
+      g.shadowColor = AV.util.rgba(scol, 0.9); g.shadowBlur = 18 * glow;
+      if (st === "speaking") {                  // ripples with the voice
+        for (let i = 1; i <= 3; i++) {
+          g.strokeStyle = AV.util.rgba(scol, 0.35 * AV.env / i); g.lineWidth = 1;
+          g.beginPath(); g.arc(x, y, r * (1 + i * 0.45 * (0.5 + AV.env)), 0, Math.PI * 2); g.stroke();
+        }
+      }
+      if (st === "thinking") {                  // a rotating arc
+        g.strokeStyle = AV.util.rgba(scol, 0.9); g.lineWidth = 2;
+        g.beginPath(); g.arc(x, y, r * 1.35, clock * 3, clock * 3 + Math.PI * 0.7); g.stroke();
+      }
+      glyph("cmd", x, y, r, AV.util.rgba(scol, 1), "rgba(2,7,5,.9)");
+      g.shadowBlur = 0;
+      g.fillStyle = "#fff"; g.fillText(AV.name || n.label, x, y + r + 6);
+      continue;
+    }
+    if (on) { g.shadowColor = AV.util.rgba(C.green, 0.9); g.shadowBlur = 14 * pulse; col = C.green; fill = AV.util.rgba(C.green, 0.18 * pulse); }
+    glyph(n.kind, x, y, r, AV.util.rgba(col, 0.95 * dim), fill || "rgba(3,9,6,.85)");
+    g.shadowBlur = 0;
+    const showLabel = n === hover || n.kind === "lead" || (on && n.kind !== "job") ||
+      (n.kind === "worker" && (view.s > 1.35 || focusDept === n.dept)) ||
+      (n.kind === "tool" && (view.s > 2.2 || focusDept === n.dept));
+    if (showLabel) {
+      // the label sits on the side of the node that faces AWAY from the centre,
+      // so a lead's name never lands on the command node or on its own workers
+      const outward = n.y < -0.05 ? -1 : 1;
+      g.textBaseline = outward < 0 ? "bottom" : "top";
+      g.fillStyle = n.kind === "lead" ? `rgba(232,240,242,${dim})` : AV.util.rgba(col, 0.85 * dim);
+      g.fillText(n.label, x, y + outward * (r + 5));
+      g.textBaseline = "top";
+    }
+  }
+}
+function loop() {
+  const now = performance.now(), dt = Math.min(100, now - t0); t0 = now;
+  frame(dt); requestAnimationFrame(loop);
+}
+if (AV.shot) AV.shotRun(frame); else requestAnimationFrame(loop);
+
+/* ----------------------------------------------------------- interaction */
+cv.addEventListener("mousemove", e => {
+  const r = cv.getBoundingClientRect(); mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+  if (dragging) {
+    target.x = view.x = dragging.vx + (mouse.x - dragging.mx) / view.s;
+    target.y = view.y = dragging.vy + (mouse.y - dragging.my) / view.s;
+    return;
+  }
+  hover = nodeAt(mouse.x, mouse.y);
+  if (hover) {
+    const lines = [`<b>${hover.label}</b> <span class="k">${hover.kind}</span>`];
+    if (hover.job) lines.push(`<span class="k">job</span> ${hover.job}`);
+    if (hover.tools && hover.tools.length) lines.push(`<span class="k">tools</span> ${hover.tools.join(", ")}`);
+    if (hover.desc) lines.push(hover.desc);
+    if (hover.kind === "job") lines.push(`<span class="k">worker</span> ${hover.worker.name}`);
+    if (hover.kind === "worker" && live.active[hover.name]) lines.push(`<span style="color:#3ddc84">working now</span>`);
+    tip.innerHTML = lines.join("<br>");
+    tip.style.display = "block";
+    tip.style.left = Math.min(mouse.x + 14, W - 290) + "px";
+    tip.style.top = Math.min(mouse.y + 14, H - 90) + "px";
+  } else tip.style.display = "none";
+});
+cv.addEventListener("mouseleave", () => { hover = null; tip.style.display = "none"; });
+cv.addEventListener("mousedown", e => {
+  window.focus();
+  dragging = { mx: e.clientX - cv.getBoundingClientRect().left, my: e.clientY - cv.getBoundingClientRect().top,
+               vx: view.x, vy: view.y, moved: false, t: Date.now() };
+  cv.classList.add("drag");
+});
+addEventListener("mouseup", e => {
+  if (!dragging) return;
+  const quick = Date.now() - dragging.t < 300 && mouse &&
+    Math.hypot(mouse.x - dragging.mx, mouse.y - dragging.my) < 4;
+  dragging = null; cv.classList.remove("drag");
+  if (!quick || !mouse) return;
+  const n = nodeAt(mouse.x, mouse.y);
+  if (!n) { detail.style.display = "none"; return; }
+  if (n.kind === "lead") { focusOn(focusDept === n.dept ? null : n.dept); }
+  if (n.kind === "worker" || n.kind === "lead" || n.kind === "job") {
+    const w = n.kind === "job" ? n.worker : n;
+    const rows = [`<b>${w.label}</b> <span class="k">${w.kind}${live.active[w.name] ? " · working now" : ""}</span>`];
+    if (w.job) rows.push(`job: ${w.job}`);
+    if (w.tools && w.tools.length) rows.push(`tools: ${w.tools.join(", ")}`);
+    if (w.desc) rows.push(w.desc);
+    if (w.kind === "worker") rows.push(`<span class="k">ask: @agent-${w.name} …  ·  memory: .claude/agent-memory/${w.name}/</span>`);
+    detail.innerHTML = `<span class="x" onclick="this.parentNode.style.display='none'">×</span>` + rows.join("<br>");
+    detail.style.display = "block";
+  }
+});
+cv.addEventListener("dblclick", () => { focusOn(null); detail.style.display = "none"; });
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left - W / 2, my = e.clientY - r.top - H / 2;
+  const f = Math.exp(-e.deltaY * 0.0012), ns = Math.max(0.45, Math.min(6, view.s * f));
+  // zoom around the cursor
+  target.x = view.x = mx / ns - (mx / view.s - view.x);
+  target.y = view.y = my / ns - (my / view.s - view.y);
+  target.s = view.s = ns;
+}, { passive: false });
+$("team").addEventListener("mouseenter", () => window.focus());
+document.querySelectorAll("button[data-act]").forEach(b => b.onclick = () => act(b.dataset.act));
+function act(a) {
+  if (a === "focus") setMode(mode === "voice" ? "team" : "voice");
+  else if (a === "full") setMode(mode === "full" ? "voice" : "full");
+  else if (a === "reset") { focusOn(null); detail.style.display = "none"; }
+  else if (a === "solo") setMode(mode === "solo" ? "voice" : "solo");
+  setTimeout(resize, 520);
+}
+addEventListener("keydown", e => {
+  if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === "t") act("focus");
+  else if (k === "g") act("full");
+  else if (k === "h") act("solo");
+  else if (k === "escape") { if (focusDept) act("reset"); else { setMode("voice"); setTimeout(resize, 520); } }
+  else if (k === "r") loadTeam();
+  else if (k === "f") { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+});
+addEventListener("resize", () => setTimeout(resize, 50));
+
+loadTeam(); loadLive();
+setInterval(loadLive, 1000);
+setInterval(loadTeam, 30000);
+</script>
+</body>
+</html>

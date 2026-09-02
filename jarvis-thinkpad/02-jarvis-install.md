@@ -153,6 +153,8 @@ Log: `~/my-agent/backtalk/logs/backtalk.log`. Every failure mode has an entry in
 - `claude --continue` in `~/my-agent` reopens the last session mid-thought.
 - `./fullstack-agent/start.sh` (voice + face + hands server), `start.sh voice`
   (voice + face), `start.sh hands` (voice + board). Ctrl-C stops all of it.
+- The face opens on `command` once `command-face/install.sh` has run: the board
+  full screen, the team on the right; `T` swaps focus, `G` zooms the team.
 - Voice console, exact phrases spoken alone: "clear the session", "compact the
   session", "switch to the deep model", "back to the fast model", "set effort to
   low|medium|high|max", "usage report", "go hands free", "push to talk mode",

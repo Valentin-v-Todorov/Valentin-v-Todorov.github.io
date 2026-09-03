@@ -18,6 +18,8 @@ PKGS=(
   openssh-server ufw tlp avahi-daemon libnss-mdns qrencode lm-sensors usbutils pciutils
   # apps and their helpers
   libfuse2t64 timeshift gnome-tweaks xdg-utils fonts-inter
+  # music by request (flint-play): mpv plays, mpv-mpris lets playerctl see it; yt-dlp comes from uv in stage 05
+  mpv mpv-mpris
 )
 
 run() {
@@ -37,7 +39,7 @@ run() {
 }
 
 check() {
-  for c in git curl python3 espeak-ng ffmpeg arecord pactl secret-tool bwrap socat xdotool wmctrl notify-send tmux jq rg ufw qrencode; do
+  for c in git curl python3 espeak-ng ffmpeg arecord pactl secret-tool bwrap socat xdotool wmctrl notify-send tmux jq rg ufw qrencode mpv playerctl; do
     chk "$c" has "$c"
   done
   for p in tlp openssh-server timeshift libfuse2t64 avahi-daemon libnss-mdns fd-find pipx alsa-utils v4l-utils; do chk "package $p" pkg_installed "$p"; done

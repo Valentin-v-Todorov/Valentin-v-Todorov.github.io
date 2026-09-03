@@ -29,13 +29,24 @@ export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] && { set -a; . "$f"; set +a; }; done   # secrets by name (chmod 600 files)
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$HERE"
+OFF="$HOME/.flint-setup/stack-off"     # "stopped on purpose": the keeper leaves the stack down while this exists
+stack() {                              # the wake-phrase hook must be in backtalk's venv before every start
+  [ -x "$HERE/bin/voice-hook/install.sh" ] && "$HERE/bin/voice-hook/install.sh" "$HERE" -q || true
+  rm -f "$OFF"
+  ./fullstack-agent/start.sh "$@"; local rc=$?
+  # a hang-up ("goodbye"), Ctrl-C or a clean exit was you; anything else is a crash the keeper may retry
+  case "$rc" in 0|130) mkdir -p "$(dirname "$OFF")"; touch "$OFF" ;; esac
+  return $rc
+}
 case "${1:-chat}" in
-  chat)   exec claude ;;
-  talk)   exec ./fullstack-agent/start.sh voice ;;
-  hands)  exec ./fullstack-agent/start.sh hands ;;
-  all)    exec ./fullstack-agent/start.sh ;;
-  update) ./fullstack-agent/update.sh; echo; read -r -p "done. press Enter to close." _ ;;
-  *) echo "usage: launch.sh chat|talk|hands|all|update" >&2; exit 1 ;;
+  chat)    exec claude ;;
+  talk)    stack voice ;;
+  hands)   stack hands ;;
+  all)     stack ;;
+  stop)    exec "$HERE/bin/flint-stack" stop ;;
+  restart) exec "$HERE/bin/flint-stack" restart ;;
+  update)  ./fullstack-agent/update.sh; echo; read -r -p "done. press Enter to close." _ ;;
+  *) echo "usage: launch.sh chat|talk|hands|all|stop|restart|update" >&2; exit 1 ;;
 esac
 WRAP
 chmod +x "$HOME_DIR/bin/launch.sh"
@@ -66,5 +77,6 @@ mk talk   "Talk to $NAME"     "Voice + face (Ctrl-C in the window stops it)"  au
 mk all    "$NAME full stack"  "Voice + face + hands server"                     video-display
 [ -d "$HOME_DIR/barehands" ] && mk hands "$NAME barehands" "Voice + hands board (open http://127.0.0.1:8794/stage.html in Chrome)" camera-web
 mk update "Update $NAME"      "Pull the newest version of every piece"          system-software-update
+mk stop   "Stop $NAME"        "Hang up the voice, close the face and hands; stays stopped until started again" process-stop
 update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
 echo "done. Double-click one on the Desktop to test it (GNOME may ask once to trust it)."

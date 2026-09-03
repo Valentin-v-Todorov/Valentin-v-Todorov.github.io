@@ -179,6 +179,35 @@ simpler, another reason for the Xorg session.
 The Claude Desktop app's "Computer Use" (screen control) is not available on
 Linux yet; xdotool plus screenshots is the working substitute.
 
+### 5b. Music, the screen, the browser, his voice, his health (stage 10 installs these)
+
+Six small tools live in `~/my-agent/bin` and on the PATH; Flint's `CLAUDE.md`
+tells him when to use which. They run outside the Bash sandbox (the speakers,
+the microphone and the X11 screen are Unix sockets the sandbox does not reach).
+
+| Tool | What it does | Try |
+| --- | --- | --- |
+| `flint-play` | Music through mpv: the first YouTube match (audio only, yt-dlp), an album (`--album`), a queue (`--queue`), files under `~/Music` (`--local`), any URL or stream; pause, resume, next, stop, volume, seek, status. The music dips while he talks (the `flint_voice` ducker). | "Flint, play Lose Yourself by Eminem", "Flint, play the album Recovery", "stop the music" |
+| `xdg-open` + Playwright MCP | Showing things: `xdg-open <url>` opens it in Chrome on the screen. The Playwright server drives Google Chrome, headed, with its own profile in `~/.local/share/flint/chrome-profile` (logins persist, your own Chrome is untouched), for searching, reading, logging in, clicking. | "Flint, find me Eminem's album The Eminem Show and show me the tracklist" |
+| `flint-voice` | `list`, `try <id>`, `audition`, `set <id>`, `speed`, `elevenlabs on/off`. Twenty-eight Kokoro voices, British and American, graded. A new voice applies after `flint-stack restart`. | "Flint, switch your voice to af_heart" |
+| `flint-stack` | `start`, `stop`, `restart`, `status`: the voice + face + hands as one thing. `stop` (or Ctrl-C, or "goodbye Flint") marks it stopped on purpose so the keeper leaves it down. | "Flint, restart yourself" |
+| `flint-health.sh` | Machine and stack in one report with a verdict: load, temperature, memory, disk, battery and mains, network and Tailscale, audio and camera, services, Home Assistant, the stack, the agent's login, updates, journal errors, the last doctor. `--brief` is one line. | "Flint, how is the machine?" |
+| `flint-doctor.sh` | The installer's real tests (`setup.sh --check`, silent), usable from inside the agent; `--only NN` redoes a stage. | "Flint, run the doctor and fix what fails" |
+
+Two things run without anyone asking:
+
+- **The keeper** (`flint-keeper.timer`, every two minutes): a stack that died
+  is restarted in its window; one you stopped is left alone; after three
+  restarts in thirty minutes it stops trying and tells you (`notify-send`,
+  `~/.local/state/flint/keeper.log`); once a week it refreshes `yt-dlp`.
+- **The nightly doctor** (a `schedules:` entry in `team.yaml`, 03:30): Flint
+  runs `flint-health.sh` and `flint-doctor.sh`, repairs what he can from each
+  piece's `TROUBLESHOOTING.md`, and appends to `Doctor Log.md` in the vault's
+  ThinkPad folder.
+
+Power cut: enable "Power On with AC Attach" in the BIOS (`01`, section C) and
+the machine comes back on its own; everything after that is the auto-login.
+
 ## 6. Scheduled and unattended work
 
 Three ways, pick per job:

@@ -26,7 +26,10 @@ if [ -f "$ENV_FILE" ]; then . "$ENV_FILE"; fi
 : "${VAULT_DIR:=$HOME/Brain}"
 : "${IDENTITY_DOOR:=B}"
 : "${PTT_KEY:=home}"
-: "${MIC_MODE:=ptt}"
+: "${MIC_MODE:=open}"                    # open = always listening, but only for its name (the wake phrase); the key still works
+: "${WAKE_WORDS:=}"                      # empty = the agent's name and "hey <name>" (the transcriber's near-misses match too)
+: "${WAKE_WINDOW_S:=30}"
+: "${VOICE_EFFORT:=}"                    # "" = the model's default; "low" is the fastest spoken reply
 : "${VOICE:=bm_lewis}"
 : "${STT_MODEL:=small.en}"
 : "${VOICE_PERMISSIONS:=ask}"
@@ -53,12 +56,14 @@ if [ -f "$ENV_FILE" ]; then . "$ENV_FILE"; fi
 : "${UFW:=1}"
 : "${ACCOUNTS_LATER:=0}"
 : "${WIZARD_MODE:=headless}"
+: "${MUSIC:=1}"                          # mpv + yt-dlp + flint-play (music by request, YouTube or local files)
+: "${KEEPER:=1}"                         # the watchdog timer that restarts a dead stack
 : "${YOUR_WORK:=I run a personal business and I am building an AI operating partner on this ThinkPad.}"
 : "${PROJECTS:=Personal Business; Home Automation; ThinkPad (this machine, the server the agent runs on)}"
 : "${KEY_PEOPLE:=}"
 : "${PRIORITIES:=Get the agent, the team and the home automation working end to end}"
 : "${RECURRING:=Morning brief; Inbox triage; Weekly finance review; Vault backup}"
-export YOUR_NAME AGENT_NAME AGENT_HOME VAULT_DIR PTT_KEY MIC_MODE VOICE STT_MODEL VOICE_PERMISSIONS FACE
+export YOUR_NAME AGENT_NAME AGENT_HOME VAULT_DIR PTT_KEY MIC_MODE VOICE STT_MODEL VOICE_PERMISSIONS FACE WAKE_WORDS WAKE_WINDOW_S VOICE_EFFORT MUSIC KEEPER
 # the machine's secrets (chmod 600 files written by the stages) as environment, by name
 for _f in "$HOME"/.config/flint/*.env; do [ -f "$_f" ] && { set -a; . "$_f"; set +a; }; done; unset _f
 

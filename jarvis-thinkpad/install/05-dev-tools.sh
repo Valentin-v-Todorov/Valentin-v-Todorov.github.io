@@ -9,6 +9,12 @@ run() {
   local pyv; pyv="$(python3 -c 'import sys;print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
   case "$pyv" in 3.11|3.12) ;; *) uv python install 3.12 >/dev/null 2>&1 && ok "uv-managed python 3.12 for backtalk" || warn "uv could not fetch python 3.12; backtalk's install will try again" ;; esac
 
+  if [ "$MUSIC" = 1 ]; then
+    log "yt-dlp (music search for flint-play; the apt version is too old for YouTube, uv keeps this one current)"
+    if [ -x "$HOME/.local/bin/yt-dlp" ]; then uv tool upgrade yt-dlp >/dev/null 2>&1 || true; else uv tool install yt-dlp >"$LOG_DIR/yt-dlp-install.log" 2>&1 || warn "uv tool install yt-dlp failed ($LOG_DIR/yt-dlp-install.log); the keeper retries weekly"; fi
+    has yt-dlp && ok "yt-dlp $(yt-dlp --version 2>/dev/null)"
+  fi
+
   log "Claude Code (native installer, auto-updates)"
   if ! has claude; then curl -fsSL https://claude.ai/install.sh | bash >"$LOG_DIR/claude-install.log" 2>&1 || die "Claude Code installer failed: $LOG_DIR/claude-install.log"; fi
   has claude || die "claude did not install; see $LOG_DIR/claude-install.log and re-run"
@@ -68,6 +74,7 @@ PROFILE
 
 check() {
   chk "uv" has uv
+  [ "$MUSIC" = 1 ] && chk "yt-dlp (music search)" has yt-dlp
   chk "claude" has claude
   chk "claude --version" claude --version
   chk "bwrap can sandbox (Claude Code sandbox works)" bwrap --ro-bind / / --unshare-user --unshare-pid true

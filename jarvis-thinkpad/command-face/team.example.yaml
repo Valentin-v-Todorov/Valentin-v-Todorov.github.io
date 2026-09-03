@@ -121,3 +121,11 @@ schedules:
     permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
     max_turns: 40
     enabled: true
+  - name: nightly-doctor
+    description: Nightly self-check and repair of the machine and the stack
+    on_calendar: "*-*-* 03:30"
+    agent: ""
+    prompt: "You are the mechanic tonight. Run bin/flint-health.sh, then bin/flint-doctor.sh (the installer's own checks; a few minutes, silent). For every failure: read the TROUBLESHOOTING.md of the piece it belongs to (backtalk, ai-visualizer, barehands, ai-memory-vault) and the installer's logs in ~/.flint-setup/logs, fix the cause, and run the failing check again (bin/flint-doctor.sh --only NN redoes one stage). Then append a dated section to the note 'Doctor Log.md' in the vault's ThinkPad project folder (create it if missing) saying what was checked, what you fixed and what you could not, and finish with: notify-send 'Flint' '<one line>'. Never reboot, never change a config you were not asked about, never touch ~/.config/flint."
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
+    max_turns: 80
+    enabled: true

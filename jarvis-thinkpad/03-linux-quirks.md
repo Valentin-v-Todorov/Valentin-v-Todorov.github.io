@@ -106,12 +106,20 @@ The `ELEVENLABS_API_KEY` environment variable is the last-resort fallback backta
 checks; an export in `.bashrc` is a plaintext key on disk, so prefer the keyring.
 ElevenLabs also needs `ffmpeg` (installed).
 
-## 7. Spotify ducking is macOS only
+## 7. Spotify ducking is macOS only (solved: the flint_voice hook)
 
 `backtalk/ducking.py` uses AppleScript; on Linux every call is a no-op, by
-design. If you want music to dip while Flint talks, ask him to add a `playerctl`
-equivalent (`playerctl volume 0.3` / restore) in `ducking.py`; the file invites
-that PR.
+design. The install adds `voice/flint_voice.py` to backtalk's virtualenv through
+a `.pth` file (stage 10; `launch.sh` re-adds it before every start), without
+touching Jared's files, so `update.sh` keeps working. On Linux it swaps the
+ducker for one that dips the `flint-play` player (over its mpv socket) and every
+MPRIS player that is playing (over `playerctl`: Spotify, Chrome, mpv) while
+Flint talks, and restores them after. The same hook is the wake phrase: in
+hands-free mode only utterances that start or end with his name reach him, plus
+follow-ups within thirty seconds of an exchange (`wake_words`, `wake_window_s`,
+`wake_required` in `backtalk.json`). `python -m flint_voice --selftest` inside
+the venv runs its cases; `FLINT_VOICE=0` in the environment disables the hook
+for one launch.
 
 ## 8. Ports
 

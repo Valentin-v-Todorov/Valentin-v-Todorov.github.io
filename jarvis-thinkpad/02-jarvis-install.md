@@ -104,6 +104,16 @@ runs on Linux unchanged, whatever the READMEs say about "macOS".
 tiles (the plan's 5-hour and 7-day windows) show real numbers. It is your own
 usage, published on your own machine only.
 
+The installer pins four more keys that backtalk itself ignores and the
+`flint_voice` hook reads (`03-linux-quirks.md` section 7): `"mic_mode": "open"`
+with `"wake_words": ["flint", "hey flint"]`, `"wake_window_s": 30`,
+`"wake_required": true` and `"greeting_open_mic": "Hello Valentin. I'm
+listening. Say my name when you want me."` So the mic is always open, but only
+"Flint, ..." (or "..., Flint") reaches him, plus follow-ups within thirty
+seconds of an exchange; holding the key still always works. `"duck_music":
+false` would stop the music dipping while he talks. `flint-voice set <id>`
+changes the voice, `flint-voice speed 1.15` the pace.
+
 Other keys you may add later (defaults live in `backtalk/backtalk/config.py`):
 `"speed": 1.15` (brisker voice), `"mic_device": "<name from python -m sounddevice>"`,
 `"deep_model": "claude-opus-5"`, `"effort": "low"`, `"thinking_sound": ""`,

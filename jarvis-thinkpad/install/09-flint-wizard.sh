@@ -82,6 +82,12 @@ fix_configs() {
   json_set "$bt" barehands_state_dir "\"$AGENT_HOME/barehands/state\""
   json_set "$bt" greeting "\"Hello $YOUR_NAME, what are we working on today?\""
   json_set "$bt" show_usage "true"
+  # the wake phrase (read by the flint_voice hook stage 10 installs; inert for a plain backtalk)
+  json_set "$bt" wake_words "$(python3 -c 'import json,sys; ws=[w.strip().lower() for w in sys.argv[1].split(",") if w.strip()]; n=sys.argv[2].strip().lower(); print(json.dumps(ws or [n, "hey " + n]))' "$WAKE_WORDS" "$AGENT_NAME")"
+  json_set "$bt" wake_window_s "$WAKE_WINDOW_S"
+  json_set "$bt" wake_required "true"
+  json_set "$bt" greeting_open_mic "\"Hello $YOUR_NAME. I'm listening. Say my name when you want me.\""
+  [ -n "$VOICE_EFFORT" ] && json_set "$bt" effort "\"$VOICE_EFFORT\""
   local vz="$AGENT_HOME/ai-visualizer/ai-visualizer.json"
   [ -f "$vz" ] || cp "$AGENT_HOME/ai-visualizer/ai-visualizer.json.example" "$vz" 2>/dev/null || echo '{}' > "$vz"
   json_set "$vz" name "\"$(printf '%s' "$AGENT_NAME" | tr '[:lower:]' '[:upper:]')\""

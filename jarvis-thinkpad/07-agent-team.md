@@ -376,7 +376,9 @@ timers to fire when nobody is logged in: `sudo loginctl enable-linger valentin`
 
 **The automated way (what `setup.sh` does):** a `schedules:` list in
 `~/my-agent/team.yaml` (see `command-face/team.example.yaml`: morning brief,
-weekly finance review, vault hygiene) and `uv run ~/my-agent/bin/team-timers.py --apply`.
+weekly finance review, vault hygiene, and the nightly doctor at 03:30 that runs
+`flint-health.sh` and `flint-doctor.sh`, repairs what it can and writes `Doctor
+Log.md` in the vault) and `uv run ~/my-agent/bin/team-timers.py --apply`.
 It writes one `jobs/<name>.json` and one `flint-<name>.{service,timer}` per entry,
 enables them, and `bin/run-job.py <name>` runs any job by hand. Edit the YAML,
 re-run `--apply`; `--remove` takes them all away. Flint can do all of this himself.

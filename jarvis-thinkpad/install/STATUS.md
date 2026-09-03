@@ -75,6 +75,52 @@ prove, in the order they will happen:
   vault build inside the 90-minute timeout on the ThinkPad's connection. If not,
   the stage's second pass and then the interactive rescue window take over.
 
+## The capability pass (2026-09-03): wake phrase, music, voices, keeper, health
+
+Added after the question list ("can he hear me without a key, play music,
+change voice, come back after a power cut, repair and diagnose himself, drive
+Chrome, show me things"). What exists now, and how far each is proven:
+
+- **`voice/flint_voice.py`** (wake phrase + Linux ducking, loaded into
+  backtalk's venv by a `.pth`): its matcher passes 15 built-in cases
+  (`python -m flint_voice --selftest`); the import hook was exercised
+  end-to-end against a stub backtalk (filtering, the summons acknowledgement,
+  the follow-up window after an address and after a reply, the ducker swap)
+  and the installer against a real virtualenv (idempotent, `.pth` loads).
+  Not yet proven: the real backtalk on the ThinkPad, i.e. that
+  `Ears.listen_once` and `Mouth.__init__` still have the signatures the hook
+  wraps (they match the clone at commit 84b3a6c) and how often the
+  transcriber writes "Flint" as something the loose match misses. The doctor
+  runs the self-test inside the real venv (stage 13).
+- **`bin/flint-play`**: tested here with the real mpv over its IPC socket
+  (local files, status, pause, volume, next, seek, restart while playing,
+  stop, the ducker dipping it from 40 to 25 and back). YouTube search is not
+  provable from this container (Google's bot check on datacenter IPs and a
+  yt-dlp too old on apt, which is why stage 05 installs it with uv and the
+  keeper refreshes it weekly). On the ThinkPad the doctor's optional check
+  "a YouTube search answers" is the proof; if YouTube ever demands a login,
+  `--cookies-from-browser chrome` is the yt-dlp answer.
+- **`bin/flint-stack`, `bin/flint-keeper.sh`, `launch.sh`**: tested with a
+  fake voice process and a fake desktop session: start (headless path),
+  status, stop with the marker, the keeper honouring the marker, restarting
+  after a crash, doing nothing while healthy, giving up after three restarts
+  in thirty minutes and clearing that on `flint-stack start`, and `launch.sh`
+  marking a clean exit but not a crash. Not yet proven: `gnome-terminal` from
+  a user timer (DISPLAY/XAUTHORITY fallback in `flint-stack`), `ss -ltnp`
+  finding the face and hands servers to close.
+- **`bin/flint-health.sh`**: runs here (a container without audio, battery
+  or systemd) and produces the report and the verdict; the ThinkPad-specific
+  rows (battery, TLP thresholds, sensors, Tailscale, HA) are unverified.
+- **`bin/flint-voice`**: `list`, `set` validation and the config write are
+  tested; `try`/`audition` need Kokoro (stage 13's TTS test uses the same call).
+- **Stage 10** was dry-run against the fake agent home with stubbed
+  `claude`/`sudo`: the tools, the symlinks, the `flint-doctor.sh` wrapper,
+  the hook, the Playwright re-registration with `--browser chrome
+  --user-data-dir`, the sandbox exclusions, the CLAUDE.md section and all
+  checks pass; only the systemd units could not be enabled here.
+- **Docs**: README 4b answers the question list; `04` 5b has the tool table;
+  `01` C has the BIOS setting for coming back after a power cut.
+
 ## Review findings deliberately left for later
 
 - `13-doctor.sh`: the Timeshift snapshot moved to stage 14 (a check must not

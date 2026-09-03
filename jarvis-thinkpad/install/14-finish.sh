@@ -15,11 +15,15 @@ run() {
   cat <<EOF
    Agent home      $AGENT_HOME            (cd there and run: claude      or the "Chat with $AGENT_NAME" launcher)
    Memory          $VAULT_DIR             (Obsidian opens straight into it)
-   Voice           hold "$PTT_KEY", speak, release.  "go hands free" / "push to talk mode" switch the mic.
+   Voice           $( [ "$MIC_MODE" = open ] && printf 'say "%s, ..." and he answers; follow-ups within %ss need no name. Holding "%s" always works' "$AGENT_NAME" "$WAKE_WINDOW_S" "$PTT_KEY" || printf 'hold "%s", speak, release. "go hands free" switches to listening for his name' "$PTT_KEY")
+   Music           "$AGENT_NAME, play Lose Yourself" / "play the album ..." / "stop the music"   (flint-play)
+   His voice       flint-voice list | try af_heart | set af_heart   then: flint-stack restart
    Face            http://127.0.0.1:8790/faces/$FACE/   Z zooms into the team, Esc back, F fullscreen
    Hands           http://127.0.0.1:8794/stage.html   (Chrome, allow the camera)
-   Start it        Desktop launcher "$AGENT_NAME full stack", or: $AGENT_HOME/bin/launch.sh all
-   Stop it         Ctrl-C in its window
+   Start it        Desktop launcher "$AGENT_NAME full stack", or: flint-stack start   (it also starts at every login)
+   Stop it         Ctrl-C in its window, "goodbye $AGENT_NAME", or: flint-stack stop  (then it stays stopped)
+   Keeper          a dead stack is restarted within 2 minutes; log: ~/.local/state/flint/keeper.log
+   Health          flint-health.sh (now) ; the nightly doctor at 03:30 repairs and writes "Doctor Log.md" in the vault
    Phone           tmux attach -t flint  then press space for the QR (Remote Control)
    Team            $AGENT_HOME/team.yaml -> uv run bin/team-sync.py --agents ; timers: systemctl --user list-timers 'flint-*'
 $( [ "$HOME_ASSISTANT" = 1 ] && printf '   Home Assistant  http://127.0.0.1:8123  login: see ~/.config/flint/ha.env ; expose entities to Assist so %s can control them\n' "$AGENT_NAME")

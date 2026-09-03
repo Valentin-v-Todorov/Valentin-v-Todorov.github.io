@@ -15,7 +15,9 @@ Read this file first. It is the map. The other files are the detail.
 | `01-os-and-first-boot.md` | Installing Ubuntu on the ThinkPad (the only manual part) and the reference for what the first-boot stages do (BIOS, Xorg, power, SSH, Tailscale) |
 | `bootstrap.sh` | The older single-script bootstrap (packages, uv, Claude Code, Obsidian, Chrome, Docker, Tailscale, Node). `setup.sh` supersedes it; kept for a manual install |
 | `02-flint-install.md` | Running Jared's `fullstack-agent` installer on Linux, with the interview answers pre-decided and every config file explained |
-| `make-launchers.sh` | Creates the Linux desktop launchers (Chat / Talk / Barehands / Update) the installer only knows how to make for macOS and Windows |
+| `make-launchers.sh` | Creates the Linux desktop launchers (Chat / Talk / Full stack / Barehands / Update / Stop) the installer only knows how to make for macOS and Windows |
+| `bin/` | Flint's own tools, installed into `~/my-agent/bin` and the PATH: `flint-play` (music: YouTube, albums, local files, streams), `flint-voice` (28 voices, audition and switch), `flint-stack` (start/stop/restart/status), `flint-health.sh` (machine + stack report with a verdict), `flint-keeper.sh` (the watchdog timer) |
+| `voice/` | `flint_voice.py`: the wake phrase ("Flint, ...") and Linux music ducking, hooked into backtalk's virtualenv without touching Jared's files |
 | `03-linux-quirks.md` | Every Linux-specific trap found in the code: push-to-talk on Wayland, Obsidian registry path, Python version, audio, keyring, ports |
 | `04-full-power-agent.md` | Giving Flint full control of the machine safely: permission modes, sandbox, Remote Control from the phone, MCP servers, app control, scheduled work |
 | `05-home-automation.md` | Home Assistant on the ThinkPad and wiring it into Flint through the Home Assistant MCP server |
@@ -125,8 +127,10 @@ laptop into a server that never sleeps with the lid closed.
    one reboot that continues on its own.
 5. **Jared's installer**, headless, with every interview answer pre-supplied:
    the vault, the voice, the face, the hands, the marketing skill.
-6. **The wiring**: launchers, the Orbitals face, hooks, the permission profile,
-   MCP servers, secrets, vault backups, Remote Control, the stack at login.
+6. **The wiring**: launchers, Flint's tools (music, voices, stack control,
+   health), the wake phrase, the Orbitals face, hooks, the permission profile,
+   the Chrome-driving browser server, secrets, vault backups, Remote Control,
+   the keeper, the stack at login.
 7. **The agent team**: roster to subagents, schedules to timers.
 8. **Home Assistant**, onboarded through its API, with the MCP server for Flint.
 9. **The doctor**: real tests (it speaks, it hears, the agent boots as Flint),
@@ -167,6 +171,24 @@ phone or any browser. See `04-full-power-agent.md`.
 
 ---
 
+## 4b. What Flint can do on the ThinkPad once installed
+
+| You asked | The answer, and what makes it true |
+| --- | --- |
+| Full control of the ThinkPad | Yes. Claude Code in auto mode with passwordless sudo, the sandbox open for the machine tools, X11 tools for the screen (xdotool, wmctrl, screenshots he can read), systemd, Docker, Tailscale. The deny list keeps the few things that must never happen (wiping disks, `shutdown`, the secrets folder). `04`, sections 1, 2 and 5 |
+| Create things that were not there and use them like a person | Yes. He installs packages (apt, uv, npm, Docker), writes and runs code, opens apps, types and clicks, reads the screen. New abilities land in `~/my-agent/bin` and in his `CLAUDE.md` so they survive updates |
+| Replies within about 3 seconds | Mostly. The voice uses the fast model with the mic transcribed locally; simple answers come back in 2 to 3 seconds, tool-using ones take longer behind a spoken filler. The doctor measures ears + brain + mouth on your box and prints the budget. `VOICE_EFFORT=low` and `STT_MODEL=base.en` in `setup.env` make it faster still |
+| Talk to him without a key; a wake word | Yes. The mic is always open; only "Flint, ..." / "hey Flint" / "..., Flint" / "Flint, question for you" / "I have a job for you, Flint" reach him (near-misses like "Clint" count). A bare "Flint?" gets "Yes?" and opens a 30-second window in which nothing needs the name. Holding Home always works |
+| Control a browser like Chrome | Yes. The Playwright MCP server drives Google Chrome, visibly, with its own profile (logins persist); `xdg-open` puts any page on the screen; built-in web search |
+| Different voices | Yes. 28 local Kokoro voices (`flint-voice list`, `try`, `set`; `audition` plays them all), plus ElevenLabs on your own key if you want the premium one |
+| Comes back after the power was off | Yes, if "Power On with AC Attach" is enabled in the BIOS (`01`, section C); then auto-login starts the stack, Remote Control and the timers by themselves. Otherwise one press of the power button |
+| Repairs itself | Yes, two layers. The keeper restarts a stack that died within two minutes (and stops after three tries in half an hour, telling you). The nightly doctor runs the installer's tests and repairs from each piece's troubleshooting guide; and "Flint, run the doctor and fix what fails" does it on demand |
+| Diagnoses itself and the ThinkPad | Yes. `flint-health.sh`: load, temperature, memory, disk, battery, mains, network, Tailscale, audio, camera, services, Home Assistant, the stack, the login, updates, journal errors, a verdict. "Flint, how is the machine?" |
+| Shows me things from the internet; finds an album | Yes. He searches, opens the page in Chrome on the screen, reads it back, and offers to play it |
+| Plays the music I ask for | Yes. `flint-play`: the first YouTube match, a whole album, a queue, files in `~/Music`, any stream or URL; pause, next, volume, stop by voice. The music dips while he talks |
+
+---
+
 ## 5. Decisions already made for you (change any of them)
 
 | Question the installer asks | Answer | Why |
@@ -174,7 +196,7 @@ phone or any browser. See `04-full-power-agent.md`.
 | Your name | Valentin | Used in the greeting "Hello Valentin, what are we working on today?" |
 | Agent identity | Door B: Jared's personality, renamed **Flint** | Door B keeps Jared's exact personality (direct, swears freely, calls you "sir"/"boss", pushes back) and changes only the name. Pick door C if you want Flint with a calmer tone |
 | Vault | Fresh vault at `~/Brain` | Home folder, not Documents, not cloud-synced. The installer registers it in `~/.config/obsidian/obsidian.json` so Obsidian opens straight into it |
-| Microphone | Push to talk, key `home` | Mic is closed unless the key is held. ThinkPads have a physical Home key. Say "go hands free" later to switch |
+| Microphone | Always listening, answers to his name; key `home` still works | "Flint, ..." or "..., Flint" reaches him; anything else in the room is dropped by the `flint_voice` hook (`03`, section 7). Follow-ups within 30 s of an exchange need no name. Holding Home always gets you heard. `MIC_MODE=ptt` in `setup.env` for key-only |
 | Voice engine | Kokoro `bm_lewis` (free, local) first | Zero cost, offline. Audition ElevenLabs later if you want the natural voice; the key goes in the GNOME keyring via `secret-tool`, never in a file |
 | Face | `board` in the wizard, then `command-face/install.sh` makes **The Core** the default | The Core is the Orbitals design you picked: the voice as particle orbits, the team zoomed out at the centre, the numbers, the conversation and the activity around them, zooming into the org chart on `Z` or on Flint's command. The board stays one page away |
 | Hands | Yes, if the ThinkPad has a webcam | Needs Chrome; `bootstrap.sh` installs it |

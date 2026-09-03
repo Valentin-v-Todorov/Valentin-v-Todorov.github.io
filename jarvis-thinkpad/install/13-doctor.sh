@@ -6,33 +6,54 @@
 REPORT="$STATE_DIR/report.md"
 BT="$AGENT_HOME/backtalk"
 
-tts_test() {   # Kokoro says one line through the speakers; returns 0 if audio was produced
-  ( cd "$BT" && timeout 300 .venv/bin/python - "$VOICE" "$YOUR_NAME" <<'PY'
-import sys, wave, numpy as np, warnings; warnings.filterwarnings("ignore")
+tts_test() {   # Kokoro says one line through the speakers; returns 0 if audio was produced (FLINT_QUIET=1: no playback)
+  ( cd "$BT" && timeout 300 .venv/bin/python - "$VOICE" "$YOUR_NAME" "$STATE_DIR/.lat-tts" <<'PY'
+import sys, time, wave, numpy as np, warnings; warnings.filterwarnings("ignore")
 from kokoro import KPipeline
 voice, name = sys.argv[1], sys.argv[2]
 pipe = KPipeline(lang_code=voice[0] if voice[0] in "ab" else "a", repo_id="hexgrad/Kokoro-82M")
+t0 = time.monotonic()
 chunks = [np.asarray(audio, dtype=np.float32) for _, _, audio in pipe(f"All systems online, {name}. Your machine is ready.", voice=voice)]
+synth = time.monotonic() - t0
 pcm = (np.concatenate(chunks) * 32767).astype(np.int16)
 with wave.open("/tmp/flint-tts.wav", "wb") as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(pcm.tobytes())
 assert len(pcm) > 24000, "less than a second of audio"
-print("ok", len(pcm) / 24000, "s")
+open(sys.argv[3], "w").write(f"{synth:.2f}")
+print(f"ok {len(pcm) / 24000:.1f}s of audio, synthesised in {synth:.2f}s (model warm)")
 PY
-  ) && { paplay /tmp/flint-tts.wav 2>/dev/null || aplay -q /tmp/flint-tts.wav 2>/dev/null || true; }
+  ) && { [ "${FLINT_QUIET:-0}" = 1 ] || paplay /tmp/flint-tts.wav 2>/dev/null || aplay -q /tmp/flint-tts.wav 2>/dev/null || true; }
 }
 stt_test() {   # espeak-ng says a sentence into a file, faster-whisper must hear "hello"
   espeak-ng -w /tmp/flint-stt.wav -s 150 "hello flint, all systems online" 2>/dev/null || return 1
-  ( cd "$BT" && timeout 300 .venv/bin/python - "$STT_MODEL" <<'PY'
-import sys, warnings; warnings.filterwarnings("ignore")
+  ( cd "$BT" && timeout 300 .venv/bin/python - "$STT_MODEL" "$STATE_DIR/.lat-stt" <<'PY'
+import sys, time, warnings; warnings.filterwarnings("ignore")
 from faster_whisper import WhisperModel
 m = WhisperModel(sys.argv[1], device="cpu", compute_type="int8")
+list(m.transcribe("/tmp/flint-stt.wav")[0])          # warm-up: the live voice line keeps the model warm too
+t0 = time.monotonic()
 segs, _ = m.transcribe("/tmp/flint-stt.wav")
 text = " ".join(s.text for s in segs).lower()
-print(text)
+took = time.monotonic() - t0
+open(sys.argv[2], "w").write(f"{took:.2f}")
+print(f"{text!r} in {took:.2f}s (model warm)")
 assert "hello" in text or "flint" in text or "online" in text, text
 PY
   )
+}
+wake_test() {   # the hook loads inside backtalk's virtualenv and its matcher cases pass
+  ( cd "$BT" && .venv/bin/python -m flint_voice --selftest -q )
+}
+latency_test() {  # the spoken-reply budget: ears + brain + mouth, from the numbers the tests above left behind
+  local t0 t1 brain ears mouth total
+  t0="$(date +%s.%N)"
+  ( cd "$AGENT_HOME" && timeout 120 claude -p "Reply with exactly: ready" --max-turns 1 --output-format text </dev/null >/dev/null 2>&1 ) || return 1
+  t1="$(date +%s.%N)"
+  ears="$(cat "$STATE_DIR/.lat-stt" 2>/dev/null || echo 0)"; mouth="$(cat "$STATE_DIR/.lat-tts" 2>/dev/null || echo 0)"
+  brain="$(python3 -c "print(round($t1 - $t0, 1))")"
+  total="$(python3 -c "print(round($ears + $brain + $mouth, 1))")"
+  printf 'ears %ss + brain %ss + mouth %ss = about %ss to the first spoken word (the brain figure includes starting a fresh claude process, which the live voice line does not pay; expect it faster)\n' "$ears" "$brain" "$mouth" "$total" | tee "$STATE_DIR/.lat-total"
+  python3 -c "import sys; sys.exit(0 if $total <= 3.0 else 1)"
 }
 face_test() {   # a throwaway face server on the real port, killed afterwards; skipped if the stack already runs
   if curl -fsS -m 2 -o /dev/null http://127.0.0.1:8790/state 2>/dev/null; then curl -fsS -m 5 http://127.0.0.1:8790/faces/core/ | grep -q "The Core"; return; fi
@@ -84,6 +105,15 @@ check() {
   tee_chk "face server + The Core + roster" face_test
   tee_chk "hands server" hands_test
   tee_chk "the agent boots as $AGENT_NAME and the hooks record it" agent_test
+  tee_chk "wake phrase: the hook loads in backtalk and its cases pass" wake_test
+  tee_warn "spoken reply budget under 3 s (ears + brain + mouth)" latency_test
+  [ -f "$STATE_DIR/.lat-total" ] && printf -- '- reply budget: %s\n' "$(cat "$STATE_DIR/.lat-total")" >> "$REPORT"
+  [ "$MUSIC" = 1 ] && tee_chk "music: mpv plays a tone, yt-dlp present" flint-play --selftest
+  [ "$MUSIC" = 1 ] && tee_warn "music: a YouTube search answers" bash -c "timeout 90 yt-dlp --simulate --print title 'ytsearch1:eminem lose yourself' | grep -q ."
+  tee_chk "flint-health.sh reports" bash -c "flint-health.sh --brief | grep -q ."
+  tee_chk "flint-stack answers" bash -c "flint-stack status >/dev/null 2>&1; [ \$? -le 1 ]"
+  [ "$KEEPER" = 1 ] && tee_chk "keeper timer" systemctl --user is-active flint-keeper.timer
+  tee_warn "browser: Playwright MCP drives Chrome with its own profile" bash -c "claude mcp get playwright | grep -q -- '--browser chrome'"
   tee_warn "MCP servers connect (playwright$( [ "$HOME_ASSISTANT" = 1 ] && printf ', home-assistant'))" mcp_test
   [ "$HOME_ASSISTANT" = 1 ] && tee_chk "Home Assistant API with the token" bash -c ". '$HOME/.config/flint/ha.env'; curl -fsS -m 5 -H \"Authorization: Bearer \$HA_TOKEN\" http://127.0.0.1:8123/api/ | grep -q 'API running'"
   [ "$AGENT_TIMERS" = 1 ] && tee_chk "agent timers scheduled" bash -c "ls '$HOME'/.config/systemd/user/flint-*.timer.made-by-team-timers >/dev/null 2>&1 && for m in '$HOME'/.config/systemd/user/flint-*.timer.made-by-team-timers; do systemctl --user is-active \"\$(basename \"\${m%.made-by-team-timers}\")\" >/dev/null || exit 1; done"

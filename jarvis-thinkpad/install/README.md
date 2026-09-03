@@ -28,19 +28,19 @@ README). Logs: `~/.flint-setup/logs/`. Report: `~/.flint-setup/report.md`.
 | --- | --- | --- |
 | 00 preflight | Ubuntu 24.04 check, internet, disk, power, sudo (one password; then a NOPASSWD rule if `SUDO_NOPASSWD=1`), git identity, timezone, hostname | the sudo password, once |
 | 01 system-update | `apt full-upgrade`, autoremove, unattended security updates, Lenovo firmware via fwupd | no |
-| 02 essentials | every apt package the stack needs (python 3.12, espeak-ng, PortAudio, ffmpeg, audio/video tools, bubblewrap+socat, xdotool and friends, ssh, ufw, tlp, timeshift, fonts) and `~/.local/bin` on PATH | no |
+| 02 essentials | every apt package the stack needs (python 3.12, espeak-ng, PortAudio, ffmpeg, audio/video tools, bubblewrap+socat, xdotool and friends, mpv for music, ssh, ufw, tlp, timeshift, fonts) and `~/.local/bin` on PATH | no |
 | 03 desktop | GDM auto-login on the Xorg session (push-to-talk needs X11), never sleep, no lock, dark theme, TLP battery thresholds 75–80 % | no |
 | 04 remote-access | sshd, an ssh key, ufw (SSH, mDNS, 8123), Tailscale with `--ssh` | open the Tailscale link once (or put `TS_AUTHKEY` in setup.env) |
-| 05 dev-tools | uv, Claude Code (native installer) + the bwrap AppArmor profile, Node 22, GitHub CLI, Docker, groups (input, dialout, video, kvm, docker) | no |
+| 05 dev-tools | uv, yt-dlp (music search, kept current by uv), Claude Code (native installer) + the bwrap AppArmor profile, Node 22, GitHub CLI, Docker, groups (input, dialout, video, kvm, docker) | no |
 | 06 apps | Obsidian (.deb, not launched), Chrome, Claude Desktop (beta), VS Code (off by default) | no |
 | 07 accounts | `claude auth login` with the subscription; `gh auth login` (token kept outside the locked keyring) | the two browser logins (postpone with `ACCOUNTS_LATER=1` in setup.env; `setup.sh --only 07` runs them regardless) |
 | 08 reboot | one reboot for groups, the Xorg session, firmware and kernel; an autostart entry reopens a terminal and continues | nothing: it continues by itself |
-| 09 flint-wizard | Jared's `fullstack-agent` installer, headless (`claude -p` with every answer pre-supplied); then the configs pinned to the decisions, the vault registered in Obsidian, the speech models fetched | no (`WIZARD_MODE=interactive` if you want to watch) |
-| 10 flint-wire | Desktop launchers, the Orbitals face as default + the roster + the live hooks, CLAUDE.md additions (team on screen, machine toolbox), Claude Code user settings (auto mode, deny list, vault access, sandbox), Playwright MCP, secrets loaded from `~/.config/flint/*.env`, hourly vault git commits, Remote Control in tmux, the stack at every login | no |
+| 09 flint-wizard | Jared's `fullstack-agent` installer, headless (`claude -p` with every answer pre-supplied); then the configs pinned to the decisions (mic always open, the wake words, the voice), the vault registered in Obsidian, the speech models fetched | no (`WIZARD_MODE=interactive` if you want to watch) |
+| 10 flint-wire | Desktop launchers, Flint's tools (`flint-play`, `flint-voice`, `flint-stack`, `flint-health.sh`, `flint-doctor.sh`) on the PATH, the wake-phrase + ducking hook in backtalk's venv, the Orbitals face as default + the roster + the live hooks, CLAUDE.md additions (team on screen, machine toolbox, music/screen/browser/voice/health), Claude Code user settings (auto mode, deny list, vault access, sandbox with the machine tools excluded), Playwright MCP driving Chrome with its own profile, secrets loaded from `~/.config/flint/*.env`, hourly vault git commits, Remote Control in tmux, the keeper timer, the stack at every login | no |
 | 11 agent-team | `team.yaml` → subagent files and systemd user timers (morning brief, weekly finance, vault hygiene) | no |
 | 12 home-assistant | Home Assistant Container (compose), onboarding over its REST API, long-lived token, the MCP Server integration, `.mcp.json` for the agent, port 8123 open on the LAN | no |
-| 13 doctor | real tests: Kokoro speaks through the speakers, faster-whisper transcribes, face and hands servers answer, the agent boots as Flint and its hooks record the turn, MCP servers connect, HA API answers, timers, firewall; report | no |
-| 14 finish | Timeshift snapshot when the report is clean, Remote Control started, prints the map, starts the stack; Flint says hello | no |
+| 13 doctor | real tests: Kokoro speaks through the speakers, faster-whisper transcribes, the wake-phrase hook loads and passes its cases, the spoken-reply budget (ears + brain + mouth, in seconds), mpv plays a tone and yt-dlp finds a song, face and hands servers answer, the agent boots as Flint and its hooks record the turn, the health report, the keeper, MCP servers connect (Chrome-driving browser, HA), HA API answers, timers, firewall; report | no |
+| 14 finish | Timeshift snapshot when the report is clean, Remote Control started, prints the map (how to talk, play music, change the voice, stop and start, the keeper, the nightly doctor), starts the stack; Flint says hello | no |
 
 ## Commands
 
@@ -57,11 +57,28 @@ setup.sh --reset      # forget progress (uninstalls nothing)
 
 Edit `~/.flint-setup/setup.env` (or `install/setup.env.example` before the
 first run). The important ones: `IDENTITY_DOOR` (B keeps Jared's personality
-with the name Flint, C is the calmer one), `PTT_KEY`, `VOICE_PERMISSIONS`
-(`ask` first; `bypassPermissions` when you trust him), `HOME_ASSISTANT`,
-`SUDO_NOPASSWD`, `AUTOSTART_STACK`, `REMOTE_CONTROL`, `AGENT_TIMERS`, and the
-five vault-interview answers (`YOUR_WORK`, `PROJECTS`, `KEY_PEOPLE`,
-`PRIORITIES`, `RECURRING`) that become the agent's first profile of you.
+with the name Flint, C is the calmer one), `MIC_MODE` (`open`: always listening
+for his name; `ptt`: key only) with `WAKE_WORDS` and `WAKE_WINDOW_S`, `PTT_KEY`,
+`VOICE` and `VOICE_EFFORT` (`low` for the fastest spoken replies),
+`VOICE_PERMISSIONS` (`ask` first; `bypassPermissions` when you trust him),
+`HOME_ASSISTANT`, `SUDO_NOPASSWD`, `AUTOSTART_STACK`, `KEEPER`, `MUSIC`,
+`REMOTE_CONTROL`, `AGENT_TIMERS`, and the five vault-interview answers
+(`YOUR_WORK`, `PROJECTS`, `KEY_PEOPLE`, `PRIORITIES`, `RECURRING`) that become
+the agent's first profile of you.
+
+## What he can do afterwards, and the tool behind each
+
+Installed by stage 10 into `~/my-agent/bin` and the PATH; `04-full-power-agent.md`
+section 5b has the table. In one breath: `flint-play` (music from YouTube, an
+album, a queue, `~/Music`, a stream; the music dips while he talks),
+`flint-voice` (28 voices: list, try, audition, set), `flint-stack`
+(start/stop/restart/status), `flint-health.sh` (the machine and the stack with
+a verdict), `flint-doctor.sh` (these installer checks, from inside the agent),
+`flint-keeper.sh` (the watchdog timer: a dead stack is back within two
+minutes; three deaths in thirty minutes and it stops and tells you), the
+`flint_voice` hook (the wake phrase "Flint, ..." and Linux music ducking), the
+Playwright server driving Google Chrome visibly with its own profile, and the
+nightly doctor at 03:30 from `team.yaml`.
 
 ## Secrets
 

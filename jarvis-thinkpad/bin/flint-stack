@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# flint-stack start|stop|restart|status: the voice + face + hands stack, as one thing.
+#
+#   start     opens the stack in its own terminal window (or headless when there is no display);
+#             clears the "stopped on purpose" marker so the keeper watches it again
+#   stop      sets that marker (the keeper leaves it down), hangs up the voice, closes the servers
+#   restart   stop, then start: the way to apply a new voice, wake words or a config change
+#   status    what is up; exit 0 when the voice line is running
+#
+# Ctrl-C in the stack's window also sets the marker (launch.sh does it), so a stack you closed by
+# hand stays closed until you start it again, from the Desktop launcher or here.
+set -uo pipefail
+
+agent_home() {
+  if [ -n "${FLINT_AGENT_HOME:-}" ]; then echo "$FLINT_AGENT_HOME"; return; fi
+  local d; d="$(cd "$(dirname "$(readlink -f "$0")")/.." 2>/dev/null && pwd)" || d=""
+  if [ -n "$d" ] && [ -f "$d/bin/launch.sh" ]; then echo "$d"; return; fi
+  echo "$HOME/my-agent"
+}
+AH="$(agent_home)"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/flint"; mkdir -p "$STATE"
+MARK="$HOME/.flint-setup/stack-off"
+NAME="$(python3 -c "import json;print(json.load(open('$AH/backtalk/backtalk.json')).get('name','Flint'))" 2>/dev/null || echo Flint)"
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+
+voice_up() { pgrep -f 'backtalk[.]main' >/dev/null 2>&1; }
+port_up()  { curl -fsS -m 2 -o /dev/null "http://127.0.0.1:$1/$2" 2>/dev/null; }
+face_state() { curl -fsS -m 2 "http://127.0.0.1:8790/state" 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("state","?"))' 2>/dev/null || echo down; }
+have_display() {
+  [ -n "${DISPLAY:-}" ] && return 0
+  if [ -S /tmp/.X11-unix/X0 ] && pgrep -u "$(id -u)" -x gnome-shell >/dev/null 2>&1; then
+    export DISPLAY=:0; export XAUTHORITY="${XAUTHORITY:-$(ls /run/user/$(id -u)/gdm/Xauthority 2>/dev/null | head -1)}"
+    [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ] || export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
+    return 0
+  fi
+  return 1
+}
+kill_port() {  # kill whatever listens on a port (the face and hands servers are plain "python3 server.py")
+  local pids; pids="$(ss -ltnpH "sport = :$1" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u)"
+  [ -n "$pids" ] && kill $pids 2>/dev/null || true
+}
+
+case "${1:-status}" in
+  status)
+    v=down; voice_up && v=up
+    echo "voice line (backtalk): $v"
+    echo "face (8790): $(face_state)"
+    echo "hands (8794): $(port_up 8794 stage.html && echo up || echo down)"
+    [ -f "$MARK" ] && echo "stopped on purpose (flint-stack start clears it)"
+    command -v flint-play >/dev/null && flint-play status 2>/dev/null | sed 's/^/music: /' || true
+    voice_up ;;
+  start)
+    rm -f "$MARK" "$STATE/keeper-gave-up"
+    if voice_up; then echo "$NAME is already running"; exit 0; fi
+    [ -x "$AH/bin/launch.sh" ] || { echo "no $AH/bin/launch.sh (run make-launchers.sh)" >&2; exit 1; }
+    if have_display && command -v gnome-terminal >/dev/null; then
+      gnome-terminal --title="$NAME" -- bash -lc "'$AH/bin/launch.sh' all; echo; read -r -p 'stack stopped. press Enter to close.' _" >/dev/null 2>&1 &
+      echo "starting $NAME in its own window"
+    else
+      setsid bash -lc "'$AH/bin/launch.sh' all" >>"$STATE/stack.log" 2>&1 < /dev/null &
+      echo "starting $NAME headless (no display); log: $STATE/stack.log"
+    fi
+    for _ in $(seq 1 30); do voice_up && { echo "voice line up"; exit 0; }; sleep 1; done
+    echo "the voice line did not come up within 30 s; check the window or $AH/backtalk/logs/backtalk.log" >&2; exit 1 ;;
+  stop)
+    mkdir -p "$(dirname "$MARK")"; touch "$MARK"
+    if voice_up; then
+      pkill -f 'backtalk[.]main' 2>/dev/null || true
+      for _ in $(seq 1 16); do voice_up || break; sleep 0.5; done
+      voice_up && pkill -9 -f 'backtalk[.]main' 2>/dev/null || true
+    fi
+    sleep 1                                 # start.sh's trap closes its servers when the voice exits
+    port_up 8790 state && kill_port 8790
+    port_up 8794 stage.html && kill_port 8794
+    command -v flint-play >/dev/null && flint-play stop >/dev/null 2>&1 || true
+    echo "$NAME stopped (and stays stopped until: flint-stack start)" ;;
+  restart)
+    "$0" stop; sleep 2; exec "$0" start ;;
+  -h|--help|help) sed -n '2,13p' "$0" ;;
+  *) echo "usage: flint-stack start|stop|restart|status" >&2; exit 1 ;;
+esac

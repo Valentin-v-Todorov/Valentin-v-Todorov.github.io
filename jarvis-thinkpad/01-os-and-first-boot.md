@@ -29,6 +29,13 @@ an hour including downloads.
   Docker performance, Claude Desktop's Cowork (KVM), and any Home Assistant VM.
 - Config → Power → "Always on USB" as you like; Config → Network → wake on LAN
   is useful for a server.
+- Config → Power → **"Power On with AC Attach"** (some models call it "Wake on
+  AC" or "Automatic power on after power loss"): **Enabled**. This is the one
+  setting Linux cannot set for you. With it, the ThinkPad boots by itself when
+  the mains comes back after a power cut, and everything after that is
+  automatic: auto-login, the stack, Remote Control, the timers. Without it,
+  someone has to press the power button once. The lid can stay closed
+  (`03-desktop` tells logind to ignore it).
 - Startup → boot order: USB first for the install, then back to the SSD.
 - Optional: Config → Display → set the internal display as primary if you use an
   external monitor. Save with F10.

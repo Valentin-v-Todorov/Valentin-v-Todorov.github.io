@@ -1,5 +1,10 @@
 # 02. Installing Flint with Jared's fullstack-agent on Linux
 
+> `setup.sh` (stage 09) runs this wizard headless with every answer below
+> pre-supplied, then pins the configs. This file is the reference for what it
+> does, and the manual path if you ever want to watch the wizard work
+> (`WIZARD_MODE=interactive` in `~/.flint-setup/setup.env`).
+
 ## Pre-flight (two minutes, saves an hour)
 
 ```bash

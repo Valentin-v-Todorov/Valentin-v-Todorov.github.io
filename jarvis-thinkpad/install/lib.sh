@@ -59,6 +59,8 @@ if [ -f "$ENV_FILE" ]; then . "$ENV_FILE"; fi
 : "${PRIORITIES:=Get the agent, the team and the home automation working end to end}"
 : "${RECURRING:=Morning brief; Inbox triage; Weekly finance review; Vault backup}"
 export YOUR_NAME AGENT_NAME AGENT_HOME VAULT_DIR PTT_KEY MIC_MODE VOICE STT_MODEL VOICE_PERMISSIONS FACE
+# the machine's secrets (chmod 600 files written by the stages) as environment, by name
+for _f in "$HOME"/.config/flint/*.env; do [ -f "$_f" ] && { set -a; . "$_f"; set +a; }; done; unset _f
 
 # ------------------------------------------------------------------ output
 if [ -t 1 ]; then C_H=$'\033[1;36m'; C_OK=$'\033[1;32m'; C_W=$'\033[1;33m'; C_E=$'\033[1;31m'; C_0=$'\033[0m'; else C_H=""; C_OK=""; C_W=""; C_E=""; C_0=""; fi
@@ -151,12 +153,12 @@ checks_done() { if [ "$CHECK_FAILS" = 0 ]; then ok "all $CHECK_TOTAL checks pass
 # run() stops at the first real failure (errexit). check() must run every check and
 # report all of them, so errexit is off while it runs; checks_done decides the verdict.
 stage_main() {
-  local rc=0
+  local __stage_rc=0                    # a name no stage's own variables can shadow (bash scoping is dynamic)
   case "${1:-both}" in
     run)   run ;;
-    check) set +e; check; rc=$?; set -e ;;
-    both)  run; set +e; check; rc=$?; set -e ;;
+    check) set +e; check; __stage_rc=$?; set -e ;;
+    both)  run; set +e; check; __stage_rc=$?; set -e ;;
     *) die "usage: $0 run|check" ;;
   esac
-  return $rc
+  return "$__stage_rc"
 }

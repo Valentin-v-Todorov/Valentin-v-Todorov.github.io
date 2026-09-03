@@ -44,6 +44,7 @@ done
 # stage numbers as typed by a human ("5") or as listed ("05")
 [ -n "$FROM" ] && FROM="$(printf '%02d' "$((10#$FROM))")"
 [ -n "$ONLY" ] && ONLY="$(printf '%02d' "$((10#$ONLY))")"
+export FLINT_ONLY="$ONLY"            # a stage asked for by name runs even if setup.env says "later"
 # a stop marker left by the reboot stage belongs to the run that rebooted, not to this one;
 # the post-reboot autostart entry is consumed only by a run that actually continues
 rm -f "$STATE/stop"
@@ -89,6 +90,7 @@ for s in "${STAGES[@]}"; do
   if run_stage "$s" run "$logf" && run_stage "$s" check "$logf"; then
     touch "$DONE/$s"
   else
+    [ -f "$STATE/interrupted" ] && { rm -f "$STATE/interrupted"; exit 0; }
     printf '\n\033[1;31mstage %s did not pass its checks.\033[0m  Log: %s\n' "$s" "$logf"
     printf 'Fix what it printed (or just run setup.sh again: many failures are a download that timed out).\n'
     exit 1

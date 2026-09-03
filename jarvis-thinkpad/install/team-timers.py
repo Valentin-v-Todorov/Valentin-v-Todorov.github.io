@@ -40,7 +40,9 @@ for f in glob.glob(os.path.expanduser("~/.config/flint/*.env")):      # secrets 
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1); os.environ.setdefault(k, v.strip().strip("'\\""))
-args = ["claude", "-p", job["prompt"], "--permission-mode", job.get("permission_mode") or "acceptEdits", "--max-turns", str(job.get("max_turns") or 60), "--output-format", "text"]
+args = ["claude", "-p", job["prompt"], "--max-turns", str(job.get("max_turns") or 60), "--output-format", "text"]
+if job.get("permission_mode"):                                   # unset = the machine's default mode (auto)
+    args += ["--permission-mode", job["permission_mode"]]
 if job.get("agent"):
     args += ["--agent", job["agent"]]
 os.execvp("claude", args)
@@ -91,11 +93,16 @@ def main():
         open(runner, "w").write(RUNNER); os.chmod(runner, 0o755)
     sched = load_roster(home).get("schedules") or []
     made = []
+    modes = {"", "default", "acceptEdits", "plan", "auto", "dontAsk", "bypassPermissions"}
     for s in sched:
         name = slug(s.get("name") or "job")
         if not s.get("prompt") or not s.get("on_calendar"):
             print(f"  skip {name}: needs prompt and on_calendar"); continue
-        json.dump({"prompt": s["prompt"], "agent": s.get("agent") or "", "permission_mode": s.get("permission_mode") or "acceptEdits",
+        if subprocess.call(["systemd-analyze", "calendar", str(s["on_calendar"])], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
+            print(f"  skip {name}: on_calendar '{s['on_calendar']}' is not a valid systemd OnCalendar"); continue
+        if (s.get("permission_mode") or "") not in modes:
+            print(f"  skip {name}: permission_mode must be one of {sorted(m for m in modes if m)}"); continue
+        json.dump({"prompt": s["prompt"], "agent": s.get("agent") or "", "permission_mode": s.get("permission_mode") or "",
                    "max_turns": int(s.get("max_turns") or 60), "description": s.get("description") or s.get("name")},
                   open(os.path.join(home, "jobs", name + ".json"), "w"), indent=2)
         unit = "flint-" + name
@@ -124,6 +131,16 @@ WantedBy=timers.target
 """)
         open(os.path.join(UNIT_DIR, unit + ".timer.made-by-team-timers"), "w").write("")
         made.append((unit, s.get("enabled", True) is not False))
+    # timers this tool made earlier for schedules that no longer exist go away
+    wanted = {u for u, _ in made}
+    for f in sorted(os.listdir(UNIT_DIR)):
+        if f.endswith(".timer.made-by-team-timers") and f[:-len(".timer.made-by-team-timers")] not in wanted:
+            unit = f[:-len(".timer.made-by-team-timers")]
+            sysctl("disable", "--now", unit + ".timer")
+            for path in (unit + ".timer", unit + ".service", f):
+                try: os.remove(os.path.join(UNIT_DIR, path))
+                except FileNotFoundError: pass
+            print(f"  removed {unit}.timer (no longer in team.yaml)")
     sysctl("daemon-reload")
     for unit, enabled in made:
         if enabled:

@@ -46,6 +46,13 @@ except Exception: d = {}
 d.setdefault("mcpServers", {})["home-assistant"] = {"type": "http", "url": "http://127.0.0.1:8123/api/mcp", "headers": {"Authorization": "Bearer ${HA_TOKEN}"}}
 tmp = p + ".tmp"; json.dump(d, open(tmp, "w"), indent=2); os.replace(tmp, p)
 print("   .mcp.json: home-assistant -> http://127.0.0.1:8123/api/mcp with ${HA_TOKEN}")
+# approve it once, so no session asks and the doctor can see it connect
+us = os.path.expanduser("~/.claude/settings.json")
+try: u = json.load(open(us))
+except Exception: u = {}
+en = u.setdefault("enabledMcpjsonServers", [])
+if "home-assistant" not in en: en.append("home-assistant")
+os.makedirs(os.path.dirname(us), exist_ok=True); t = us + ".tmp"; json.dump(u, open(t, "w"), indent=2); os.replace(t, us)
 PY
   # the voice session and the launchers get the token from the same file
   grep -q 'flint/\*.env' "$AGENT_HOME/bin/launch.sh" 2>/dev/null || sed -i '2a for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] \&\& { set -a; . "$f"; set +a; }; done' "$AGENT_HOME/bin/launch.sh"

@@ -143,7 +143,8 @@ def long_lived_token(base, access_token, name):
     msg = ws.recv()
     if msg.get("type") != "auth_ok":
         raise SystemExit(f"websocket auth failed: {msg}")
-    ws.send({"id": 1, "type": "auth/long_lived_access_token", "client_name": name, "client_icon": None, "lifespan": 3650})
+    # client_icon is optional and must be omitted, never null; a client_name must be unique per token
+    ws.send({"id": 1, "type": "auth/long_lived_access_token", "client_name": f"{name}-{time.strftime('%Y%m%d-%H%M%S')}", "lifespan": 3650})
     while True:
         msg = ws.recv()
         if msg.get("id") == 1:
@@ -156,7 +157,9 @@ def enable_mcp(base, token):
     if st != 200:
         raise SystemExit(f"mcp_server flow start: {st} {res}")
     if res.get("type") == "abort":
-        return "already configured" if res.get("reason") == "already_configured" else f"aborted: {res.get('reason')}"
+        if res.get("reason") in ("already_configured", "single_instance_allowed"):
+            return "already configured"
+        raise SystemExit(f"mcp_server flow aborted: {res.get('reason')}")
     if res.get("type") == "form":
         st, res = http("POST", base + f"/api/config/config_entries/flow/{res['flow_id']}", {"llm_hass_api": ["assist"]}, token=token)
     if res.get("type") == "create_entry":
@@ -178,6 +181,7 @@ def main():
 
     status = onboarding_status(base)
     tokens = None
+    used_password = False
     if status is None:
         print("   onboarding already complete")
     else:
@@ -186,11 +190,14 @@ def main():
             if st != 200 or "auth_code" not in res:
                 raise SystemExit(f"creating the owner failed: {st} {res}")
             tokens = exchange_code(base, res["auth_code"])
+            # persist the owner login now: anything failing later must not lose it
+            env.update({"HA_URL": base, "HA_USER": username, "HA_PASSWORD": password}); write_env(a.env, env)
+            used_password = True
             print(f"   owner account created: {username}")
         else:
             if not (env.get("HA_PASSWORD") or a.password):
                 raise SystemExit("the owner exists but I have no password for it (HA_PASSWORD in the env file or --password)")
-            tokens = login_flow(base, username, password)
+            tokens = login_flow(base, username, password); used_password = True
         at = tokens["access_token"]
         for step, body in (("core_config", {}), ("analytics", {}), ("integration", {"client_id": CLIENT_ID, "redirect_uri": CLIENT_ID + "?auth_callback=1"})):
             if status.get(step): continue
@@ -205,14 +212,16 @@ def main():
         if tokens is None:
             if not (env.get("HA_PASSWORD") or a.password):
                 raise SystemExit("no valid HA_TOKEN and no HA_PASSWORD: create a long-lived token in HA (profile → Security) and put HA_TOKEN=... into " + a.env)
-            tokens = login_flow(base, username, password)
+            tokens = login_flow(base, username, password); used_password = True
         llat = long_lived_token(base, tokens["access_token"], a.agent.lower())
         print("   long-lived token created")
     else:
         print("   existing long-lived token still valid")
 
     print("   MCP server integration:", enable_mcp(base, llat))
-    env.update({"HA_URL": base, "HA_USER": username, "HA_PASSWORD": password, "HA_TOKEN": llat})
+    env.update({"HA_URL": base, "HA_USER": username, "HA_TOKEN": llat})
+    if used_password or "HA_PASSWORD" not in env:
+        env["HA_PASSWORD"] = password if used_password else env.get("HA_PASSWORD", "")
     write_env(a.env, env)
     print(f"   credentials in {a.env} (chmod 600). Owner login for the HA web UI: {username} / the HA_PASSWORD in that file")
 

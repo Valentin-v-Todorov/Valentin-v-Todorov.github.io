@@ -34,30 +34,32 @@ assert "hello" in text or "flint" in text or "online" in text, text
 PY
   )
 }
-face_test() {
-  ( cd "$AGENT_HOME/ai-visualizer" && python3 server.py --no-open --mock idle >/tmp/flint-face.log 2>&1 & echo $! > /tmp/flint-face.pid )
-  local r=1
+face_test() {   # a throwaway face server on the real port, killed afterwards; skipped if the stack already runs
+  if curl -fsS -m 2 -o /dev/null http://127.0.0.1:8790/state 2>/dev/null; then curl -fsS -m 5 http://127.0.0.1:8790/faces/core/ | grep -q "The Core"; return; fi
+  ( cd "$AGENT_HOME/ai-visualizer" && exec python3 server.py --no-open --mock idle ) >/tmp/flint-face.log 2>&1 &
+  local pid=$! r=1
   if wait_http http://127.0.0.1:8790/state 20 && curl -fsS -m 5 http://127.0.0.1:8790/faces/core/ | grep -q "The Core" && curl -fsS -m 5 http://127.0.0.1:8790/faces/command/team.json | grep -q departments; then r=0; fi
-  kill "$(cat /tmp/flint-face.pid)" 2>/dev/null || true
+  kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true
   return $r
 }
 hands_test() {
-  ( cd "$AGENT_HOME/barehands" && python3 server.py >/tmp/flint-hands.log 2>&1 & echo $! > /tmp/flint-hands.pid )
-  local r=1
+  if curl -fsS -m 2 -o /dev/null http://127.0.0.1:8794/stage.html 2>/dev/null; then return 0; fi
+  ( cd "$AGENT_HOME/barehands" && exec python3 server.py ) >/tmp/flint-hands.log 2>&1 &
+  local pid=$! r=1
   wait_http http://127.0.0.1:8794/stage.html 20 && r=0
-  kill "$(cat /tmp/flint-hands.pid)" 2>/dev/null || true
+  kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true
   return $r
 }
-agent_test() {  # boots as the agent in its home; the hooks must record the turn
-  local before after
-  before="$(json_get "$AGENT_HOME/ai-visualizer/faces/command/live.json" turns 2>/dev/null || echo 0)"; before="${before:-0}"
-  ( cd "$AGENT_HOME" && timeout 180 claude -p "Reply with exactly: FLINT ONLINE" --max-turns 1 --output-format text 2>/dev/null | grep -q "ONLINE" ) || return 1
-  after="$(json_get "$AGENT_HOME/ai-visualizer/faces/command/live.json" turns 2>/dev/null || echo 0)"; after="${after:-0}"
-  [ "$after" -gt "$before" ] || { warn "the agent answered but the hooks did not record the turn (live.json)"; return 1; }
+agent_test() {  # boots as the agent in its home; the hooks must record the turn (live.json's ts moves)
+  local before after live="$AGENT_HOME/ai-visualizer/faces/command/live.json"
+  before="$(json_get "$live" ts 2>/dev/null)"; before="${before:-0}"
+  ( cd "$AGENT_HOME" && timeout 180 claude -p "Reply with exactly: FLINT ONLINE" --max-turns 1 --output-format text </dev/null 2>/dev/null | grep -q "ONLINE" ) || return 1
+  after="$(json_get "$live" ts 2>/dev/null)"; after="${after:-0}"
+  python3 -c "import sys; sys.exit(0 if float('${after:-0}' or 0) > float('${before:-0}' or 0) else 1)" || { warn "the agent answered but the hooks did not record the turn (live.json)"; return 1; }
 }
 mcp_test() {
-  local out; out="$(cd "$AGENT_HOME" && timeout 120 bash -lc 'claude mcp list' 2>/dev/null || true)"
-  printf '%s' "$out" | grep -q playwright || return 1
+  local out; out="$(cd "$AGENT_HOME" && timeout 120 claude mcp list </dev/null 2>/dev/null || true)"
+  printf '%s' "$out" | grep -qi "playwright.*connected" || return 1
   if [ "$HOME_ASSISTANT" = 1 ]; then printf '%s' "$out" | grep -qi "home-assistant.*connected" || return 1; fi
 }
 
@@ -71,8 +73,10 @@ run() {
 
 check() {
   : > "$REPORT"; printf '# %s ThinkPad report, %s\n\n' "$AGENT_NAME" "$(date '+%Y-%m-%d %H:%M')" >> "$REPORT"
-  tee_chk() { local w="$1"; shift; if chk "$w" "$@"; then printf -- '- ✓ %s\n' "$w" >> "$REPORT"; else printf -- '- ✗ %s\n' "$w" >> "$REPORT"; fi; }
-  tee_warn() { local w="$1"; shift; if "$@" >/dev/null 2>&1; then chk "$w" true; printf -- '- ✓ %s\n' "$w" >> "$REPORT"; else chk_warn "$w" false; printf -- '- ~ %s (optional)\n' "$w" >> "$REPORT"; fi; }
+  # every real test keeps its output in logs/doctor-<name>.log, and a failure shows its last lines
+  dlog() { printf '%s/doctor-%s.log' "$LOG_DIR" "$(printf '%s' "$1" | tr -c 'A-Za-z0-9' '-' | cut -c1-40)"; }
+  tee_chk() { local w="$1"; shift; local l; l="$(dlog "$w")"; if "$@" >"$l" 2>&1; then chk "$w" true; printf -- '- ✓ %s\n' "$w" >> "$REPORT"; else chk "$w" false; tail -5 "$l" | sed 's/^/      /'; printf -- '- ✗ %s\n' "$w" >> "$REPORT"; fi; }
+  tee_warn() { local w="$1"; shift; local l; l="$(dlog "$w")"; if "$@" >"$l" 2>&1; then chk "$w" true; printf -- '- ✓ %s\n' "$w" >> "$REPORT"; else chk_warn "$w" false; tail -3 "$l" | sed 's/^/      /'; printf -- '- ~ %s (optional)\n' "$w" >> "$REPORT"; fi; }
   tee_chk "X11 session (push-to-talk)" session_is_x11
   tee_chk "Claude Code logged in" bash -c 'claude auth status >/dev/null 2>&1 || timeout 90 claude -p "reply with exactly: ok" --max-turns 1 | grep -qi "^ok"'
   tee_chk "Kokoro speaks (you should have heard it)" tts_test
@@ -91,11 +95,6 @@ check() {
   [ "$UFW" = 1 ] && tee_chk "firewall" bash -c "sudo ufw status | grep -q 'Status: active'"
   printf '\nlogs: %s\nre-run any stage: setup.sh --only NN   the doctor alone: setup.sh --check\n' "$LOG_DIR" >> "$REPORT"
   say "report: $REPORT"
-  if [ "$TIMESHIFT_SNAPSHOT" = 1 ] && has timeshift && [ "$CHECK_FAILS" = 0 ] && [ ! -f "$STATE_DIR/.snapshot-done" ]; then
-    log "Timeshift snapshot of the working system (OS only)"
-    local dev; dev="$(findmnt -no SOURCE / 2>/dev/null || true)"
-    if sudo timeshift --create --comments "flint installed" --tags D --snapshot-device "$dev" >"$LOG_DIR/timeshift.log" 2>&1; then touch "$STATE_DIR/.snapshot-done"; ok "snapshot taken (timeshift --list)"; else warn "snapshot skipped (see $LOG_DIR/timeshift.log); BTRFS/LVM layouts sometimes need the Timeshift GUI once"; fi
-  fi
   checks_done
 }
 stage_main "$@"

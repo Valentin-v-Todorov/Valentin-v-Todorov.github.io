@@ -54,12 +54,24 @@ except Exception: cfg = {}
 perm = cfg.setdefault("permissions", {})
 perm.setdefault("defaultMode", "auto")
 deny = perm.setdefault("deny", [])
-for d in ["Bash(rm -rf /*)", "Bash(rm -rf ~*)", "Bash(rm -rf /home/*)", "Bash(sudo rm *)", "Bash(mkfs*)", "Bash(dd if=*)",
+for d in ["Bash(rm -rf /)", "Bash(rm -rf / *)", "Bash(rm -rf /*)", "Bash(rm -rf ~)", "Bash(rm -rf ~/)", "Bash(rm -rf /home)", "Bash(rm -rf /home/)",
+          "Bash(rm -rf /home/*)", "Bash(sudo rm -rf /)", "Bash(sudo rm -rf /*)", "Bash(mkfs*)", "Bash(dd if=*)",
           "Bash(shutdown*)", "Bash(systemctl poweroff*)", "Bash(git push --force*)", "Read(~/.config/flint/**)", "Read(~/.ssh/id_*)"]:
     if d not in deny: deny.append(d)
 add = perm.setdefault("additionalDirectories", [])
 if vault not in add: add.append(vault)
-cfg.setdefault("sandbox", {"enabled": True, "autoAllowBashIfSandboxed": True})
+sb = cfg.setdefault("sandbox", {}); sb.setdefault("enabled", True); sb.setdefault("autoAllowBashIfSandboxed", True)
+# the machine toolbox needs the host: these run outside the sandbox (with the classifier watching in auto mode)
+exc = sb.setdefault("excludedCommands", [])
+for c in ["sudo *", "docker *", "systemctl *", "loginctl *", "tailscale *", "gio *", "xdotool *", "wmctrl *", "playerctl *", "pactl *", "notify-send *", "gnome-screenshot *"]:
+    if c not in exc: exc.append(c)
+# the agent's home is trusted, so a detached `claude remote-control` never waits on the trust dialog
+try:
+    cj = os.path.expanduser("~/.claude.json"); c = json.load(open(cj)) if os.path.exists(cj) else {}
+    c.setdefault("projects", {}).setdefault(os.path.expanduser(os.environ.get("AGENT_HOME", "~/my-agent")), {})["hasTrustDialogAccepted"] = True
+    t = cj + ".tmp"; json.dump(c, open(t, "w"), indent=2); os.replace(t, cj)
+except Exception as e:
+    print("   note: could not pre-trust the agent home in ~/.claude.json:", e)
 tmp = p + ".tmp"; json.dump(cfg, open(tmp, "w"), indent=2); os.replace(tmp, p)
 print("   ~/.claude/settings.json: defaultMode auto, deny list, vault in additionalDirectories, sandbox on")
 PY
@@ -80,14 +92,16 @@ PY
   fi
 
   log "secrets loaded for every shell and launcher"
-  if ! grep -q 'jarvis-thinkpad: secrets' "$HOME/.bashrc" 2>/dev/null; then
-    cat >> "$HOME/.bashrc" <<'EOF'
+  for rc in "$HOME/.bashrc" "$HOME/.profile"; do
+    if ! grep -q 'jarvis-thinkpad: secrets' "$rc" 2>/dev/null; then
+      cat >> "$rc" <<'EOF'
 
 # jarvis-thinkpad: secrets (chmod 600 files) become environment variables, referenced by name
 for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] && { set -a; . "$f"; set +a; }; done
 EOF
-  fi
-  ok "~/.bashrc sources ~/.config/flint/*.env"
+    fi
+  done
+  ok "~/.bashrc and ~/.profile source ~/.config/flint/*.env"
 
   if [ "$VAULT_GIT" = 1 ]; then
     log "vault safety net: git, hourly commits"
@@ -130,9 +144,10 @@ Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=-%h/.config/flint/ha.env
 EnvironmentFile=-%h/.config/flint/elevenlabs.env
 WorkingDirectory=$AGENT_HOME
-ExecStart=/usr/bin/tmux new -d -s flint 'claude remote-control --name "$AGENT_NAME on ThinkPad" --permission-mode auto'
+ExecStartPre=-/usr/bin/nm-online -q -t 120
+ExecStart=/usr/bin/tmux new -d -s flint 'claude remote-control --name "$AGENT_NAME on ThinkPad" --permission-mode auto; sleep 30'
 ExecStop=/usr/bin/tmux kill-session -t flint
-Restart=on-failure
+Restart=always
 RestartSec=30
 [Install]
 WantedBy=default.target

@@ -16,18 +16,18 @@ run() {
 [Desktop Entry]
 Type=Application
 Name=Flint setup (continues after reboot)
-Exec=gnome-terminal --title="Flint setup" -- bash -lc "sleep 8; '$GUIDE_DIR/setup.sh' --continue; echo; read -r -p 'setup finished. press Enter to close.' _"
+Exec=gnome-terminal --title="Flint setup" -- bash -lc "nm-online -q -t 120 2>/dev/null || sleep 8; '$GUIDE_DIR/setup.sh' --continue; echo; read -r -p 'setup finished. press Enter to close.' _"
 X-GNOME-Autostart-enabled=true
 NoDisplay=false
 DESK
+  warn "Rebooting in 20 seconds. After the automatic login a terminal opens and the setup continues on its own."
+  warn "Ctrl-C now to reboot later by hand (then just log in; the setup continues by itself)."
+  trap 'echo; warn "reboot postponed: run  sudo reboot  when ready; the setup continues after the login"; touch "$STATE_DIR/interrupted"; exit 130' INT
+  sleep 20
+  trap - INT
   rm -f "$STATE_DIR/reboot-needed"
   touch "$DONE_DIR/$(basename "$0")"
   touch "$STATE_DIR/stop"
-  warn "Rebooting in 20 seconds. After the automatic login a terminal opens and the setup continues on its own."
-  warn "Ctrl-C now to reboot later by hand (then just log in; the setup continues by itself)."
-  trap 'echo; warn "reboot postponed: run  sudo reboot  when ready; the setup continues after the login"; exit 0' INT
-  sleep 20
-  trap - INT
   sudo systemctl reboot
 }
 

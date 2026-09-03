@@ -111,7 +111,7 @@ def main():
         note(agent, "started")
     elif name == "SubagentStop" and agent:
         active.pop(agent, None)
-        what = last_assistant_text(ev.get("agent_transcript_path") or "") if WORDS else ""
+        what = (ev.get("last_assistant_message") or last_assistant_text(ev.get("agent_transcript_path") or "")) if WORDS else ""
         note(agent, what or "finished")
     elif name == "UserPromptSubmit" and not in_subagent:
         command = "thinking"
@@ -123,7 +123,7 @@ def main():
         if name == "Stop":
             turns += 1
             if WORDS:
-                text = last_assistant_text(ev.get("transcript_path") or "")
+                text = ev.get("last_assistant_message") or last_assistant_text(ev.get("transcript_path") or "")
                 if text:
                     said = {"text": squash(text), "ts": now}
                     note(agent_name(), squash(text, 140))

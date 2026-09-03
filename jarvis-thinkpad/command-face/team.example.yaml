@@ -102,7 +102,7 @@ schedules:
     on_calendar: "Mon..Fri 07:00"
     agent: ""
     prompt: "Run the morning routine: read Active Priorities and yesterday's daily note, ask comms-lead for the inbox triage and automations-machine for a one-line machine report, then write '00 - Inbox/Morning Brief.md' with today's priorities, the triage and the report. Finish with: notify-send 'Flint' 'Morning brief ready'."
-    permission_mode: acceptEdits
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
     max_turns: 60
     enabled: true
   - name: finance-weekly
@@ -110,7 +110,7 @@ schedules:
     on_calendar: "Fri 18:00"
     agent: finance-lead
     prompt: "Produce this week's finance review from the Finance folder and update the ledger note. Write the result to the Finance folder and add one line to today's daily note."
-    permission_mode: acceptEdits
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
     max_turns: 40
     enabled: true
   - name: vault-hygiene
@@ -118,6 +118,6 @@ schedules:
     on_calendar: "Sun 20:00"
     agent: knowledge-librarian
     prompt: "Check every folder index in the vault against its folder, fix broken wikilinks, archive notes whose status is done, and write a short hygiene report to the Knowledge folder."
-    permission_mode: acceptEdits
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
     max_turns: 40
     enabled: true

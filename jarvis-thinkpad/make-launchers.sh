@@ -9,7 +9,9 @@
 #   ./make-launchers.sh ~/my-agent Flint
 set -euo pipefail
 HOME_DIR="${1:-$HOME/my-agent}"
+HOME_DIR="$(cd "$HOME_DIR" 2>/dev/null && pwd)" || { echo "no such folder: ${1:-}" >&2; exit 1; }
 NAME="${2:-}"
+DESKTOP="$(xdg-user-dir DESKTOP 2>/dev/null || true)"; DESKTOP="${DESKTOP:-$HOME/Desktop}"
 if [ ! -f "$HOME_DIR/CLAUDE.md" ]; then echo "no CLAUDE.md in $HOME_DIR; is Flint installed?" >&2; exit 1; fi
 if [ -z "$NAME" ] && [ -f "$HOME_DIR/backtalk/backtalk.json" ]; then
   NAME="$(python3 -c "import json;print(json.load(open('$HOME_DIR/backtalk/backtalk.json')).get('name','Flint'))")"
@@ -17,7 +19,7 @@ fi
 NAME="${NAME:-Flint}"
 SLUG="$(printf '%s' "$NAME" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$//')"
 
-mkdir -p "$HOME_DIR/bin" "$HOME/.local/share/applications" "$HOME/Desktop"
+mkdir -p "$HOME_DIR/bin" "$HOME/.local/share/applications" "$DESKTOP"
 
 # One wrapper does the work; the .desktop files just pick a mode.
 cat > "$HOME_DIR/bin/launch.sh" <<'WRAP'
@@ -51,10 +53,10 @@ Icon=$4
 Terminal=true
 Categories=Utility;
 DESK
-  cp "$f" "$HOME/Desktop/"
-  chmod +x "$HOME/Desktop/$(basename "$f")"
+  cp "$f" "$DESKTOP/"
+  chmod +x "$DESKTOP/$(basename "$f")"
   # GNOME marks desktop files untrusted until this metadata is set
-  gio set "$HOME/Desktop/$(basename "$f")" metadata::trusted true 2>/dev/null || true
+  gio set "$DESKTOP/$(basename "$f")" metadata::trusted true 2>/dev/null || true
   echo "  $2  ->  $f"
 }
 

@@ -61,7 +61,7 @@ missing_list() {
 }
 
 run_wizard() {  # run_wizard "<prompt text>"
-  ( cd "$FSA" && timeout 5400 claude -p "$1" --dangerously-skip-permissions --max-turns 500 --output-format text 2>&1 | tee -a "$WLOG" ) || true
+  ( cd "$FSA" && timeout 5400 claude -p "$1" --dangerously-skip-permissions --max-turns 500 --output-format text </dev/null 2>&1 | tee -a "$WLOG" ) || true
 }
 
 fix_configs() {
@@ -90,7 +90,11 @@ fix_configs() {
   mkdir -p "$AGENT_HOME/barehands/state" "$AGENT_HOME/logs"
   ok "backtalk.json, ai-visualizer.json, barehands.json pinned"
 
-  # the Obsidian registry must list the vault, or the first launch is a welcome screen
+  # the Obsidian registry must list the vault, or the first launch is a welcome screen;
+  # Obsidian rewrites that file while it runs, so it is closed first, only if a write is needed
+  if ! python3 -c "import json,os,sys;v=os.path.abspath(os.path.expanduser('$VAULT_DIR'));d=json.load(open(os.path.expanduser('~/.config/obsidian/obsidian.json')));sys.exit(0 if any(os.path.abspath(x.get('path',''))==v for x in d.get('vaults',{}).values()) else 1)" 2>/dev/null; then
+    pgrep -x obsidian >/dev/null && { pkill -x obsidian || true; sleep 2; }
+  fi
   python3 - "$VAULT_DIR" <<'PY'
 import json, os, shutil, time, secrets
 vault = os.path.abspath(os.path.expanduser(__import__("sys").argv[1]))
@@ -115,8 +119,8 @@ PY
 
 run() {
   log "before the wizard"
-  claude auth status >/dev/null 2>&1 || timeout 90 claude -p "reply with exactly: ok" --max-turns 1 2>/dev/null | grep -qi '^ok' || die "Claude Code is not logged in (stage 07)."
-  pgrep -x obsidian >/dev/null && { warn "closing Obsidian so the wizard can register the vault"; pkill -x obsidian || true; sleep 2; }
+  claude auth status >/dev/null 2>&1 || (cd "$STATE_DIR" && timeout 90 claude -p "reply with exactly: ok" --max-turns 1 --output-format text </dev/null 2>/dev/null | grep -qi 'ok') || die "Claude Code is not logged in (stage 07)."
+  wizard_ok || { pgrep -x obsidian >/dev/null && { warn "closing Obsidian so the wizard can register the vault"; pkill -x obsidian || true; sleep 2; }; }
   session_is_x11 || warn "not an X11 session (push-to-talk needs one after the reboot); the wizard does not care"
   mkdir -p "$AGENT_HOME"
   if [ ! -d "$FSA/.git" ]; then git clone -q https://github.com/jaredrhod/fullstack-agent "$FSA"; ok "fullstack-agent cloned"; else ok "fullstack-agent present"; fi
@@ -146,8 +150,8 @@ run() {
   fi
   if ! wizard_ok; then
     if have_display; then
-      warn "opening an interactive session so you can finish it with the wizard (say: we got cut off, keep going; these are missing:$(missing_list))"
-      term_run "cd '$FSA' && claude --continue"
+      warn "opening an interactive session so you can finish it with the wizard (the headless run cannot be resumed; this one starts with its context)"
+      term_run "cd '$FSA' && claude \"We got cut off during setup. Continue from fullstack-agent.md with the answers in $PROMPT (read it first). Still missing:$(missing_list). Ask me only what you truly cannot decide.\""
     fi
     wizard_ok || die "the agent is not fully installed:$(missing_list). Run again: setup.sh --only 09  (log: $WLOG)"
   fi

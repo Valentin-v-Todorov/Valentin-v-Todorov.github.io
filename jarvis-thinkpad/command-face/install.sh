@@ -9,7 +9,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOME_DIR="$HOME/my-agent"; DEFAULT_FACE="core"
-for a in "$@"; do case "$a" in --default=*) DEFAULT_FACE="${a#--default=}" ;; *) HOME_DIR="$a" ;; esac; done
+for a in "$@"; do case "$a" in --default=*) DEFAULT_FACE="${a#--default=}" ;; *) HOME_DIR="$(cd "$a" 2>/dev/null && pwd)" || { echo "no such folder: $a" >&2; exit 1; } ;; esac; done
 VIS="$HOME_DIR/ai-visualizer"
 export PATH="$HOME/.local/bin:$PATH"
 [ -f "$HOME_DIR/CLAUDE.md" ] || { echo "no CLAUDE.md in $HOME_DIR: install Flint first (02-flint-install.md)" >&2; exit 1; }

@@ -4,6 +4,12 @@
 
 run() {
   rm -f "$HOME/.config/autostart/flint-setup-continue.desktop"
+  if [ "$TIMESHIFT_SNAPSHOT" = 1 ] && has timeshift && [ ! -f "$STATE_DIR/.snapshot-done" ] && ! grep -q '✗' "$STATE_DIR/report.md" 2>/dev/null; then
+    log "Timeshift snapshot of the working system (OS only, a few minutes)"
+    local dev; dev="$(findmnt -no SOURCE / 2>/dev/null || true)"
+    if timeout 1800 sudo timeshift --create --comments "flint installed" --tags D --snapshot-device "$dev" >"$LOG_DIR/timeshift.log" 2>&1; then touch "$STATE_DIR/.snapshot-done"; ok "snapshot taken (timeshift --list)"; else warn "snapshot skipped (see $LOG_DIR/timeshift.log); BTRFS/LVM layouts sometimes need the Timeshift GUI once"; fi
+  fi
+  [ "$REMOTE_CONTROL" = 1 ] && systemctl --user start flint-rc.service >/dev/null 2>&1 || true
   date -Is > "$STATE_DIR/DONE"
   log "$AGENT_NAME is installed"
   cat <<EOF
@@ -25,14 +31,19 @@ $( [ "$HOME_ASSISTANT" = 1 ] && printf '   Home Assistant  http://127.0.0.1:8123
       not yet in the vault: your machine access note, remote access note, the team roster with my real departments."
 EOF
   if [ "$AUTOSTART_STACK" = 1 ] && have_display; then
-    log "starting the stack (the face opens, $AGENT_NAME says hello)"
-    gnome-terminal --title="$AGENT_NAME" -- bash -lc "exec $AGENT_HOME/bin/launch.sh all" >/dev/null 2>&1 &
-    sleep 3
+    if curl -fsS -m 2 -o /dev/null http://127.0.0.1:8790/state 2>/dev/null || pgrep -f 'backtalk[.]main' >/dev/null; then
+      ok "the stack is already running (its own window)"
+    else
+      log "starting the stack (the face opens, $AGENT_NAME says hello)"
+      gnome-terminal --title="$AGENT_NAME" -- bash -lc "$AGENT_HOME/bin/launch.sh all; echo; read -r -p 'stack stopped. press Enter to close.' _" >/dev/null 2>&1 &
+      sleep 3
+    fi
   fi
 }
 
 check() {
   chk "setup marked done" test -f "$STATE_DIR/DONE"
+  [ "$AUTOSTART_STACK" = 1 ] && have_display && chk_warn "face server answering after the hello" wait_http http://127.0.0.1:8790/state 40
   checks_done
 }
 stage_main "$@"

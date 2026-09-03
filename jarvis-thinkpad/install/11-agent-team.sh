@@ -23,7 +23,7 @@ run() {
 check() {
   chk "team.yaml valid" bash -c "cd '$AGENT_HOME' && uv run --quiet '$AGENT_HOME/bin/team-sync.py' --home '$AGENT_HOME' --check"
   chk "agent files exist" bash -c "test \"\$(find '$AGENT_HOME/.claude/agents' -name '*.md' | wc -l)\" -ge 5"
-  [ "$AGENT_TIMERS" = 1 ] && chk "at least one flint-* timer active" bash -c "systemctl --user list-timers --all --no-legend 'flint-*' | grep -q flint-"
+  [ "$AGENT_TIMERS" = 1 ] && chk "the team's timers are active" bash -c "ls '$HOME'/.config/systemd/user/flint-*.timer.made-by-team-timers >/dev/null 2>&1 && for m in '$HOME'/.config/systemd/user/flint-*.timer.made-by-team-timers; do systemctl --user is-active \"\$(basename \"\${m%.made-by-team-timers}\")\" >/dev/null || exit 1; done"
   checks_done
 }
 stage_main "$@"

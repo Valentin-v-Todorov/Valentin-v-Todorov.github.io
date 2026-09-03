@@ -55,6 +55,26 @@ prove, in the order they will happen:
    connected.
 7. **Stage 14**: the stack starting in its terminal, the greeting.
 
+## The two critic passes, done by hand (the panel's ran out of usage)
+
+- **Post-reboot continuation**: the autostart entry opens gnome-terminal (a real
+  TTY, so `script` and the logins work), waits for the network (`nm-online`),
+  and runs `setup.sh --continue` in a login shell: `~/.profile` gives it
+  `~/.local/bin`, lib.sh loads `~/.config/flint/*.env`, sudo is passwordless,
+  the docker group is active, DISPLAY and DBus exist for gsettings, gnome-terminal
+  and the audio tests. The stack's own autostart entry is only written in stage
+  10, after that login, so it cannot collide with the continuation; stage 14
+  starts the stack only if nothing answers on 8790; the doctor uses the face
+  port only while the stack is not running.
+- **Headless wizard prompt against fullstack-agent.md and the four component
+  wizards**: every Phase 2 answer is supplied; the prompt forbids the things the
+  wizards would otherwise try unattended (start.sh, live mic and speaker tests,
+  opening a browser, apt, Obsidian Sync, memory migration) and pre-confirms the
+  memory wizard's preview step. What remains unprovable without a run: whether
+  `claude -p` with `--max-turns 500` completes the ~1 GB model download and the
+  vault build inside the 90-minute timeout on the ThinkPad's connection. If not,
+  the stage's second pass and then the interactive rescue window take over.
+
 ## Review findings deliberately left for later
 
 - `13-doctor.sh`: the Timeshift snapshot moved to stage 14 (a check must not

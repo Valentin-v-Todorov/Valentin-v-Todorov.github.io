@@ -180,6 +180,8 @@ def main():
     username = env.get("HA_USER") or a.user
 
     status = onboarding_status(base)
+    if status and all(status.values()):
+        status = None                   # every step done, views just not unregistered yet (no restart since)
     tokens = None
     used_password = False
     if status is None:

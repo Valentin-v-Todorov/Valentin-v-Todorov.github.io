@@ -33,14 +33,14 @@ README). Logs: `~/.flint-setup/logs/`. Report: `~/.flint-setup/report.md`.
 | 04 remote-access | sshd, an ssh key, ufw (SSH, mDNS, 8123), Tailscale with `--ssh` | open the Tailscale link once (or put `TS_AUTHKEY` in setup.env) |
 | 05 dev-tools | uv, Claude Code (native installer) + the bwrap AppArmor profile, Node 22, GitHub CLI, Docker, groups (input, dialout, video, kvm, docker) | no |
 | 06 apps | Obsidian (.deb, not launched), Chrome, Claude Desktop (beta), VS Code (off by default) | no |
-| 07 accounts | `claude auth login` with the subscription; `gh auth login` | the two browser logins (skip with `ACCOUNTS_LATER=1`) |
+| 07 accounts | `claude auth login` with the subscription; `gh auth login` (token kept outside the locked keyring) | the two browser logins (postpone with `ACCOUNTS_LATER=1` in setup.env; `setup.sh --only 07` runs them regardless) |
 | 08 reboot | one reboot for groups, the Xorg session, firmware and kernel; an autostart entry reopens a terminal and continues | nothing: it continues by itself |
 | 09 flint-wizard | Jared's `fullstack-agent` installer, headless (`claude -p` with every answer pre-supplied); then the configs pinned to the decisions, the vault registered in Obsidian, the speech models fetched | no (`WIZARD_MODE=interactive` if you want to watch) |
 | 10 flint-wire | Desktop launchers, the Orbitals face as default + the roster + the live hooks, CLAUDE.md additions (team on screen, machine toolbox), Claude Code user settings (auto mode, deny list, vault access, sandbox), Playwright MCP, secrets loaded from `~/.config/flint/*.env`, hourly vault git commits, Remote Control in tmux, the stack at every login | no |
 | 11 agent-team | `team.yaml` → subagent files and systemd user timers (morning brief, weekly finance, vault hygiene) | no |
 | 12 home-assistant | Home Assistant Container (compose), onboarding over its REST API, long-lived token, the MCP Server integration, `.mcp.json` for the agent, port 8123 open on the LAN | no |
-| 13 doctor | real tests: Kokoro speaks through the speakers, faster-whisper transcribes, face and hands servers answer, the agent boots as Flint and its hooks record the turn, MCP servers connect, HA API answers, timers, firewall; report; Timeshift snapshot | no |
-| 14 finish | prints the map, starts the stack; Flint says hello | no |
+| 13 doctor | real tests: Kokoro speaks through the speakers, faster-whisper transcribes, face and hands servers answer, the agent boots as Flint and its hooks record the turn, MCP servers connect, HA API answers, timers, firewall; report | no |
+| 14 finish | Timeshift snapshot when the report is clean, Remote Control started, prints the map, starts the stack; Flint says hello | no |
 
 ## Commands
 
@@ -83,5 +83,6 @@ The stage prints what failed and where its log is. Most failures are a download
 that timed out: run `setup.sh` again. A stage that keeps failing: read
 `~/.flint-setup/logs/NN-*.log`, fix the cause, `setup.sh --only NN`. The wizard
 stage keeps its own transcript in `logs/wizard.log`; if it ends incomplete it
-lists what is missing and, when a display exists, opens an interactive
-`claude --continue` so you can finish it with the wizard by typing.
+lists what is missing and, when a display exists, opens an interactive Claude
+session that starts with the same answers and the list of what is missing, so
+you can finish it with the wizard by typing.

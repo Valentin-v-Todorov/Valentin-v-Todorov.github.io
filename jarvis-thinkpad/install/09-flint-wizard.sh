@@ -40,6 +40,10 @@ HARD RULES FOR THIS RUN
 - Obsidian on this machine: the .deb. Its registry file is ~/.config/obsidian/obsidian.json (back it up first if it exists, then register the vault). Launch it only after registering, with: setsid obsidian >/dev/null 2>&1 & ; do not wait for it and do not close it.
 - Write backtalk.json, ai-visualizer.json and barehands.json exactly as fullstack-agent.md Phase 4 says, then read each back.
 - Do not skip the Obsidian, vault, CLAUDE.md, backtalk, ai-visualizer or barehands steps for any reason. If a download fails, retry it up to three times before moving on, and list anything that still failed at the end under the heading "NOT DONE:".
+- ai-memory-vault: no Obsidian Sync (the vault is backed up with git by another script); Obsidian is installed already, do not reinstall it. Preview-and-confirm steps are confirmed in advance: build.
+- backtalk: do not run any live microphone or speaker test, do not record or play audio, do not start run.sh; the doctor tests the voice afterwards. Leave mic_device unset.
+- barehands and ai-visualizer: do not open a browser; the camera permission happens on the first real open.
+- No old Claude Code memory exists on this machine: skip every migration offer.
 EOF
 }
 

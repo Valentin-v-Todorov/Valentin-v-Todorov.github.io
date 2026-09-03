@@ -78,7 +78,7 @@ check() {
   tee_chk() { local w="$1"; shift; local l; l="$(dlog "$w")"; if "$@" >"$l" 2>&1; then chk "$w" true; printf -- '- ✓ %s\n' "$w" >> "$REPORT"; else chk "$w" false; tail -5 "$l" | sed 's/^/      /'; printf -- '- ✗ %s\n' "$w" >> "$REPORT"; fi; }
   tee_warn() { local w="$1"; shift; local l; l="$(dlog "$w")"; if "$@" >"$l" 2>&1; then chk "$w" true; printf -- '- ✓ %s\n' "$w" >> "$REPORT"; else chk_warn "$w" false; tail -3 "$l" | sed 's/^/      /'; printf -- '- ~ %s (optional)\n' "$w" >> "$REPORT"; fi; }
   tee_chk "X11 session (push-to-talk)" session_is_x11
-  tee_chk "Claude Code logged in" bash -c 'claude auth status >/dev/null 2>&1 || timeout 90 claude -p "reply with exactly: ok" --max-turns 1 | grep -qi "^ok"'
+  tee_chk "Claude Code logged in" bash -c "claude auth status >/dev/null 2>&1 || (cd '$STATE_DIR' && timeout 90 claude -p 'reply with exactly: ok' --max-turns 1 --output-format text </dev/null | grep -qi ok)"
   tee_chk "Kokoro speaks (you should have heard it)" tts_test
   tee_chk "faster-whisper hears" stt_test
   tee_chk "face server + The Core + roster" face_test
@@ -86,7 +86,7 @@ check() {
   tee_chk "the agent boots as $AGENT_NAME and the hooks record it" agent_test
   tee_warn "MCP servers connect (playwright$( [ "$HOME_ASSISTANT" = 1 ] && printf ', home-assistant'))" mcp_test
   [ "$HOME_ASSISTANT" = 1 ] && tee_chk "Home Assistant API with the token" bash -c ". '$HOME/.config/flint/ha.env'; curl -fsS -m 5 -H \"Authorization: Bearer \$HA_TOKEN\" http://127.0.0.1:8123/api/ | grep -q 'API running'"
-  [ "$AGENT_TIMERS" = 1 ] && tee_chk "agent timers scheduled" bash -c "systemctl --user list-timers --all --no-legend 'flint-*' | grep -q flint-"
+  [ "$AGENT_TIMERS" = 1 ] && tee_chk "agent timers scheduled" bash -c "ls '$HOME'/.config/systemd/user/flint-*.timer.made-by-team-timers >/dev/null 2>&1 && for m in '$HOME'/.config/systemd/user/flint-*.timer.made-by-team-timers; do systemctl --user is-active \"\$(basename \"\${m%.made-by-team-timers}\")\" >/dev/null || exit 1; done"
   [ "$VAULT_GIT" = 1 ] && tee_chk "vault backup timer" systemctl --user is-active flint-vault-backup.timer
   [ "$TAILSCALE" = 1 ] && tee_warn "Tailscale connected" tailscale status
   tee_chk "auto-login + Xorg configured" bash -c "sudo grep -Eq '^AutomaticLogin=$USER' /etc/gdm3/custom.conf && sudo grep -Eq '^WaylandEnable=false' /etc/gdm3/custom.conf"

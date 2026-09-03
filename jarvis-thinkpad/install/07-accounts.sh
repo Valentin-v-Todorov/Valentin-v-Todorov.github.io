@@ -25,7 +25,9 @@ run() {
     log "GitHub login (optional but useful: private vault backups, the agent's repos)"
     if gh auth status >/dev/null 2>&1; then ok "already logged in as $(gh api user -q .login 2>/dev/null)"; else
       warn "A browser device-code login follows (copy the code, press Enter, paste it in the browser)."
-      gh auth login --hostname github.com --git-protocol https --web || warn "GitHub login skipped; later: gh auth login"
+      # --insecure-storage: the token goes to ~/.config/gh/hosts.yml (mode 600) instead of the GNOME
+      # keyring, which stays locked after the automatic login and would block every unattended git push
+      gh auth login --hostname github.com --git-protocol https --web --insecure-storage || warn "GitHub login skipped; later: gh auth login --insecure-storage"
       gh auth status >/dev/null 2>&1 && gh auth setup-git >/dev/null 2>&1 && ok "git uses gh for GitHub credentials" || true
     fi
     if [ -z "$(git config --global user.email || true)" ] && gh auth status >/dev/null 2>&1; then

@@ -35,13 +35,14 @@ CONF
     if tailscale status >/dev/null 2>&1; then
       ok "already connected: $(tailscale ip -4 2>/dev/null | head -1)"
     elif [ -n "$TS_AUTHKEY" ]; then
-      sudo tailscale up --ssh --auth-key="$TS_AUTHKEY" --hostname="$HOSTNAME_WANTED" && ok "connected with the auth key" || warn "the auth key did not work; later: sudo tailscale up --ssh"
+      sudo tailscale up --ssh --auth-key="$TS_AUTHKEY" && ok "connected with the auth key" || warn "the auth key did not work; later: sudo tailscale up --ssh"
     else
       warn "One-time login: a link (and a QR code) follows. Open it on any device where you are logged into Tailscale."
       warn "This waits up to 5 minutes; if you skip it, run later:  sudo tailscale up --ssh"
-      timeout 300 sudo tailscale up --ssh --qr --hostname="$HOSTNAME_WANTED" 2>&1 | tee "$LOG_DIR/tailscale-login.txt" || \
-      timeout 300 sudo tailscale up --ssh --hostname="$HOSTNAME_WANTED" 2>&1 | tee -a "$LOG_DIR/tailscale-login.txt" || \
-      warn "not connected yet (run: sudo tailscale up --ssh)"
+      local out=""
+      out="$(timeout 300 sudo tailscale up --ssh --qr 2>&1 | tee "$LOG_DIR/tailscale-login.txt")" || true
+      case "$out" in *"flag provided but not defined"*) timeout 300 sudo tailscale up --ssh 2>&1 | tee -a "$LOG_DIR/tailscale-login.txt" || true ;; esac
+      tailscale status >/dev/null 2>&1 || warn "not connected yet (run: sudo tailscale up --ssh)"
     fi
     tailscale status >/dev/null 2>&1 && ok "Tailscale: $(tailscale ip -4 2>/dev/null | head -1)  ssh $USER@$(hostname) works from any of your devices" || true
   fi

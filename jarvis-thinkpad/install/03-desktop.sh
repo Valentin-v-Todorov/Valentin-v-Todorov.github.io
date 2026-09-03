@@ -104,8 +104,6 @@ CONF
   sudo tee /etc/tlp.d/01-flint-server.conf >/dev/null <<'CONF'
 START_CHARGE_THRESH_BAT0=75
 STOP_CHARGE_THRESH_BAT0=80
-CPU_ENERGY_PERF_POLICY_ON_AC=balance_performance
-CPU_ENERGY_PERF_POLICY_ON_BAT=balance_power
 USB_AUTOSUSPEND=0
 CONF
   sudo systemctl enable --now tlp >/dev/null 2>&1 || true
@@ -127,6 +125,8 @@ check() {
   chk "logind lid/idle drop-in" test -f /etc/systemd/logind.conf.d/flint-server.conf
   chk "dconf defaults compiled" test -f /etc/dconf/db/local
   chk "TLP threshold config" test -f /etc/tlp.d/01-flint-server.conf
+  chk "tlp enabled" systemctl is-enabled tlp
+  chk_warn "battery thresholds 75-80 applied (needs a ThinkPad battery)" bash -c "sudo tlp-stat -b 2>/dev/null | grep -Eq 'charge_control_start_threshold *= *75'"
   chk_warn "this session is X11 (after the reboot it will be)" session_is_x11
   checks_done
 }

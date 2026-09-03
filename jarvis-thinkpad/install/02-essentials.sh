@@ -40,8 +40,9 @@ check() {
   for c in git curl python3 espeak-ng ffmpeg arecord pactl secret-tool bwrap socat xdotool wmctrl notify-send tmux jq rg ufw qrencode; do
     chk "$c" has "$c"
   done
+  for p in tlp openssh-server timeshift libfuse2t64 avahi-daemon libnss-mdns fd-find pipx alsa-utils v4l-utils; do chk "package $p" pkg_installed "$p"; done
   chk "python 3.11 or 3.12 (or uv-managed 3.12 later)" python3 -c 'import sys; assert sys.version_info[:2] in ((3,11),(3,12))'
-  chk "libespeak-ng.so.1 where backtalk looks" test -e /usr/lib/x86_64-linux-gnu/libespeak-ng.so.1
+  chk "libespeak-ng.so.1 installed" bash -c 'ldconfig -p | grep -q libespeak-ng.so.1'
   chk "portaudio library" bash -c 'ldconfig -p | grep -q portaudio'
   checks_done
 }

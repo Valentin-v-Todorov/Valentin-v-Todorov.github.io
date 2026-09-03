@@ -17,7 +17,9 @@ export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a           # never pop the "which services to restart" dialog
 
 # ------------------------------------------------------------------ config
-if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE"; set +a; fi
+# sourced, not exported: an optional key in setup.env (TS_AUTHKEY) must not reach every
+# child process; the values the stages' children need are exported by name below
+if [ -f "$ENV_FILE" ]; then . "$ENV_FILE"; fi
 : "${YOUR_NAME:=Valentin}"
 : "${AGENT_NAME:=Flint}"
 : "${AGENT_HOME:=$HOME/my-agent}"
@@ -30,7 +32,7 @@ if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE"; set +a; fi
 : "${VOICE_PERMISSIONS:=ask}"
 : "${FACE:=core}"
 : "${TIMEZONE:=}"
-: "${HOSTNAME_WANTED:=thinkpad}"
+: "${HOSTNAME_WANTED=thinkpad}"          # empty in setup.env = keep the hostname the installer chose
 : "${GIT_NAME:=$YOUR_NAME}"
 : "${GIT_EMAIL:=}"
 : "${SUDO_NOPASSWD:=1}"
@@ -71,20 +73,24 @@ say()  { printf '   %s\n' "$*"; }
 has() { command -v "$1" >/dev/null 2>&1; }
 in_group() { id -nG "$USER" | tr ' ' '\n' | grep -qx "$1"; }
 pkg_installed() { dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q "install ok installed"; }
-apt_update_once() { if [ ! -f "$STATE_DIR/.apt-updated" ] || [ "$(( $(date +%s) - $(stat -c %Y "$STATE_DIR/.apt-updated") ))" -gt 3600 ]; then sudo apt-get update -qq; touch "$STATE_DIR/.apt-updated"; fi; }
+# sudo resets the environment, so the non-interactive flags must ride on the command itself;
+# apt-get does not wait for the dpkg lock by default (the first minutes after a fresh login
+# are exactly when apt-daily and unattended-upgrades hold it), so it waits up to 10 minutes
+aptget() { sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get -o DPkg::Lock::Timeout=600 -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold "$@"; }
+apt_update_once() { if [ ! -f "$STATE_DIR/.apt-updated" ] || [ "$(( $(date +%s) - $(stat -c %Y "$STATE_DIR/.apt-updated") ))" -gt 3600 ]; then aptget update -qq; touch "$STATE_DIR/.apt-updated"; fi; }
 apt_install() {           # apt_install pkg...   (retries once; skips what is present)
   local want=() p
   for p in "$@"; do pkg_installed "$p" || want+=("$p"); done
   [ "${#want[@]}" = 0 ] && return 0
   apt_update_once
-  sudo apt-get install -y -qq --no-install-recommends "${want[@]}" || { sleep 5; sudo apt-get install -y -qq --no-install-recommends "${want[@]}"; }
+  aptget install -y -qq --no-install-recommends "${want[@]}" || { sleep 5; aptget install -y -qq --no-install-recommends "${want[@]}"; }
 }
 apt_install_full() {      # with recommends (desktop apps want them)
   local want=() p
   for p in "$@"; do pkg_installed "$p" || want+=("$p"); done
   [ "${#want[@]}" = 0 ] && return 0
   apt_update_once
-  sudo apt-get install -y -qq "${want[@]}" || { sleep 5; sudo apt-get install -y -qq "${want[@]}"; }
+  aptget install -y -qq "${want[@]}" || { sleep 5; aptget install -y -qq "${want[@]}"; }
 }
 mark_reboot() { echo "$1" >> "$STATE_DIR/reboot-needed"; warn "reboot needed later: $1"; }
 reboot_needed() { [ -s "$STATE_DIR/reboot-needed" ]; }
@@ -113,7 +119,12 @@ json.dump(d, open(tmp, "w"), indent=2); os.replace(tmp, p)
 PY
 }
 session_is_x11() { [ "${XDG_SESSION_TYPE:-}" = "x11" ]; }
-export -f has in_group pkg_installed json_get json_set session_is_x11      # usable inside `bash -c` checks too
+net_ok() {                # is https://api.github.com reachable, with whatever tool this machine has
+  if has curl; then curl -fsS -m 10 -o /dev/null https://api.github.com/ 2>/dev/null && return 0; fi
+  if has wget; then wget -q --spider --timeout=10 https://api.github.com/ 2>/dev/null && return 0; fi
+  python3 -c 'import urllib.request; urllib.request.urlopen("https://api.github.com/", timeout=10)' 2>/dev/null
+}
+export -f has in_group pkg_installed json_get json_set session_is_x11 aptget net_ok      # usable inside `bash -c` checks too
 have_display() { [ -n "${DISPLAY:-}" ] && [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]; }
 wait_http() {             # wait_http url seconds
   local i=0; while [ $i -lt "$2" ]; do curl -fsS -m 3 -o /dev/null "$1" 2>/dev/null && return 0; sleep 2; i=$((i+2)); done; return 1

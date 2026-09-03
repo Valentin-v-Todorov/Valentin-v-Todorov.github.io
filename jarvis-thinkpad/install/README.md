@@ -71,7 +71,11 @@ owner login and the long-lived token; every shell, launcher, timer and the voice
 session load `~/.config/flint/*.env` into the environment, and configs reference
 `${HA_TOKEN}` by name. An ElevenLabs key, if you ever want one, goes into
 `~/.config/flint/elevenlabs.env` as `ELEVENLABS_API_KEY=...` the same way.
-Claude Code's user settings deny the agent reading that folder.
+Claude Code's user settings deny the agent reading that folder. The GitHub
+login is stored by `gh` in `~/.config/gh/hosts.yml` (mode 600) rather than in
+the GNOME keyring, because the keyring stays locked after an automatic login
+and would block every unattended vault push; Claude Code keeps its own login
+in `~/.claude/` and is not affected.
 
 ## When something fails
 

@@ -4,14 +4,14 @@
 
 run() {
   log "uv (Python manager backtalk uses)"
-  if ! has uv; then curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1; fi
+  if ! has uv; then curl -LsSf https://astral.sh/uv/install.sh | sh >"$LOG_DIR/uv-install.log" 2>&1 || die "uv installer failed: $LOG_DIR/uv-install.log"; fi
   ok "uv $(uv --version 2>/dev/null | awk '{print $2}')"
   local pyv; pyv="$(python3 -c 'import sys;print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
   case "$pyv" in 3.11|3.12) ;; *) uv python install 3.12 >/dev/null 2>&1 && ok "uv-managed python 3.12 for backtalk" || warn "uv could not fetch python 3.12; backtalk's install will try again" ;; esac
 
   log "Claude Code (native installer, auto-updates)"
-  if ! has claude; then curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1; fi
-  has claude || die "claude did not install; check $LOG_DIR and re-run"
+  if ! has claude; then curl -fsSL https://claude.ai/install.sh | bash >"$LOG_DIR/claude-install.log" 2>&1 || die "Claude Code installer failed: $LOG_DIR/claude-install.log"; fi
+  has claude || die "claude did not install; see $LOG_DIR/claude-install.log and re-run"
   ok "claude $(claude --version 2>/dev/null | head -1)"
 
   log "Claude Code sandbox on Ubuntu 24.04 (bubblewrap + AppArmor profile)"
@@ -25,13 +25,13 @@ profile bwrap /usr/bin/bwrap flags=(unconfined) {
   include if exists <local/bwrap>
 }
 PROFILE
-    sudo systemctl reload apparmor >/dev/null 2>&1 || sudo apparmor_parser -r /etc/apparmor.d/bwrap || true
+    sudo systemctl reload apparmor >/dev/null 2>&1 || sudo apparmor_parser -r /etc/apparmor.d/bwrap || warn "could not load the bwrap profile; the check below tells"
   fi
   ok "bwrap profile in place"
 
   log "Node.js 22 (Playwright MCP, npm-based MCP servers, the FounderOS demo)"
   if ! has node || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
-    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - >/dev/null 2>&1
+    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - >"$LOG_DIR/nodesource.log" 2>&1 || die "NodeSource setup failed: $LOG_DIR/nodesource.log"
     apt_install nodejs
   fi
   ok "node $(node --version)"
@@ -43,14 +43,14 @@ PROFILE
       curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
       sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-      sudo apt-get update -qq && apt_install gh
+      aptget update -qq && apt_install gh
     fi
     ok "gh $(gh --version | head -1 | awk '{print $3}')"
   fi
 
   if [ "$DOCKER" = 1 ]; then
     log "Docker Engine"
-    if ! has docker; then curl -fsSL https://get.docker.com | sh >/dev/null 2>&1; fi
+    if ! has docker; then curl -fsSL https://get.docker.com | sh >"$LOG_DIR/docker-install.log" 2>&1 || die "Docker installer failed: $LOG_DIR/docker-install.log"; fi
     sudo systemctl enable --now docker >/dev/null 2>&1
     if ! in_group docker; then sudo usermod -aG docker "$USER"; mark_reboot "docker group membership"; fi
     ok "docker $(docker --version | awk '{print $3}' | tr -d ,)"
@@ -70,7 +70,7 @@ check() {
   chk "uv" has uv
   chk "claude" has claude
   chk "claude --version" claude --version
-  chk "bwrap AppArmor profile (or not needed)" bash -c '[ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" != 1 ] || sudo test -f /etc/apparmor.d/bwrap'
+  chk "bwrap can sandbox (Claude Code sandbox works)" bwrap --ro-bind / / --unshare-user --unshare-pid true
   chk "node >= 20" bash -c 'test "$(node -p "process.versions.node.split(\".\")[0]")" -ge 20'
   [ "$GITHUB_CLI" = 1 ] && chk "gh" has gh
   [ "$DOCKER" = 1 ] && chk "docker daemon active" systemctl is-active docker

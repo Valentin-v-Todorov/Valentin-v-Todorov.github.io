@@ -31,7 +31,7 @@ run() {
     fi
     tmp="$(mktemp -d)"
     if [ -n "$deb" ]; then
-      curl -fL "$deb" -o "$tmp/obsidian.deb" && sudo apt-get install -y -qq "$tmp/obsidian.deb"
+      curl -fL "$deb" -o "$tmp/obsidian.deb" && aptget install -y -qq "$tmp/obsidian.deb"
       ok "installed from $deb"
     else
       local suffix app
@@ -51,7 +51,7 @@ run() {
   if has google-chrome; then ok "already installed"
   elif [ "$ARCH" = amd64 ]; then
     local tmp; tmp="$(mktemp -d)"
-    curl -fL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o "$tmp/chrome.deb" && sudo apt-get install -y -qq "$tmp/chrome.deb"; rm -rf "$tmp"
+    curl -fL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o "$tmp/chrome.deb" && aptget install -y -qq "$tmp/chrome.deb"; rm -rf "$tmp"
     ok "installed (Google's apt repo keeps it updated)"
   else
     sudo snap install chromium >/dev/null 2>&1 && sudo snap connect chromium:camera >/dev/null 2>&1 || true
@@ -64,7 +64,7 @@ run() {
       sudo curl -fsSLo /usr/share/keyrings/claude-desktop-archive-keyring.asc https://downloads.claude.ai/claude-desktop/key.asc
       if gpg --show-keys /usr/share/keyrings/claude-desktop-archive-keyring.asc 2>/dev/null | grep -q 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE; then
         echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/claude-desktop-archive-keyring.asc] https://downloads.claude.ai/claude-desktop/apt/stable stable main" | sudo tee /etc/apt/sources.list.d/claude-desktop.list >/dev/null
-        sudo apt-get update -qq && apt_install_full claude-desktop && ok "installed" || warn "claude-desktop package not installable right now; optional, skipped"
+        aptget update -qq && apt_install_full claude-desktop && ok "installed" || warn "claude-desktop package not installable right now; optional, skipped"
       else warn "signing key fingerprint did not match the documented one; skipped (optional)"; fi
     fi
   fi

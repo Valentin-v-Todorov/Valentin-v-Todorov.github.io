@@ -97,7 +97,8 @@ habits only: never a password, a card number or a token (those stay in the brows
 - Never pay without a spoken yes.
 - Say what was booked and where the confirmation is.
 EOF
-  ok "Flint/News Sources.md, Flint/Music Taste.md, Flint/Preferences.md, Knowledge/Drop, Knowledge/Inbox"
+  cp "$GUIDE_DIR/WHAT-FLINT-CAN-DO.md" "$VAULT_DIR/Flint/What I Can Do.md"
+  ok "Flint/News Sources.md, Flint/Music Taste.md, Flint/Preferences.md, Flint/What I Can Do.md, Knowledge/Drop, Knowledge/Inbox"
 
   log "the knowledge drop folder: anything put in $VAULT_DIR/Knowledge/Drop is ingested every ten minutes"
   cat > "$HOME/.config/systemd/user/flint-ingest.service" <<EOF
@@ -152,6 +153,9 @@ PY
   says what $YOUR_NAME replays and skips. Update the note when you learn something ("I hate that song" counts).
 - Errands in the browser: read Flint/Preferences.md first, do it in the Playwright browser (logins persist in its profile),
   update the note after. Ask before paying, ever. Say what was booked and where the confirmation is.
+- "What can you do?": answer from the vault note Flint/What I Can Do.md (every ability, the words that trigger it, the
+  tool, and what is not built yet). When $YOUR_NAME asks for something you cannot do, offer to build it: a script in
+  bin/, a line in this file, a check for the doctor; then add a row to that note.
 EOF
   ok "CLAUDE.md: reaching you and the world"
 }

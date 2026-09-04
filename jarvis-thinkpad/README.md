@@ -10,6 +10,7 @@ Read this file first. It is the map. The other files are the detail.
 | File | What it is |
 | --- | --- |
 | `README.md` | This map: what Flint is, the OS decision, the install order, the quick start |
+| `WHAT-FLINT-CAN-DO.md` | **Every ability in one list**: the words to say, the tool behind it, and whether it is built, needs one step from you, or is an idea he can build. The installer puts a copy in the vault so "Flint, what can you do?" is answered from it |
 | `CLAUDE.md` | Boot file. Open Claude Code inside this folder on the ThinkPad and it becomes the setup conductor |
 | `setup.sh` + `install/` | **The one command.** Eighteen numbered, idempotent stages with a check after each: system update, packages, desktop-as-server, remote access, tools, apps, the two logins, one reboot that continues by itself, Jared's wizard headless, the face, the team, Home Assistant, the doctor, the first hello. `install/README.md` explains it |
 | `01-os-and-first-boot.md` | Installing Ubuntu on the ThinkPad (the only manual part) and the reference for what the first-boot stages do (BIOS, Xorg, power, SSH, Tailscale) |

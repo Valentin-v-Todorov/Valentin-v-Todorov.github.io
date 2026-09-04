@@ -9,6 +9,7 @@ Read this file first. It is the map. The other files are the detail.
 
 | File | What it is |
 | --- | --- |
+| `START-HERE.md` | **Read this on install day**: from the Fedora ThinkPad to Flint, step by step: the ISO, the USB, the BIOS, the installer screens, the clone, the answer sheet, what setup.sh asks and when, the once-only steps after |
 | `README.md` | This map: what Flint is, the OS decision, the install order, the quick start |
 | `WHAT-FLINT-CAN-DO.md` | **Every ability in one list**: the words to say, the tool behind it, and whether it is built, needs one step from you, or is an idea he can build. The installer puts a copy in the vault so "Flint, what can you do?" is answered from it |
 | `CLAUDE.md` | Boot file. Open Claude Code inside this folder on the ThinkPad and it becomes the setup conductor |

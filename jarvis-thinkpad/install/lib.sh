@@ -58,12 +58,22 @@ if [ -f "$ENV_FILE" ]; then . "$ENV_FILE"; fi
 : "${WIZARD_MODE:=headless}"
 : "${MUSIC:=1}"                          # mpv + yt-dlp + flint-play (music by request, YouTube or local files)
 : "${KEEPER:=1}"                         # the watchdog timer that restarts a dead stack
+: "${SENSES:=1}"                         # the camera watcher (your face), the listener (sounds), OCR, timers, the intercom
+: "${PHONE:=1}"                          # KDE Connect: the phone's SMS, notifications, battery, ring, share
+: "${TELEGRAM:=1}"                       # the Telegram bot (token from @BotFather: setup.env or flint-telegram setup)
+: "${TELEGRAM_BOT_TOKEN:=}"
+: "${GUARD:=1}"                          # fail2ban, LAN watch, motion while away
+: "${BACKUP:=1}"                         # restic nightly + monthly restore test
+: "${BACKUP_REPO:=}"                     # empty = the first external disk under /media, else ~/Backups/restic
+: "${OFFLINE:=1}"                        # Ollama + a small model for when the cloud is out
+: "${OFFLINE_MODEL:=qwen2.5:3b}"
 : "${YOUR_WORK:=I run a personal business and I am building an AI operating partner on this ThinkPad.}"
 : "${PROJECTS:=Personal Business; Home Automation; ThinkPad (this machine, the server the agent runs on)}"
 : "${KEY_PEOPLE:=}"
 : "${PRIORITIES:=Get the agent, the team and the home automation working end to end}"
 : "${RECURRING:=Morning brief; Inbox triage; Weekly finance review; Vault backup}"
 export YOUR_NAME AGENT_NAME AGENT_HOME VAULT_DIR PTT_KEY MIC_MODE VOICE STT_MODEL VOICE_PERMISSIONS FACE WAKE_WORDS WAKE_WINDOW_S VOICE_EFFORT MUSIC KEEPER
+export SENSES PHONE TELEGRAM GUARD BACKUP OFFLINE OFFLINE_MODEL
 # the machine's secrets (chmod 600 files written by the stages) as environment, by name
 for _f in "$HOME"/.config/flint/*.env; do [ -f "$_f" ] && { set -a; . "$_f"; set +a; }; done; unset _f
 
@@ -138,6 +148,10 @@ wait_http() {             # wait_http url seconds
 }
 term_run() {              # open a visible terminal window that runs a command (falls back to plain run)
   if have_display && has gnome-terminal; then gnome-terminal --wait -- bash -lc "$1"; else bash -lc "$1"; fi
+}
+append_once() {           # append_once file marker-heading <<content   (adds the block unless the marker is already there)
+  local f="$1" marker="$2" body; body="$(cat)"
+  grep -qF "$marker" "$f" 2>/dev/null || printf '\n%s\n' "$body" >> "$f"
 }
 
 # ------------------------------------------------------------------ checks

@@ -49,11 +49,11 @@ prove, in the order they will happen:
    session with the same context.
 5. **Stage 12**: Home Assistant Container's first start time; `${HA_TOKEN}`
    expansion in `.mcp.json` when `claude mcp list` runs.
-6. **Stage 13**: Kokoro through the speakers (KPipeline API), faster-whisper
+6. **Stage 16**: Kokoro through the speakers (KPipeline API), faster-whisper
    hearing the espeak-ng sample, `claude -p` booting as Flint with the hooks
    recording the turn, `claude mcp list` reporting playwright and home-assistant
    connected.
-7. **Stage 14**: the stack starting in its terminal, the greeting.
+7. **Stage 17**: the stack starting in its terminal, the greeting.
 
 ## The two critic passes, done by hand (the panel's ran out of usage)
 
@@ -63,7 +63,7 @@ prove, in the order they will happen:
   `~/.local/bin`, lib.sh loads `~/.config/flint/*.env`, sudo is passwordless,
   the docker group is active, DISPLAY and DBus exist for gsettings, gnome-terminal
   and the audio tests. The stack's own autostart entry is only written in stage
-  10, after that login, so it cannot collide with the continuation; stage 14
+  10, after that login, so it cannot collide with the continuation; stage 17
   starts the stack only if nothing answers on 8790; the doctor uses the face
   port only while the stack is not running.
 - **Headless wizard prompt against fullstack-agent.md and the four component
@@ -91,7 +91,7 @@ Chrome, show me things"). What exists now, and how far each is proven:
   `Ears.listen_once` and `Mouth.__init__` still have the signatures the hook
   wraps (they match the clone at commit 84b3a6c) and how often the
   transcriber writes "Flint" as something the loose match misses. The doctor
-  runs the self-test inside the real venv (stage 13).
+  runs the self-test inside the real venv (stage 16).
 - **`bin/flint-play`**: tested here with the real mpv over its IPC socket
   (local files, status, pause, volume, next, seek, restart while playing,
   stop, the ducker dipping it from 40 to 25 and back). YouTube search is not
@@ -112,7 +112,7 @@ Chrome, show me things"). What exists now, and how far each is proven:
   or systemd) and produces the report and the verdict; the ThinkPad-specific
   rows (battery, TLP thresholds, sensors, Tailscale, HA) are unverified.
 - **`bin/flint-voice`**: `list`, `set` validation and the config write are
-  tested; `try`/`audition` need Kokoro (stage 13's TTS test uses the same call).
+  tested; `try`/`audition` need Kokoro (stage 16's TTS test uses the same call).
 - **Stage 10** was dry-run against the fake agent home with stubbed
   `claude`/`sudo`: the tools, the symlinks, the `flint-doctor.sh` wrapper,
   the hook, the Playwright re-registration with `--browser chrome
@@ -121,9 +121,47 @@ Chrome, show me things"). What exists now, and how far each is proven:
 - **Docs**: README 4b answers the question list; `04` 5b has the tool table;
   `01` C has the BIOS setting for coming back after a power cut.
 
+## The second capability pass (2026-09-04): senses, connections, guard, backups, offline
+
+Fourteen features from the "20 cool things" list, as tools in `bin/`, three new
+stages (13 senses, 14 connect, 15 guard-backup; the doctor and finish moved to
+16 and 17) and the doctor's new tests. What is proven here and what is not:
+
+- **Proven in this container**: every script passes `bash -n` / `py_compile`
+  and the Python bodies parse; the YAMNet classifier runs through
+  `flint-ears test` with the real model (a second of silence scores 0.80
+  "Silence", a pulsed 3 kHz tone scores "Beep" then "Smoke detector"); the
+  YuNet and SFace models download and load in a virtualenv built with the same
+  packages; `flint-play like/dislike/taste/--for` write the vault note and the
+  play log against the real mpv; `flint-notify` logs and reports; `flint-timer`
+  parses durations; the keeper's offline block is syntax-checked only.
+- **Needs the ThinkPad**: a camera for `flint-presence enrol` and the greeting;
+  a microphone for the listener; `systemd-run --user` for the timers; the
+  Telegram bot end to end (a token from @BotFather, `/start`, a voice note
+  transcribed, `claude -p --output-format json` returning `session_id` so the
+  conversation continues with `--resume`); KDE Connect pairing and
+  `kdeconnect-cli` flags on 23.08 (`--photo`, `--send-sms`); `flint-say --to`
+  through Home Assistant (the wav is served from HA's `www` folder to the
+  player; `tts.speak` is the fallback); `flint-mail` against a real IMAP
+  server; `flint-calendar` with a private ICS link; `flint-ingest` end to end
+  (`claude -p` summarising, `yt-dlp` subtitles); `flint-guard` with sudo
+  `arp-scan` and the fail2ban jail on noble's systemd backend; `flint-backup`
+  with restic 0.16 (`setup` generating the password, `run`, `check`);
+  Ollama's installer, the model pull and `flint-offline serve` reusing
+  backtalk's `Ears`, `record_held`, `Mouth` and `PTTListener` (names verified
+  against the clone at 84b3a6c).
+- **Design choices to know**: the senses tools are bash heads that `exec` the
+  senses virtualenv's Python on a heredoc body (so `bash -n` stays clean and
+  no shebang has to know the path); `flint-telegram` obeys only the chat that
+  sent `/start` first; `flint-mail send` refuses without `--confirm`;
+  `flint-guard` learns the LAN for an hour before alerting; the backup
+  password is generated and printed once (and kept in `backup.env`); the
+  keeper never restarts the stack while the cloud is unreachable, it starts
+  the offline loop instead and stops it when the cloud is back.
+
 ## Review findings deliberately left for later
 
-- `13-doctor.sh`: the Timeshift snapshot moved to stage 14 (a check must not
+- `16-doctor.sh`: the Timeshift snapshot moved to stage 17 (a check must not
   change the system); still unverified on LVM/BTRFS layouts.
 - `10-flint-wire.sh`: `hasTrustDialogAccepted` in `~/.claude.json` is written on
   the reviewer's word; confirm on the box that `claude remote-control` in

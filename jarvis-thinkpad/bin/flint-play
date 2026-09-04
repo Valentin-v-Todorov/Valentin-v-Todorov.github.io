@@ -10,6 +10,9 @@
   flint-play volume 60 | volume up | volume down | mute
   flint-play seek +30 | seek -30
   flint-play status [--json] | what            what is playing
+  flint-play like | dislike                    note the current song in the vault (Flint/Music Taste.md)
+  flint-play taste                             what gets replayed, what gets skipped, the liked and disliked lists
+  flint-play --for focus|morning|dinner|party|sleep|workout|chill|me     a mood (moods live in the taste note)
   flint-play --selftest                        plays one second of a tone (FLINT_QUIET=1: no sound)
 
 The player runs detached with an IPC socket ($XDG_RUNTIME_DIR/flint-mpv.sock). The voice line's
@@ -36,6 +39,69 @@ LOG = os.path.join(STATE, "mpv.log")
 PIDFILE = os.path.join(STATE, "mpv.pid")
 AUDIO_EXT = {".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wav", ".aac", ".wma", ".aiff", ".mp4", ".webm"}
 QUIET = os.environ.get("FLINT_QUIET") == "1"
+MUSIC_LOG = os.path.join(STATE, "music-log.jsonl")
+MOODS = {"focus": "deep focus instrumental music", "morning": "upbeat morning playlist", "dinner": "dinner jazz playlist",
+         "party": "party hits playlist", "sleep": "sleep ambient music", "workout": "workout mix", "chill": "chill lofi beats"}
+
+
+def setup_val(key, default):
+    import re
+    try:
+        for line in open(os.path.expanduser("~/.flint-setup/setup.env")):
+            m = re.match(rf'^{key}="?([^"#]*)"?', line.strip())
+            if m and m.group(1).strip():
+                return os.path.expandvars(m.group(1).strip())
+    except OSError:
+        pass
+    return default
+
+
+TASTE = os.path.join(setup_val("VAULT_DIR", os.path.expanduser("~/Brain")), "Flint", "Music Taste.md")
+
+
+def log_music(action, title=None, extra=None):
+    try:
+        os.makedirs(STATE, exist_ok=True)
+        with open(MUSIC_LOG, "a") as f:
+            f.write(json.dumps({"ts": time.time(), "action": action, "title": title or prop("media-title") or "",
+                                "pos": prop("time-pos"), "duration": prop("duration"), **(extra or {})}) + "\n")
+    except OSError:
+        pass
+
+
+def taste_lists():
+    """-> (liked, disliked, moods) from the vault note."""
+    liked, disliked, moods, section = [], [], dict(MOODS), ""
+    try:
+        for line in open(TASTE):
+            s = line.strip()
+            if s.startswith("## "):
+                section = s[3:].lower(); continue
+            if s.startswith("- ") and section:
+                item = s[2:].strip()
+                if section.startswith("liked"):
+                    liked.append(item)
+                elif section.startswith("disliked"):
+                    disliked.append(item)
+                elif section.startswith("moods") and ":" in item:
+                    k, v = item.split(":", 1); moods[k.strip().lower()] = v.strip()
+    except OSError:
+        pass
+    return liked, disliked, moods
+
+
+def taste_add(section, item):
+    os.makedirs(os.path.dirname(TASTE), exist_ok=True)
+    text = open(TASTE).read() if os.path.exists(TASTE) else "# Music taste\n\n## Liked\n\n## Disliked\n\n## Moods\n"
+    head = f"## {section}"
+    if head not in text:
+        text += f"\n{head}\n"
+    lines = text.split("\n")
+    i = lines.index(head) + 1
+    while i < len(lines) and not lines[i].startswith("## "):
+        i += 1
+    lines.insert(i, f"- {item}")
+    open(TASTE, "w").write("\n".join(lines))
 
 
 def which(name):
@@ -175,10 +241,35 @@ def start(targets, label, extra=()):
         except OSError:
             pass
         sys.exit(f"the player stopped right away ({label}). Log tail:\n{tail}")
+    log_music("play", title or label, {"label": label})
     if title:
         print(f"Playing: {title}")
     else:
         print(f"Started: {label} (title not available yet; flint-play status in a moment)")
+    return 0
+
+
+def cmd_taste():
+    liked, disliked, _ = taste_lists()
+    plays, skips = {}, {}
+    try:
+        for line in open(MUSIC_LOG):
+            e = json.loads(line)
+            t = e.get("title") or ""
+            if not t or t.startswith("ytsearch"):
+                continue
+            if e["action"] == "play":
+                plays[t] = plays.get(t, 0) + 1
+            elif e["action"] == "skip" and (e.get("pos") or 0) < 45:
+                skips[t] = skips.get(t, 0) + 1
+    except OSError:
+        pass
+    print("liked: " + (", ".join(liked) or "nothing yet"))
+    print("disliked: " + (", ".join(disliked) or "nothing yet"))
+    top = sorted(plays.items(), key=lambda x: -x[1])[:8]
+    print("most played: " + (", ".join(f"{t} ({n}x)" for t, n in top) or "no history yet"))
+    sk = sorted(skips.items(), key=lambda x: -x[1])[:5]
+    print("skipped early: " + (", ".join(f"{t} ({n}x)" for t, n in sk) or "nothing"))
     return 0
 
 
@@ -264,15 +355,41 @@ def main(argv):
     if a in ("status", "what"):
         return status("--json" in rest)
     if a == "stop":
+        if running():
+            log_music("stop")
         stop_player()
         print("Stopped.")
         return 0
+    if a in ("like", "dislike"):
+        need_running()
+        t = prop("media-title") or ""
+        taste_add("Liked" if a == "like" else "Disliked", t)
+        log_music(a, t)
+        print(f"{a}d: {t} (noted in {os.path.basename(TASTE)})")
+        return 0
+    if a == "taste":
+        return cmd_taste()
+    if a == "--for":
+        import random
+        mood = (rest[0] if rest else "focus").lower()
+        liked, disliked, moods = taste_lists()
+        if mood == "me":
+            picks = random.sample(liked, min(3, len(liked))) if liked else []
+            if not picks:
+                sys.exit("nothing in the liked list yet (flint-play like while something plays)")
+            return start([f"ytsearch3:{p}" for p in picks], "from the liked list: " + ", ".join(picks))
+        q = moods.get(mood)
+        if not q:
+            sys.exit(f"unknown mood {mood!r}; known: {', '.join(sorted(moods))}, me")
+        return start([f"ytsearch5:{q}"], f"{mood}: {q}")
     if a in ("pause", "resume", "toggle"):
         need_running()
         ipc(["set_property", "pause", True] if a == "pause" else ["set_property", "pause", False] if a == "resume" else ["cycle", "pause"])
         return status()
     if a in ("next", "previous", "prev"):
         need_running()
+        if a == "next":
+            log_music("skip")
         ok, err = ipc(["playlist-next" if a == "next" else "playlist-prev", "weak"])
         if not ok:
             sys.exit(f"cannot skip: {err}")

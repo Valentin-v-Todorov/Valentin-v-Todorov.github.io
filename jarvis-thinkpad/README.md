@@ -11,12 +11,12 @@ Read this file first. It is the map. The other files are the detail.
 | --- | --- |
 | `README.md` | This map: what Flint is, the OS decision, the install order, the quick start |
 | `CLAUDE.md` | Boot file. Open Claude Code inside this folder on the ThinkPad and it becomes the setup conductor |
-| `setup.sh` + `install/` | **The one command.** Fifteen numbered, idempotent stages with a check after each: system update, packages, desktop-as-server, remote access, tools, apps, the two logins, one reboot that continues by itself, Jared's wizard headless, the face, the team, Home Assistant, the doctor, the first hello. `install/README.md` explains it |
+| `setup.sh` + `install/` | **The one command.** Eighteen numbered, idempotent stages with a check after each: system update, packages, desktop-as-server, remote access, tools, apps, the two logins, one reboot that continues by itself, Jared's wizard headless, the face, the team, Home Assistant, the doctor, the first hello. `install/README.md` explains it |
 | `01-os-and-first-boot.md` | Installing Ubuntu on the ThinkPad (the only manual part) and the reference for what the first-boot stages do (BIOS, Xorg, power, SSH, Tailscale) |
 | `bootstrap.sh` | The older single-script bootstrap (packages, uv, Claude Code, Obsidian, Chrome, Docker, Tailscale, Node). `setup.sh` supersedes it; kept for a manual install |
 | `02-flint-install.md` | Running Jared's `fullstack-agent` installer on Linux, with the interview answers pre-decided and every config file explained |
 | `make-launchers.sh` | Creates the Linux desktop launchers (Chat / Talk / Full stack / Barehands / Update / Stop) the installer only knows how to make for macOS and Windows |
-| `bin/` | Flint's own tools, installed into `~/my-agent/bin` and the PATH: `flint-play` (music: YouTube, albums, local files, streams), `flint-voice` (28 voices, audition and switch), `flint-stack` (start/stop/restart/status), `flint-health.sh` (machine + stack report with a verdict), `flint-keeper.sh` (the watchdog timer) |
+| `bin/` | Flint's own tools, installed into `~/my-agent/bin` and the PATH. The stack: `flint-play` (music, likes, moods), `flint-voice` (28 voices), `flint-stack`, `flint-health.sh`, `flint-keeper.sh` (the watchdog, and the switch to the offline brain). The senses: `flint-look` (camera, screen, OCR), `flint-presence` (your face), `flint-ears` (doorbell, glass, smoke alarm, crying), `flint-say` (here or on any speaker in the house), `flint-notify`, `flint-timer`. The connections: `flint-telegram`, `flint-phone` (KDE Connect), `flint-mail`, `flint-calendar`, `flint-news`, `flint-ingest` (PDFs, links, videos into the vault), `flint-ha`. The ops: `flint-guard`, `flint-backup`, `flint-offline` |
 | `voice/` | `flint_voice.py`: the wake phrase ("Flint, ...") and Linux music ducking, hooked into backtalk's virtualenv without touching Jared's files |
 | `03-linux-quirks.md` | Every Linux-specific trap found in the code: push-to-talk on Wayland, Obsidian registry path, Python version, audio, keyring, ports |
 | `04-full-power-agent.md` | Giving Flint full control of the machine safely: permission modes, sandbox, Remote Control from the phone, MCP servers, app control, scheduled work |
@@ -133,8 +133,15 @@ laptop into a server that never sleeps with the lid closed.
    the keeper, the stack at login.
 7. **The agent team**: roster to subagents, schedules to timers.
 8. **Home Assistant**, onboarded through its API, with the MCP server for Flint.
-9. **The doctor**: real tests (it speaks, it hears, the agent boots as Flint),
-   the report, a Timeshift snapshot, and the first hello.
+8b. **The senses**: the camera watcher (your face, enrolled once), the listener
+    (doorbell, glass, smoke alarm), OCR, timers, the intercom. **The
+    connections**: the phone (KDE Connect), the Telegram bot, mail and
+    calendars, the news, the knowledge drop folder, the DJ's taste, the errands
+    note. **The ops**: fail2ban and the LAN watch, restic backups, the offline
+    brain.
+9. **The doctor**: real tests (it speaks, it hears, it sees, it classifies a
+   sound, the agent boots as Flint, the timers, the guard, the backup), the
+   report, a Timeshift snapshot, and the first hello.
 10. Afterwards, with Flint in a typed session: the vault notes from `04`, `05`,
     `07`; your real departments in `team.yaml`; optional FounderOS dashboard (`06`).
 
@@ -154,7 +161,7 @@ git clone -b claude/jarvis-thinkpad-setup-9a3aiv https://github.com/Valentin-v-T
 Then do only what it asks: your password once, the Claude login in the browser,
 the GitHub login, the Tailscale link on your phone. It reboots once and carries
 on by itself after the automatic login; at the end the doctor runs its tests,
-the face opens and Flint says hello. About two hours, mostly downloads. To
+the face opens and Flint says hello. About two to three hours, mostly downloads. To
 change any default first, edit `~/.flint-setup/setup.env` after the first
 seconds of the run (or `install/setup.env.example` before). `install/README.md`
 lists every stage and every command (`--check`, `--only NN`, `--list`).
@@ -186,6 +193,20 @@ phone or any browser. See `04-full-power-agent.md`.
 | Diagnoses itself and the ThinkPad | Yes. `flint-health.sh`: load, temperature, memory, disk, battery, mains, network, Tailscale, audio, camera, services, Home Assistant, the stack, the login, updates, journal errors, a verdict. "Flint, how is the machine?" |
 | Shows me things from the internet; finds an album | Yes. He searches, opens the page in Chrome on the screen, reads it back, and offers to play it |
 | Plays the music I ask for | Yes. `flint-play`: the first YouTube match, a whole album, a queue, files in `~/Music`, any stream or URL; pause, next, volume, stop by voice. The music dips while he talks |
+| Knows when I sit down (1) | Yes. `flint-presence`: your face enrolled once (six seconds at the camera), he greets you by name, pauses the music when the desk empties, resumes when you are back, flags a stranger with a snapshot. Local, OpenCV |
+| What's on my desk, what's on the screen (2) | Yes. `flint-look desk` (camera), `flint-look screen`, `flint-look text` (OCR); he reads the picture back |
+| Hears the house (3) | Yes. `flint-ears`: YAMNet on the open mic flags a doorbell, a knock, glass, a smoke or fire alarm, a siren, crying, a dog; he speaks the ones that matter and notifies the rest |
+| A Telegram bot (5) | Yes. `flint-telegram`: text him from anywhere, voice notes transcribed locally, photos both ways, `/look`, `/status`, `/play`, `/say`; only your chat is obeyed. One manual step: a token from @BotFather |
+| Phone mirroring (6) | Yes. `flint-phone` over KDE Connect: ring it, its battery, its notifications, send an SMS, share a file or link, the clipboard, a photo from its camera. Pair once on the phone |
+| Intercom (7) | Yes. `flint-say --to media_player.kitchen "..."` or `--to all`: his own voice on any Home Assistant speaker |
+| Email and calendar in his head (8) | Yes. The Gmail and Google Calendar connectors from claude.ai appear in Claude Code by themselves (one click on claude.ai); the morning brief reads them. Local fallbacks: `flint-mail` (IMAP, drafts, send only with `--confirm`) and `flint-calendar` (private ICS links) |
+| Voice browsing with memory (12) | Yes. The Chrome profile keeps the logins; `Flint/Preferences.md` in the vault keeps the usual table, addresses, sizes and the rule "never pay without a yes" |
+| Knowledge ingest (13) | Yes. `flint-ingest <pdf|link|video>` files a note with a summary, key points and quotes in `Knowledge/Inbox` and tells the gist; anything dropped into `Knowledge/Drop` is ingested every ten minutes |
+| DJ with taste (16) | Yes. `flint-play like|dislike|taste|--for focus|me`: likes and dislikes in `Flint/Music Taste.md`, a play log, moods |
+| Reads the news (18) | Yes. `flint-news --brief|--read`: your RSS feeds (a vault note), summarised by him, spoken. Part of the morning brief |
+| Guard duty (20) | Yes. fail2ban on SSH; `flint-guard` every two minutes: SSH logins, bans, new devices on the wifi (named by you), motion while you are away with a camera snapshot |
+| Backups (21) | Yes. restic, encrypted, nightly at 02:30 to an external disk or a cloud bucket, thinned; a real restore test on the first of the month; `flint-backup restore <path>` brings anything back |
+| Offline mode (22) | Yes. Ollama with a small model; when the cloud is out the keeper starts `flint-offline` and timers, lights, music and the time still work by voice, with the same wake word |
 
 ---
 

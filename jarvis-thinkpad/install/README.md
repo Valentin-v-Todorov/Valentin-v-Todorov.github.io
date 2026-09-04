@@ -1,4 +1,4 @@
-# The installer: one command, fifteen stages, a check after each
+# The installer: one command, eighteen stages, a check after each
 
 ```bash
 sudo apt-get install -y git
@@ -9,8 +9,10 @@ git clone -b claude/jarvis-thinkpad-setup-9a3aiv https://github.com/Valentin-v-T
 That is the whole install on a fresh Ubuntu 24.04 Desktop. It asks for your
 password once (sudo), opens a browser twice for logins only you can do (Claude
 with your Max plan, GitHub), shows a Tailscale link once, reboots once and
-continues by itself after the automatic login, then runs the doctor and starts
-the stack. Budget about 1.5 to 2 hours, most of it downloads.
+continues by itself after the automatic login, asks you to look at the camera
+once, then runs the doctor and starts the stack. Budget about 2 to 3 hours,
+most of it downloads (the speech models, Chrome, Home Assistant, the offline
+model).
 
 ## How it works
 
@@ -39,8 +41,11 @@ README). Logs: `~/.flint-setup/logs/`. Report: `~/.flint-setup/report.md`.
 | 10 flint-wire | Desktop launchers, Flint's tools (`flint-play`, `flint-voice`, `flint-stack`, `flint-health.sh`, `flint-doctor.sh`) on the PATH, the wake-phrase + ducking hook in backtalk's venv, the Orbitals face as default + the roster + the live hooks, CLAUDE.md additions (team on screen, machine toolbox, music/screen/browser/voice/health), Claude Code user settings (auto mode, deny list, vault access, sandbox with the machine tools excluded), Playwright MCP driving Chrome with its own profile, secrets loaded from `~/.config/flint/*.env`, hourly vault git commits, Remote Control in tmux, the keeper timer, the stack at every login | no |
 | 11 agent-team | `team.yaml` → subagent files and systemd user timers (morning brief, weekly finance, vault hygiene) | no |
 | 12 home-assistant | Home Assistant Container (compose), onboarding over its REST API, long-lived token, the MCP Server integration, `.mcp.json` for the agent, port 8123 open on the LAN | no |
-| 13 doctor | real tests: Kokoro speaks through the speakers, faster-whisper transcribes, the wake-phrase hook loads and passes its cases, the spoken-reply budget (ears + brain + mouth, in seconds), mpv plays a tone and yt-dlp finds a song, face and hands servers answer, the agent boots as Flint and its hooks record the turn, the health report, the keeper, MCP servers connect (Chrome-driving browser, HA), HA API answers, timers, firewall; report | no |
-| 14 finish | Timeshift snapshot when the report is clean, Remote Control started, prints the map (how to talk, play music, change the voice, stop and start, the keeper, the nightly doctor), starts the stack; Flint says hello | no |
+| 13 senses | a second virtualenv (OpenCV, the YAMNet sound classifier, feeds, calendars, article extraction), the models, tesseract + pdftotext, the presence watcher (camera) and the listener (microphone) as user services, `flint-look`, `flint-say`, `flint-notify`, `flint-timer` | look at the camera for six seconds (or skip; `flint-presence enrol` later) |
+| 14 connect | KDE Connect for the phone (+ the firewall ports), the Telegram bot service, the mail/calendar tools and the connector note, the intercom, the news sources note, the Knowledge/Drop folder + its timer, the DJ's taste note, the errands preferences note, CLAUDE.md, sandbox exclusions | no (later: `flint-telegram setup`, `flint-phone pair`, the connectors on claude.ai) |
+| 15 guard-backup | fail2ban on SSH, arp-scan + the guard timer (learning for the first hour), restic + the backup repository (external disk if one is mounted, else a local folder) + nightly and monthly timers + the first backup, Ollama + the offline model + `flint-offline.service` | copy the backup password from `~/.config/flint/backup.env` to your password manager |
+| 16 doctor | real tests: Kokoro speaks through the speakers, faster-whisper transcribes, the wake-phrase hook loads and passes its cases, the spoken-reply budget (ears + brain + mouth, in seconds), mpv plays a tone and yt-dlp finds a song, face and hands servers answer, the agent boots as Flint and its hooks record the turn, the health report, the keeper, MCP servers connect (Chrome-driving browser, HA), HA API answers, timers, firewall; report | no |
+| 17 finish | Timeshift snapshot when the report is clean, Remote Control started, prints the map (how to talk, play music, change the voice, stop and start, the keeper, the nightly doctor), starts the stack; Flint says hello | no |
 
 ## Commands
 
@@ -62,23 +67,28 @@ for his name; `ptt`: key only) with `WAKE_WORDS` and `WAKE_WINDOW_S`, `PTT_KEY`,
 `VOICE` and `VOICE_EFFORT` (`low` for the fastest spoken replies),
 `VOICE_PERMISSIONS` (`ask` first; `bypassPermissions` when you trust him),
 `HOME_ASSISTANT`, `SUDO_NOPASSWD`, `AUTOSTART_STACK`, `KEEPER`, `MUSIC`,
-`REMOTE_CONTROL`, `AGENT_TIMERS`, and the five vault-interview answers
-(`YOUR_WORK`, `PROJECTS`, `KEY_PEOPLE`, `PRIORITIES`, `RECURRING`) that become
-the agent's first profile of you.
+`REMOTE_CONTROL`, `AGENT_TIMERS`, the stage 13 to 15 toggles (`SENSES`, `PHONE`,
+`TELEGRAM` + `TELEGRAM_BOT_TOKEN`, `GUARD`, `BACKUP` + `BACKUP_REPO`, `OFFLINE` +
+`OFFLINE_MODEL`), and the five vault-interview answers (`YOUR_WORK`, `PROJECTS`,
+`KEY_PEOPLE`, `PRIORITIES`, `RECURRING`) that become the agent's first profile of you.
 
 ## What he can do afterwards, and the tool behind each
 
-Installed by stage 10 into `~/my-agent/bin` and the PATH; `04-full-power-agent.md`
-section 5b has the table. In one breath: `flint-play` (music from YouTube, an
-album, a queue, `~/Music`, a stream; the music dips while he talks),
-`flint-voice` (28 voices: list, try, audition, set), `flint-stack`
-(start/stop/restart/status), `flint-health.sh` (the machine and the stack with
-a verdict), `flint-doctor.sh` (these installer checks, from inside the agent),
-`flint-keeper.sh` (the watchdog timer: a dead stack is back within two
-minutes; three deaths in thirty minutes and it stops and tells you), the
-`flint_voice` hook (the wake phrase "Flint, ..." and Linux music ducking), the
-Playwright server driving Google Chrome visibly with its own profile, and the
-nightly doctor at 03:30 from `team.yaml`.
+Installed by stages 10 and 13 to 15 into `~/my-agent/bin` and the PATH;
+`04-full-power-agent.md` section 5b has the table. In one breath: `flint-play`
+(music from YouTube, an album, a queue, `~/Music`, a stream; likes, dislikes,
+moods; the music dips while he talks), `flint-voice` (28 voices), `flint-stack`,
+`flint-health.sh`, `flint-doctor.sh`, `flint-keeper.sh` (the watchdog; it also
+switches to the offline brain when the cloud is out), the `flint_voice` hook
+(the wake phrase and ducking), the Playwright server driving Chrome, the nightly
+doctor; then the senses: `flint-look` (camera, screen, OCR), `flint-presence`
+(your face: greetings, music paused when you leave), `flint-ears` (doorbell,
+knock, glass, smoke alarm, siren, crying, dog), `flint-say` (here or on any
+Home Assistant speaker), `flint-notify` (screen, Telegram, phone push, voice),
+`flint-timer`; the connections: `flint-telegram` (the bot), `flint-phone` (KDE
+Connect), `flint-mail`, `flint-calendar`, `flint-news`, `flint-ingest` (PDFs,
+links, videos into the vault), `flint-ha` (Home Assistant from the shell); and
+the ops: `flint-guard`, `flint-backup`, `flint-offline`.
 
 ## Secrets
 
@@ -87,7 +97,11 @@ Nothing secret is in this repo or in the vault. The install creates
 owner login and the long-lived token; every shell, launcher, timer and the voice
 session load `~/.config/flint/*.env` into the environment, and configs reference
 `${HA_TOKEN}` by name. An ElevenLabs key, if you ever want one, goes into
-`~/.config/flint/elevenlabs.env` as `ELEVENLABS_API_KEY=...` the same way.
+`~/.config/flint/elevenlabs.env` as `ELEVENLABS_API_KEY=...` the same way. The
+same folder holds `telegram.env` (the bot token and your chat id), `mail.env`
+(the IMAP app password and the private calendar links) and `backup.env` (the
+restic repository and its password), each written by its tool's `setup` and
+never read by the agent.
 Claude Code's user settings deny the agent reading that folder. The GitHub
 login is stored by `gh` in `~/.config/gh/hosts.yml` (mode 600) rather than in
 the GNOME keyring, because the keyring stays locked after an automatic login

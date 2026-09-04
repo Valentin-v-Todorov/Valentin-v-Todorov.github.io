@@ -4,11 +4,6 @@
 # and the stack starting at login.
 . "$(dirname "$0")/lib.sh"
 
-append_once() {  # append_once file marker-heading <<content on stdin
-  local f="$1" marker="$2" body; body="$(cat)"
-  grep -qF "$marker" "$f" 2>/dev/null || printf '\n%s\n' "$body" >> "$f"
-}
-
 run() {
   [ -f "$AGENT_HOME/CLAUDE.md" ] || die "no agent in $AGENT_HOME (stage 09 first)"
 

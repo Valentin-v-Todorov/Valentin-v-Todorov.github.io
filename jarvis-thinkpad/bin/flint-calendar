@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# flint-calendar: your calendars for the agent, from their private ICS links (Google, Outlook, iCloud, Nextcloud).
+#   flint-calendar today | tomorrow | week | next | day 2026-09-10 | agenda 14   (days ahead)
+#   flint-calendar setup             paste the private ICS link(s) -> ~/.config/flint/mail.env (chmod 600)
+# Google: calendar Settings > Integrate calendar > "Secret address in iCal format". Read-only; creating events
+# is the Calendar connector's job (claude.ai > Settings > Connectors). Bash head, python body (the senses venv).
+here="$(dirname "$(readlink -f "$0")")"; PY="$here/../senses/.venv/bin/python"
+[ -x "$PY" ] || { echo "no senses virtualenv at $PY (run: setup.sh --only 13)" >&2; exit 1; }
+exec "$PY" - "$@" <<'PY'
+import datetime as dt
+import os
+import sys
+import time
+import urllib.request
+
+HOME = os.path.expanduser("~")
+ENV = os.path.join(HOME, ".config", "flint", "mail.env")
+CACHE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(HOME, ".local", "state"), "flint", "calendar-cache")
+os.makedirs(CACHE, exist_ok=True)
+
+
+def read_env():
+    d = {}
+    try:
+        for line in open(ENV):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1); d[k.strip()] = v.strip().strip("'\"")
+    except OSError:
+        pass
+    return d
+
+
+def urls():
+    return [u.strip() for u in read_env().get("CALENDAR_ICS_URLS", "").split(",") if u.strip()]
+
+
+def fetch(url):
+    import hashlib
+    p = os.path.join(CACHE, hashlib.sha1(url.encode()).hexdigest() + ".ics")
+    if not os.path.exists(p) or time.time() - os.path.getmtime(p) > 600:
+        try:
+            with urllib.request.urlopen(url, timeout=30) as r:
+                data = r.read()
+            open(p, "wb").write(data)
+        except Exception as e:
+            if not os.path.exists(p):
+                raise SystemExit(f"could not fetch a calendar: {e}")
+    return open(p, "rb").read()
+
+
+def events_between(start, end):
+    import icalendar
+    import recurring_ical_events
+    out = []
+    for u in urls():
+        cal = icalendar.Calendar.from_ical(fetch(u))
+        name = str(cal.get("X-WR-CALNAME", "") or "")
+        for ev in recurring_ical_events.of(cal).between(start, end):
+            s, e = ev.get("DTSTART").dt, ev.get("DTEND").dt if ev.get("DTEND") else None
+            allday = not isinstance(s, dt.datetime)
+            if isinstance(s, dt.datetime) and s.tzinfo:
+                s = s.astimezone()
+            if isinstance(e, dt.datetime) and e.tzinfo:
+                e = e.astimezone()
+            out.append((s if isinstance(s, dt.datetime) else dt.datetime.combine(s, dt.time()), allday, str(ev.get("SUMMARY", "")),
+                        str(ev.get("LOCATION", "") or ""), e, name))
+    out.sort(key=lambda x: x[0].replace(tzinfo=None))
+    return out
+
+
+def show(start, end, empty="nothing scheduled"):
+    if not urls():
+        sys.exit("no calendars: flint-calendar setup (or use the Calendar connector in Claude Code)")
+    evs = events_between(start, end)
+    if not evs:
+        print(empty); return
+    day = None
+    for s, allday, title, loc, e, cal in evs:
+        if s.date() != day:
+            day = s.date(); print(s.strftime("%A %d %B"))
+        when = "all day" if allday else s.strftime("%H:%M") + (("–" + e.strftime("%H:%M")) if isinstance(e, dt.datetime) else "")
+        print(f"  {when:13} {title}{'  @ ' + loc if loc else ''}{'  [' + cal + ']' if cal else ''}")
+
+
+def setup():
+    cfg = read_env()
+    if not sys.stdin.isatty():
+        sys.exit("run flint-calendar setup in a terminal")
+    print("Paste the private ICS link(s), comma-separated. Google: calendar settings > Integrate calendar > Secret address in iCal format.")
+    v = input(f"links [{'kept' if cfg.get('CALENDAR_ICS_URLS') else 'none yet'}]: ").strip()
+    if v:
+        cfg["CALENDAR_ICS_URLS"] = v
+    os.makedirs(os.path.dirname(ENV), exist_ok=True)
+    with open(ENV, "w") as f:
+        for k, val in cfg.items():
+            f.write(f"{k}={val}\n")
+    os.chmod(ENV, 0o600)
+    print("saved. Testing:"); show(dt.datetime.now(), dt.datetime.now() + dt.timedelta(days=7))
+
+
+def main(argv):
+    now = dt.datetime.now()
+    c = argv[0] if argv else "today"
+    sod = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    if c == "setup":
+        return setup()
+    if c == "today":
+        return show(sod, sod + dt.timedelta(days=1), "nothing today")
+    if c == "tomorrow":
+        return show(sod + dt.timedelta(days=1), sod + dt.timedelta(days=2), "nothing tomorrow")
+    if c == "week":
+        return show(sod, sod + dt.timedelta(days=7), "nothing this week")
+    if c == "agenda":
+        return show(sod, sod + dt.timedelta(days=int(argv[1]) if len(argv) > 1 else 14))
+    if c == "day":
+        d = dt.datetime.strptime(argv[1], "%Y-%m-%d")
+        return show(d, d + dt.timedelta(days=1), f"nothing on {argv[1]}")
+    if c == "next":
+        evs = [e for e in events_between(now - dt.timedelta(hours=1), now + dt.timedelta(days=30)) if e[0].replace(tzinfo=None) >= now]
+        if not evs:
+            print("nothing in the next thirty days"); return 0
+        s, allday, title, loc, e, cal = evs[0]
+        print(f"{title} on {s.strftime('%A %d %B')} {'all day' if allday else 'at ' + s.strftime('%H:%M')}{'  @ ' + loc if loc else ''}")
+        return 0
+    print("usage: flint-calendar today|tomorrow|week|next|day YYYY-MM-DD|agenda N|setup")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)
+PY

@@ -24,6 +24,15 @@ run() {
    Stop it         Ctrl-C in its window, "goodbye $AGENT_NAME", or: flint-stack stop  (then it stays stopped)
    Keeper          a dead stack is restarted within 2 minutes; log: ~/.local/state/flint/keeper.log
    Health          flint-health.sh (now) ; the nightly doctor at 03:30 repairs and writes "Doctor Log.md" in the vault
+   Eyes and ears   "what's on my desk?" (camera), "read the screen" (OCR); the listener alerts on a doorbell, glass, a smoke alarm
+   Presence        he greets you at the desk and pauses the music when you leave   (flint-presence enrol $YOUR_NAME if skipped)
+   Timers          "$AGENT_NAME, timer ten minutes, the pasta"   flint-timer list
+   Phone           Telegram: flint-telegram setup, then /start in the chat.   KDE Connect: flint-phone pair (accept on the phone)
+   Mail, calendar  claude.ai > Settings > Connectors (Gmail, Google Calendar) ; local: flint-mail setup, flint-calendar setup
+   Intercom        "$AGENT_NAME, tell the kitchen dinner is ready"   (flint-say --players lists the speakers)
+   News, reading   "$AGENT_NAME, the news" ; drop a PDF or a link into $VAULT_DIR/Knowledge/Drop and he files a summary
+   Guard, backups  flint-guard status ; flint-backup status  (THE BACKUP PASSWORD is in ~/.config/flint/backup.env: save it)
+   Offline         when the cloud is out the keeper switches to the local model: timers, lights and music still work
    Phone           tmux attach -t flint  then press space for the QR (Remote Control)
    Team            $AGENT_HOME/team.yaml -> uv run bin/team-sync.py --agents ; timers: systemctl --user list-timers 'flint-*'
 $( [ "$HOME_ASSISTANT" = 1 ] && printf '   Home Assistant  http://127.0.0.1:8123  login: see ~/.config/flint/ha.env ; expose entities to Assist so %s can control them\n' "$AGENT_NAME")

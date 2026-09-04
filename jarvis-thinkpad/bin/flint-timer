@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# flint-timer: timers, alarms and reminders that survive the voice line (systemd user timers).
+#
+#   flint-timer 10m "the pasta"             in ten minutes: a spoken line + a notification
+#   flint-timer 1h30m "call the bank"       h, m, s combine; plain numbers are minutes
+#   flint-timer at 07:30 "wake up"          today at that time (tomorrow if it has passed)
+#   flint-timer at "2026-09-10 09:00" "dentist"
+#   flint-timer list                        what is pending
+#   flint-timer cancel <id|all>
+#
+# Each timer runs: flint-notify "Timer" "<text>" --say   (screen, Telegram, phone push, and the voice)
+set -uo pipefail
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+
+dur() {  # "1h30m" -> seconds; "15" -> minutes
+  local s="$1" total=0 n
+  if [[ "$s" =~ ^[0-9]+$ ]]; then echo $((s * 60)); return; fi
+  while [[ "$s" =~ ^([0-9]+)([hms]) ]]; do
+    n="${BASH_REMATCH[1]}"; case "${BASH_REMATCH[2]}" in h) total=$((total + n * 3600));; m) total=$((total + n * 60));; s) total=$((total + n));; esac
+    s="${s#${BASH_REMATCH[0]}}"
+  done
+  [ -z "$s" ] && [ "$total" -gt 0 ] && echo "$total" || return 1
+}
+case "${1:-}" in
+  list)
+    systemctl --user list-timers --no-legend 'flint-timer-*' 2>/dev/null | awk '{print $1, $2, $3, $4, "  " $NF}' | sed 's/flint-timer-//; s/\.timer//'
+    [ "$(systemctl --user list-timers --no-legend 'flint-timer-*' 2>/dev/null | wc -l)" = 0 ] && echo "no timers pending"; exit 0 ;;
+  cancel)
+    if [ "${2:-}" = all ]; then for u in $(systemctl --user list-timers --no-legend 'flint-timer-*' 2>/dev/null | awk '{print $NF}'); do systemctl --user stop "$u" 2>/dev/null; done; echo "all timers cancelled"
+    else [ -n "${2:-}" ] || { echo "usage: flint-timer cancel <id|all>" >&2; exit 1; }; systemctl --user stop "flint-timer-$2.timer" 2>/dev/null && echo "timer $2 cancelled" || echo "no timer $2"; fi; exit 0 ;;
+  at)
+    WHEN="${2:-}"; TEXT="${3:-reminder}"; [ -n "$WHEN" ] || { echo "usage: flint-timer at HH:MM|\"YYYY-MM-DD HH:MM\" \"text\"" >&2; exit 1; }
+    if [[ "$WHEN" =~ ^[0-9]{1,2}:[0-9]{2}$ ]]; then
+      target="$(date -d "today $WHEN" +%s)"; [ "$target" -le "$(date +%s)" ] && target="$(date -d "tomorrow $WHEN" +%s)"
+      WHEN="$(date -d "@$target" '+%Y-%m-%d %H:%M:%S')"
+    fi
+    id="$(date +%s | tail -c 6)"
+    systemd-run --user --quiet --on-calendar="$WHEN" --unit="flint-timer-$id" --description="$TEXT" \
+      --setenv=PATH="$PATH" --setenv=DISPLAY="${DISPLAY:-:0}" --setenv=DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}" \
+      flint-notify "Reminder" "$TEXT" --say && echo "reminder $id set for $WHEN: $TEXT" || { echo "could not schedule (systemd --user not reachable)" >&2; exit 1; } ;;
+  -h|--help|"") sed -n '2,11p' "$0"; exit 0 ;;
+  *)
+    secs="$(dur "$1")" || { echo "not a duration: $1 (10m, 1h30m, 90s, or minutes as a number)" >&2; exit 1; }
+    TEXT="${2:-timer}"; id="$(date +%s | tail -c 6)"
+    systemd-run --user --quiet --on-active="${secs}s" --unit="flint-timer-$id" --description="$TEXT" \
+      --setenv=PATH="$PATH" --setenv=DISPLAY="${DISPLAY:-:0}" --setenv=DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}" \
+      flint-notify "Timer" "$TEXT" --say && echo "timer $id: $TEXT in $(( secs / 60 )) min $(( secs % 60 )) s" || { echo "could not schedule (systemd --user not reachable)" >&2; exit 1; } ;;
+esac

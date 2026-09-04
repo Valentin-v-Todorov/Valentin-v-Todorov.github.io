@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# flint-phone: the phone, through KDE Connect (the KDE Connect app on Android or iOS, same wifi).
+#
+#   flint-phone devices               phones KDE Connect knows, paired or not, reachable or not
+#   flint-phone pair [id]             ask to pair (accept on the phone once)
+#   flint-phone ring                  find my phone
+#   flint-phone battery               charge and whether it is charging
+#   flint-phone sms <number> "text"   send a text message from the phone
+#   flint-phone send <file|url>       share a file or open a link on the phone
+#   flint-phone clip "text"           put text in the phone's clipboard
+#   flint-phone notifications         what is on the phone's notification shade right now
+#   flint-phone photo                 a photo from the phone's camera (see flint-look phone)
+#   flint-phone ping "text"           a small notification on the phone
+#
+# FLINT_PHONE_ID pins one device when several are paired. Pairing is the one manual step: accept on the phone.
+set -uo pipefail
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+command -v kdeconnect-cli >/dev/null || { echo "KDE Connect is not installed (sudo apt-get install -y kdeconnect)" >&2; exit 1; }
+
+# the daemon must run in the session (it autostarts at login; start it here if it is not up)
+if ! pgrep -x kdeconnectd >/dev/null 2>&1; then
+  d="$(ls /usr/lib/*/libexec/kdeconnectd /usr/libexec/kdeconnectd /usr/lib/libexec/kdeconnectd 2>/dev/null | head -1)"
+  [ -n "$d" ] && { setsid "$d" >/dev/null 2>&1 & sleep 2; }
+fi
+dev() {
+  local id="${FLINT_PHONE_ID:-}"
+  [ -n "$id" ] || id="$(kdeconnect-cli -a --id-only 2>/dev/null | head -1)"
+  [ -n "$id" ] || id="$(kdeconnect-cli -l --id-only 2>/dev/null | head -1)"
+  [ -n "$id" ] || { echo "no phone known to KDE Connect (install the app on the phone, same wifi, then: flint-phone pair)" >&2; return 1; }
+  echo "$id"
+}
+prop() {  # prop <device> <plugin> <interface> <property>
+  gdbus call --session --dest org.kde.kdeconnect --object-path "/modules/kdeconnect/devices/$1/$2" \
+    --method org.freedesktop.DBus.Properties.Get "org.kde.kdeconnect.device.$3" "$4" 2>/dev/null | grep -oE '[-0-9.]+|true|false' | head -1
+}
+
+case "${1:-devices}" in
+  devices)
+    kdeconnect-cli --refresh >/dev/null 2>&1; sleep 1
+    out="$(kdeconnect-cli -l 2>/dev/null)"; [ -n "$out" ] && echo "$out" || echo "no devices found (phone on the same wifi with KDE Connect open?)" ;;
+  pair)
+    id="${2:-$(kdeconnect-cli -a --id-only 2>/dev/null | head -1)}"; [ -n "$id" ] || id="$(kdeconnect-cli -l --id-only 2>/dev/null | head -1)"
+    [ -n "$id" ] || { echo "no phone in reach to pair with" >&2; exit 1; }
+    kdeconnect-cli -d "$id" --pair 2>&1; echo "accept the pairing request on the phone (KDE Connect app)" ;;
+  ring)  id="$(dev)" || exit 1; kdeconnect-cli -d "$id" --ring >/dev/null 2>&1 && echo "ringing" ;;
+  ping)  id="$(dev)" || exit 1; kdeconnect-cli -d "$id" --ping-msg "${2:-Flint}" >/dev/null 2>&1 && echo "pinged" ;;
+  battery)
+    id="$(dev)" || exit 1
+    c="$(prop "$id" battery battery charge)"; ch="$(prop "$id" battery battery isCharging)"
+    [ -n "$c" ] && echo "phone battery ${c}%$( [ "$ch" = true ] && echo ', charging' || echo ', not charging')" || echo "no battery reading (phone unreachable, or the battery plugin is off)" ;;
+  sms)
+    id="$(dev)" || exit 1; [ -n "${2:-}" ] && [ -n "${3:-}" ] || { echo "usage: flint-phone sms <number> \"text\"" >&2; exit 1; }
+    kdeconnect-cli -d "$id" --send-sms "$3" --destination "$2" 2>&1 && echo "sms sent to $2" ;;
+  send)
+    id="$(dev)" || exit 1; [ -n "${2:-}" ] || { echo "usage: flint-phone send <file|url>" >&2; exit 1; }
+    kdeconnect-cli -d "$id" --share "$2" 2>&1 && echo "shared: $2" ;;
+  clip)
+    id="$(dev)" || exit 1; [ -n "${2:-}" ] || { echo "usage: flint-phone clip \"text\"" >&2; exit 1; }
+    kdeconnect-cli -d "$id" --share-text "$2" 2>&1 && echo "on the phone's clipboard" ;;
+  notifications)
+    id="$(dev)" || exit 1; out="$(kdeconnect-cli -d "$id" --list-notifications 2>/dev/null)"; [ -n "$out" ] && echo "$out" || echo "no notifications on the phone" ;;
+  photo)
+    id="$(dev)" || exit 1; out="${XDG_STATE_HOME:-$HOME/.local/state}/flint/look-phone.jpg"; rm -f "$out"
+    kdeconnect-cli -d "$id" --photo "$out" >/dev/null 2>&1
+    for _ in $(seq 1 60); do [ -s "$out" ] && { echo "$out"; exit 0; }; sleep 1; done
+    echo "no photo within a minute (take it on the phone when it opens the camera)" >&2; exit 1 ;;
+  -h|--help) sed -n '2,15p' "$0" ;;
+  *) echo "unknown: $1 (flint-phone --help)" >&2; exit 1 ;;
+esac

@@ -113,6 +113,26 @@ check() {
   tee_chk "flint-health.sh reports" bash -c "flint-health.sh --brief | grep -q ."
   tee_chk "flint-stack answers" bash -c "flint-stack status >/dev/null 2>&1; [ \$? -le 1 ]"
   [ "$KEEPER" = 1 ] && tee_chk "keeper timer" systemctl --user is-active flint-keeper.timer
+  if [ "$SENSES" = 1 ]; then
+    tee_chk "eyes: a webcam frame (flint-look desk)" bash -c "ls /dev/video* >/dev/null 2>&1 && f=\$(flint-look desk) && [ -s \"\$f\" ]"
+    tee_chk "ears: the sound classifier hears silence as Silence" bash -c "python3 -c \"import wave; w=wave.open('/tmp/flint-silence.wav','wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(bytes(32000)); w.close()\" && flint-ears test /tmp/flint-silence.wav | grep -qi silence"
+    tee_chk "OCR reads text (flint-look text)" bash -c "python3 -c \"import cv2,numpy as np; img=np.full((120,600,3),255,np.uint8); cv2.putText(img,'FLINT ONLINE',(20,80),cv2.FONT_HERSHEY_SIMPLEX,2,(0,0,0),4); cv2.imwrite('/tmp/flint-ocr.png',img)\" 2>/dev/null || '$AGENT_HOME/senses/.venv/bin/python' -c \"import cv2,numpy as np; img=np.full((120,600,3),255,np.uint8); cv2.putText(img,'FLINT ONLINE',(20,80),cv2.FONT_HERSHEY_SIMPLEX,2,(0,0,0),4); cv2.imwrite('/tmp/flint-ocr.png',img)\"; flint-look text /tmp/flint-ocr.png | grep -qi 'flint'"
+    tee_chk "voice anywhere: flint-say writes audio" bash -c "f=\$(flint-say --file /tmp/flint-say.wav 'Doctor test.') && [ -s /tmp/flint-say.wav ]"
+    tee_chk "timers: flint-timer schedules and cancels" bash -c "out=\$(flint-timer 45m 'doctor test') && id=\$(echo \"\$out\" | grep -oE 'timer [0-9]+' | awk '{print \$2}') && flint-timer cancel \"\$id\" | grep -q cancelled"
+    ls /dev/video* >/dev/null 2>&1 && tee_warn "presence: your face enrolled and the watcher running" bash -c "test -f '$HOME/.local/share/flint/faces/$YOUR_NAME.npy' && systemctl --user is-active flint-presence.service"
+    tee_warn "listener service running" systemctl --user is-active flint-ears.service
+  fi
+  [ "$TELEGRAM" = 1 ] && tee_warn "Telegram bot reachable (token + /start)" flint-telegram status
+  [ "$PHONE" = 1 ] && tee_warn "a phone paired over KDE Connect" bash -c "kdeconnect-cli -a --id-only 2>/dev/null | grep -q ."
+  tee_warn "calendars or the Calendar connector" bash -c "flint-calendar today >/dev/null 2>&1 || claude mcp list 2>/dev/null | grep -qi 'calendar.*connected'"
+  tee_warn "mail (flint-mail) or the Gmail connector" bash -c "[ -f '$HOME/.config/flint/mail.env' ] && grep -q MAIL_USER '$HOME/.config/flint/mail.env' || claude mcp list 2>/dev/null | grep -qi 'gmail.*connected'"
+  [ "$HOME_ASSISTANT" = 1 ] && tee_warn "intercom: a Home Assistant media player to speak on" bash -c "flint-say --players | grep -q media_player"
+  tee_warn "news feeds reachable (flint-news)" bash -c "timeout 120 flint-news --sources | grep -q http && timeout 120 flint-news | grep -q ."
+  tee_chk "knowledge drop folder timer" systemctl --user is-active flint-ingest.timer
+  [ "$GUARD" = 1 ] && tee_chk "guard: fail2ban up and a guard pass works" bash -c "systemctl is-active fail2ban && flint-guard check && flint-guard status | grep -q passes"
+  [ "$BACKUP" = 1 ] && tee_chk "backup repository answers" bash -c "flint-backup status | grep -q 'last snapshot'"
+  [ "$BACKUP" = 1 ] && tee_warn "a backup snapshot exists" bash -c "flint-backup snapshots | grep -qE '^[0-9a-f]{8} '"
+  [ "$OFFLINE" = 1 ] && tee_warn "offline brain: ollama answers with the model" bash -c "flint-offline status && timeout 120 flint-offline ask 'what time is it' | grep -q say"
   tee_warn "browser: Playwright MCP drives Chrome with its own profile" bash -c "claude mcp get playwright | grep -q -- '--browser chrome'"
   tee_warn "MCP servers connect (playwright$( [ "$HOME_ASSISTANT" = 1 ] && printf ', home-assistant'))" mcp_test
   [ "$HOME_ASSISTANT" = 1 ] && tee_chk "Home Assistant API with the token" bash -c ". '$HOME/.config/flint/ha.env'; curl -fsS -m 5 -H \"Authorization: Bearer \$HA_TOKEN\" http://127.0.0.1:8123/api/ | grep -q 'API running'"

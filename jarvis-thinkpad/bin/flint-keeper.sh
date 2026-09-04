@@ -31,6 +31,22 @@ pgrep -x gnome-shell -u "$(id -u)" >/dev/null 2>&1 || exit 0     # no desktop se
 voice_up() { pgrep -f 'backtalk[.]main' >/dev/null 2>&1; }
 face_up() { curl -fsS -m 3 -o /dev/null http://127.0.0.1:8790/state 2>/dev/null; }
 
+# --- the cloud: no internet, or the brain refusing (plan out of usage) -> the offline loop instead of restart loops
+if [ "$(cfg OFFLINE)" != 0 ] && [ -f "$HOME/.config/systemd/user/flint-offline.service" ]; then
+  cloud=0; [ -n "$(curl -sS -m 6 -o /dev/null -w '%{http_code}' https://api.anthropic.com/ 2>/dev/null)" ] && cloud=1
+  brain_down=0; bl="$AH/backtalk/logs/backtalk.log"
+  if [ -f "$bl" ] && [ "$(( $(date +%s) - $(stat -c %Y "$bl") ))" -lt 600 ] && tail -40 "$bl" | grep -q "BRAIN CONNECT"; then brain_down=1; fi
+  offline_active=0; [ "$(systemctl --user is-active flint-offline.service 2>/dev/null)" = active ] && offline_active=1
+  if [ "$cloud" = 0 ] || { [ "$brain_down" = 1 ] && ! voice_up; }; then
+    if [ "$offline_active" = 0 ] && ! voice_up; then
+      systemctl --user start flint-offline.service 2>/dev/null && log "cloud unreachable (internet $cloud, brain down $brain_down): offline mode started"
+    fi
+    exit 0                                         # do not burn the restart budget while the cloud is out
+  elif [ "$offline_active" = 1 ]; then
+    systemctl --user stop flint-offline.service 2>/dev/null; rm -f "$STATE/keeper-restarts"; log "cloud back: offline mode stopped"
+  fi
+fi
+
 reason=""
 if ! voice_up; then
   reason="voice line down"

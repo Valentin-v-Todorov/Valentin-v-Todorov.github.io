@@ -101,7 +101,7 @@ schedules:
     description: Morning brief
     on_calendar: "Mon..Fri 07:00"
     agent: ""
-    prompt: "Run the morning routine: read Active Priorities and yesterday's daily note, ask comms-lead for the inbox triage and automations-machine for a one-line machine report, then write '00 - Inbox/Morning Brief.md' with today's priorities, the triage and the report. Finish with: notify-send 'Flint' 'Morning brief ready'."
+    prompt: "Run the morning routine: read Active Priorities and yesterday's daily note; today's calendar (the Calendar connector if claude mcp list shows it connected, else flint-calendar today); the unread mail (the Gmail connector, else flint-mail unread 10) triaged into needs-a-reply / just-know / ignore; the news in six lines (flint-news --brief); flint-health.sh --brief and flint-notify --log 20 for what happened overnight (backups, guard, sounds). Ask comms-lead for the inbox triage and automations-machine for a one-line machine report. Write '00 - Inbox/Morning Brief.md' with today's priorities, the calendar, the triage, the news and the report, then say it in under two minutes with flint-say. Finish with: flint-notify 'Flint' 'Morning brief ready'."
     permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
     max_turns: 60
     enabled: true

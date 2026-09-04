@@ -1,0 +1,290 @@
+#!/usr/bin/env bash
+# flint-presence: knows when you are at the desk, from the webcam. Bash head, python body (the senses venv).
+#   flint-presence enrol <name> | watch | status | test | forget <name>      (flint-presence --help)
+here="$(dirname "$(readlink -f "$0")")"; PY="$here/../senses/.venv/bin/python"
+[ -x "$PY" ] || { echo "no senses virtualenv at $PY (run: setup.sh --only 13)" >&2; exit 1; }
+exec "$PY" - "$@" <<'PY'
+"""flint-presence: knows when you are at the desk, from the webcam.
+
+  flint-presence enrol <name> [--seconds 6]   look at the camera for a few seconds; your face is stored locally
+  flint-presence watch                        the watcher (flint-presence.service runs it)
+  flint-presence status                       who is here, since when
+  flint-presence test                         one frame: faces found and who they are
+  flint-presence forget <name>
+
+What the watcher does: two frames a second through YuNet (detection) and SFace (recognition), both from
+OpenCV's model zoo, on the CPU. State in ~/.local/state/flint/presence.json. On arrival of a known face it
+greets by name (flint-say, at most every ten minutes) and resumes music it had paused; sixty seconds after the
+last face it pauses the music (flint-play) and marks you away. An unknown face while the owner is away is
+logged with a snapshot and sent to flint-notify, at most every five minutes. A fresh frame is kept in
+~/.local/state/flint/look-live.jpg every two seconds for flint-look. Nothing leaves the machine.
+
+Environment: FLINT_CAMERA (index, default 0), FLINT_PRESENCE_AWAY_S (60), FLINT_PRESENCE_GREET (1).
+"""
+import glob
+import json
+import os
+import subprocess
+import sys
+import time
+
+HOME = os.path.expanduser("~")
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(HOME, ".local", "state"), "flint")
+DATA = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.join(HOME, ".local", "share"), "flint")
+FACES = os.path.join(DATA, "faces")
+MODELS = os.path.join(DATA, "models")
+YUNET = os.path.join(MODELS, "face_detection_yunet_2023mar.onnx")
+SFACE = os.path.join(MODELS, "face_recognition_sface_2021dec.onnx")
+URLS = {YUNET: "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
+        SFACE: "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx"}
+PRESENCE = os.path.join(STATE, "presence.json")
+LIVE = os.path.join(STATE, "look-live.jpg")
+CAMERA = int(os.environ.get("FLINT_CAMERA", "0") or 0)
+AWAY_S = float(os.environ.get("FLINT_PRESENCE_AWAY_S", "60") or 60)
+GREET = os.environ.get("FLINT_PRESENCE_GREET", "1") != "0"
+COSINE_MATCH = 0.363          # SFace's documented cosine threshold
+os.makedirs(STATE, exist_ok=True); os.makedirs(FACES, exist_ok=True); os.makedirs(MODELS, exist_ok=True)
+os.environ["PATH"] = os.path.join(HOME, ".local", "bin") + ":" + os.environ.get("PATH", "")
+
+
+def sh(*args, timeout=60):
+    try:
+        return subprocess.run(list(args), capture_output=True, text=True, timeout=timeout).stdout.strip()
+    except Exception:
+        return ""
+
+
+def ensure_models():
+    import urllib.request
+    for path, url in URLS.items():
+        if os.path.exists(path) and os.path.getsize(path) > 100_000:
+            continue
+        print(f"downloading {os.path.basename(path)}...", flush=True)
+        urllib.request.urlretrieve(url, path + ".part")
+        os.replace(path + ".part", path)
+
+
+def engines():
+    import cv2
+    ensure_models()
+    det = cv2.FaceDetectorYN.create(YUNET, "", (320, 240), score_threshold=0.8, nms_threshold=0.3, top_k=50)
+    rec = cv2.FaceRecognizerSF.create(SFACE, "")
+    return cv2, det, rec
+
+
+def open_camera(cv2):
+    cap = cv2.VideoCapture(CAMERA)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    if not cap.isOpened():
+        sys.exit(f"cannot open camera {CAMERA} (privacy shutter closed? another program holding it? FLINT_CAMERA=1?)")
+    return cap
+
+
+def faces_in(cv2, det, frame):
+    h, w = frame.shape[:2]
+    det.setInputSize((w, h))
+    _, found = det.detect(frame)
+    return [] if found is None else list(found)
+
+
+def load_known():
+    import numpy as np
+    known = {}
+    for p in glob.glob(os.path.join(FACES, "*.npy")):
+        known[os.path.splitext(os.path.basename(p))[0]] = np.load(p)
+    return known
+
+
+def identify(cv2, rec, frame, face, known):
+    feat = rec.feature(rec.alignCrop(frame, face))
+    best, score = None, 0.0
+    for name, feats in known.items():
+        for k in feats:
+            s = rec.match(feat, k.reshape(1, -1), cv2.FaceRecognizerSF_FR_COSINE)
+            if s > score:
+                best, score = name, s
+    return (best, score) if score >= COSINE_MATCH else (None, score)
+
+
+def write_state(**kw):
+    kw["ts"] = time.time()
+    tmp = PRESENCE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(kw, f)
+    os.replace(tmp, PRESENCE)
+
+
+def owner_name():
+    names = sorted(os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(FACES, "*.npy")))
+    return names[0] if names else ""
+
+
+def cmd_enrol(name, seconds=6.0):
+    import numpy as np
+    was_active = sh("systemctl", "--user", "is-active", "flint-presence.service") == "active"
+    if was_active:
+        sh("systemctl", "--user", "stop", "flint-presence.service")
+    cv2, det, rec = engines()
+    cap = open_camera(cv2)
+    print(f"look at the camera for {seconds:.0f} seconds, turn your head a little...", flush=True)
+    feats, t0, n = [], time.time(), 0
+    while time.time() - t0 < seconds:
+        ok, frame = cap.read()
+        if not ok:
+            continue
+        n += 1
+        found = faces_in(cv2, det, frame)
+        if not found:
+            continue
+        face = max(found, key=lambda f: f[2] * f[3])
+        feats.append(rec.feature(rec.alignCrop(frame, face)).reshape(-1))
+        time.sleep(0.15)
+    cap.release()
+    if len(feats) < 4:
+        sys.exit(f"only {len(feats)} usable frames in {n}; more light, closer to the camera, try again")
+    feats = np.array(feats[-12:], dtype=np.float32)
+    np.save(os.path.join(FACES, f"{name}.npy"), feats)
+    print(f"stored {len(feats)} samples of {name}'s face in {FACES} (local only)")
+    if was_active:
+        sh("systemctl", "--user", "start", "flint-presence.service")
+
+
+def cmd_forget(name):
+    p = os.path.join(FACES, f"{name}.npy")
+    if os.path.exists(p):
+        os.remove(p); print(f"forgot {name}")
+    else:
+        print(f"no face stored for {name}")
+
+
+def cmd_test():
+    cv2, det, rec = engines()
+    known = load_known()
+    cap = open_camera(cv2)
+    frame = None
+    for _ in range(12):                      # let the exposure settle
+        ok, frame = cap.read()
+    cap.release()
+    if frame is None:
+        sys.exit("no frame")
+    found = faces_in(cv2, det, frame)
+    print(f"{len(found)} face(s); enrolled: {', '.join(known) or 'nobody (flint-presence enrol <name>)'}")
+    for f in found:
+        who, score = identify(cv2, rec, frame, f, known)
+        print(f"  {who or 'unknown'} (cosine {score:.2f}, box {int(f[0])},{int(f[1])} {int(f[2])}x{int(f[3])})")
+    cv2.imwrite(LIVE, frame)
+    print(f"frame: {LIVE}")
+
+
+def cmd_status():
+    try:
+        s = json.load(open(PRESENCE))
+    except Exception:
+        print("no presence data yet (is flint-presence.service running?)"); return 1
+    age = time.time() - s.get("ts", 0)
+    if age > 30:
+        print(f"stale ({int(age)} s old): the watcher is not running")
+    if s.get("present"):
+        who = ", ".join(s.get("who") or []) or "someone (not enrolled)"
+        print(f"{who} at the desk since {time.strftime('%H:%M', time.localtime(s.get('since', 0)))}")
+    else:
+        print(f"nobody here; last seen {time.strftime('%H:%M', time.localtime(s.get('last_seen', 0))) if s.get('last_seen') else 'never'}")
+    return 0
+
+
+def cmd_watch():
+    cv2, det, rec = engines()
+    known = load_known()
+    known_mtime = max([os.path.getmtime(p) for p in glob.glob(os.path.join(FACES, "*.npy"))] or [0])
+    owner = owner_name()
+    cap = open_camera(cv2)
+    present, since, last_seen, who = False, 0.0, 0.0, []
+    paused_by_us = False
+    last_greet, last_unknown, last_live = 0.0, 0.0, 0.0
+    print(f"watching camera {CAMERA}; enrolled: {', '.join(known) or 'nobody'}; away after {AWAY_S:.0f}s", flush=True)
+    while True:
+        ok, frame = cap.read()
+        if not ok:
+            time.sleep(1)
+            continue
+        now = time.time()
+        # pick up a new enrolment without a restart
+        try:
+            m = max([os.path.getmtime(p) for p in glob.glob(os.path.join(FACES, "*.npy"))] or [0])
+            if m != known_mtime:
+                known, known_mtime, owner = load_known(), m, owner_name()
+        except OSError:
+            pass
+        found = faces_in(cv2, det, frame)
+        names = []
+        unknown = 0
+        for f in found:
+            n, _ = identify(cv2, rec, frame, f, known) if known else (None, 0.0)
+            if n:
+                names.append(n)
+            else:
+                unknown += 1
+        if found:
+            last_seen = now
+            if not present:
+                present, since = True, now
+                if names and GREET and now - last_greet > 600:
+                    last_greet = now
+                    subprocess.Popen(["flint-say", f"Welcome back, {names[0]}."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if paused_by_us:
+                    paused_by_us = False
+                    subprocess.Popen(["flint-play", "resume"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                with open(os.path.join(STATE, "events.jsonl"), "a") as ev:
+                    ev.write(json.dumps({"ts": now, "title": "Presence", "message": f"{', '.join(names) or 'someone'} arrived"}) + "\n")
+            if names:
+                who = sorted(set(who) | set(names))
+            if unknown and owner and owner not in names and now - last_unknown > 300:
+                last_unknown = now
+                snap = os.path.join(STATE, "presence-unknown.jpg")
+                cv2.imwrite(snap, frame)
+                subprocess.Popen(["flint-notify", "Presence", "Someone I don't recognise is at the desk", "--photo", snap, "--quiet"],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif present and now - last_seen > AWAY_S:
+            present, who = False, []
+            st = sh("flint-play", "status", "--json", timeout=5)
+            try:
+                if json.loads(st).get("running") and not json.loads(st).get("paused"):
+                    sh("flint-play", "pause", timeout=5); paused_by_us = True
+            except ValueError:
+                pass
+            with open(os.path.join(STATE, "events.jsonl"), "a") as ev:
+                ev.write(json.dumps({"ts": now, "title": "Presence", "message": "desk empty"}) + "\n")
+        if now - last_live > 2:
+            last_live = now
+            try:
+                cv2.imwrite(LIVE + ".tmp.jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80]); os.replace(LIVE + ".tmp.jpg", LIVE)
+            except Exception:
+                pass
+        write_state(present=present, who=who, since=since, last_seen=last_seen, unknown=unknown, faces=len(found))
+        time.sleep(0.5)
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.strip()); return 0
+    c = argv[0]
+    if c == "enrol":
+        if len(argv) < 2:
+            sys.exit("usage: flint-presence enrol <name> [--seconds N]")
+        secs = float(argv[argv.index("--seconds") + 1]) if "--seconds" in argv else 6.0
+        return cmd_enrol(argv[1], secs)
+    if c == "forget":
+        return cmd_forget(argv[1]) if len(argv) > 1 else sys.exit("usage: flint-presence forget <name>")
+    if c == "watch":
+        return cmd_watch()
+    if c == "test":
+        return cmd_test()
+    if c == "status":
+        return cmd_status()
+    sys.exit(f"unknown command: {c}")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)
+PY

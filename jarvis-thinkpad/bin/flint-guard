@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# flint-guard: guard duty. Who logged in over SSH, who fail2ban banned, what new device joined the wifi,
+# motion in the house while you are away (Home Assistant). One pass every two minutes (flint-guard.timer).
+#
+#   flint-guard check              one pass; alerts go through flint-notify (screen, Telegram, phone)
+#   flint-guard devices            the LAN devices it knows; flint-guard name <mac> "Valentin's phone"
+#   flint-guard status             the last hour in one screen
+#   flint-guard away on|off        tell him you are away (the presence watcher sets this by itself)
+#
+# The first hour after install is learning: new devices are recorded, not announced. Log: ~/.local/state/flint/guard.log
+set -uo pipefail
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/sbin:/sbin:$PATH"
+for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] && { set -a; . "$f"; set +a; }; done
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/flint"; mkdir -p "$STATE"
+LOG="$STATE/guard.log"; DEV="$STATE/lan-devices.json"; AWAY="$STATE/away"
+log() { printf '%s %s\n' "$(date '+%F %T')" "$*" >> "$LOG"; }
+alert() { flint-notify "Guard" "$1" --quiet >/dev/null 2>&1; log "ALERT $1"; }
+now=$(date +%s)
+
+case "${1:-check}" in
+  check)
+    # --- SSH logins since the last pass (the cursor file makes every line count once)
+    if command -v journalctl >/dev/null; then
+      journalctl -u ssh -q --no-pager -o cat --cursor-file="$STATE/guard-ssh.cursor" --since "-10min" 2>/dev/null | grep -E "Accepted (publickey|password)" | while read -r line; do
+        who="$(echo "$line" | sed -E 's/.*Accepted [a-z]+ for ([^ ]+) from ([^ ]+).*/\1 from \2/')"
+        alert "SSH login: $who"
+      done
+    fi
+    # --- fail2ban bans
+    if command -v fail2ban-client >/dev/null; then
+      banned="$(sudo -n fail2ban-client status sshd 2>/dev/null | grep -oE 'Currently banned:\s*[0-9]+' | grep -oE '[0-9]+$')"
+      prev="$(cat "$STATE/guard-banned" 2>/dev/null || echo 0)"
+      if [ -n "$banned" ] && [ "$banned" -gt "${prev:-0}" ]; then
+        ips="$(sudo -n fail2ban-client status sshd 2>/dev/null | grep -oE 'Banned IP list:.*' | cut -d: -f2)"
+        alert "fail2ban banned an address hammering SSH:$ips"
+      fi
+      [ -n "$banned" ] && echo "$banned" > "$STATE/guard-banned"
+    fi
+    # --- new devices on the LAN
+    if command -v arp-scan >/dev/null; then
+      scan="$(sudo -n arp-scan --localnet --plain --quiet --retry=2 2>/dev/null | awk '{print $1, $2, substr($0, index($0,$3))}')"
+      if [ -n "$scan" ]; then
+        printf '%s\n' "$scan" | python3 - "$DEV" "$now" <<'PY' | while read -r line; do alert "$line"; done
+import json, os, sys
+dev_file, now = sys.argv[1], int(sys.argv[2])
+try: known = json.load(open(dev_file))
+except Exception: known = {"_learned_at": now}
+learning = now - int(known.get("_learned_at", now)) < 3600
+for line in sys.stdin:
+    parts = line.strip().split(" ", 2)
+    if len(parts) < 2: continue
+    ip, mac = parts[0], parts[1].lower(); vendor = parts[2] if len(parts) > 2 else ""
+    d = known.get(mac)
+    if d is None:
+        known[mac] = {"ip": ip, "vendor": vendor, "name": "", "first": now, "last": now}
+        if not learning:
+            print(f"New device on the wifi: {vendor or 'unknown make'} at {ip} ({mac}). Name it: flint-guard name {mac} \"...\"")
+    else:
+        d.update(ip=ip, last=now)
+        if vendor and not d.get("vendor"): d["vendor"] = vendor
+tmp = dev_file + ".tmp"; json.dump(known, open(tmp, "w"), indent=1); os.replace(tmp, dev_file)
+PY
+      fi
+    fi
+    # --- motion in the house while away
+    away=0; [ -f "$AWAY" ] && away=1
+    if [ "$away" = 0 ] && [ -f "$STATE/presence.json" ]; then
+      python3 -c "import json,sys,time; s=json.load(open('$STATE/presence.json')); sys.exit(0 if (not s.get('present') and time.time()-s.get('ts',0)<120) else 1)" 2>/dev/null && away=1
+    fi
+    if [ "$away" = 1 ] && [ -n "${HA_URL:-}" ] && [ -n "${HA_TOKEN:-}" ]; then
+      last="$(cat "$STATE/guard-motion" 2>/dev/null || echo 0)"
+      if [ $((now - last)) -gt 300 ]; then
+        hit="$(curl -fsS -m 10 -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/states" 2>/dev/null | python3 -c '
+import json, sys
+for s in json.load(sys.stdin):
+    a = s.get("attributes", {})
+    if s["entity_id"].startswith("binary_sensor.") and a.get("device_class") in ("motion", "occupancy", "opening", "door", "window") and s["state"] == "on":
+        print(a.get("friendly_name") or s["entity_id"]); break')"
+        if [ -n "$hit" ]; then
+          echo "$now" > "$STATE/guard-motion"
+          cam="$(curl -fsS -m 10 -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/states" 2>/dev/null | python3 -c 'import json,sys; print(next((s["entity_id"] for s in json.load(sys.stdin) if s["entity_id"].startswith("camera.")), ""))')"
+          if [ -n "$cam" ] && curl -fsS -m 15 -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/camera_proxy/$cam" -o "$STATE/guard-motion.jpg" 2>/dev/null; then
+            flint-notify "Guard" "Motion while you are away: $hit" --photo "$STATE/guard-motion.jpg" --quiet >/dev/null 2>&1; log "ALERT motion: $hit (photo)"
+          else alert "Motion while you are away: $hit"; fi
+        fi
+      fi
+    fi
+    log "pass ok" ;;
+  devices)
+    [ -f "$DEV" ] || { echo "no scan yet (flint-guard check)"; exit 0; }
+    python3 - "$DEV" <<'PY'
+import json, sys, time
+d = json.load(open(sys.argv[1]))
+for mac, v in sorted(((m, v) for m, v in d.items() if not m.startswith("_")), key=lambda x: -x[1]["last"]):
+    age = int(time.time() - v["last"])
+    print(f"{v['ip']:16} {mac}  {v.get('name') or v.get('vendor') or '?':34} last seen {age // 60} min ago")
+PY
+    ;;
+  name)
+    [ -n "${2:-}" ] && [ -n "${3:-}" ] || { echo "usage: flint-guard name <mac> \"name\"" >&2; exit 1; }
+    python3 -c "import json,sys; p=sys.argv[1]; d=json.load(open(p)); d.setdefault(sys.argv[2].lower(), {'ip':'','vendor':'','first':0,'last':0})['name']=sys.argv[3]; json.dump(d, open(p,'w'), indent=1); print('named')" "$DEV" "$2" "$3" ;;
+  away)
+    case "${2:-}" in on) touch "$AWAY"; echo "away: on";; off) rm -f "$AWAY"; echo "away: off";; *) [ -f "$AWAY" ] && echo "away: on" || echo "away: off";; esac ;;
+  status)
+    echo "away marker: $( [ -f "$AWAY" ] && echo on || echo off); devices known: $(python3 -c "import json; print(len([k for k in json.load(open('$DEV')) if not k.startswith('_')]))" 2>/dev/null || echo 0); fail2ban: $(command -v fail2ban-client >/dev/null && (sudo -n fail2ban-client status sshd 2>/dev/null | grep -oE 'Currently banned:\s*[0-9]+' || echo 'not running') || echo 'not installed')"
+    echo "last hour:"; awk -v t="$(date -d '-1 hour' '+%F %T')" '$1" "$2 >= t' "$LOG" 2>/dev/null | grep -v "pass ok" | tail -20; echo "passes: $(grep -c 'pass ok' "$LOG" 2>/dev/null || echo 0)" ;;
+  -h|--help) sed -n '2,11p' "$0" ;;
+  *) echo "unknown: $1 (flint-guard --help)" >&2; exit 1 ;;
+esac

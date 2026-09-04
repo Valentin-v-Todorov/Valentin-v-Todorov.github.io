@@ -14,8 +14,16 @@ already made. Every other file here is a detail you read when its phase comes.
 `./setup.sh` in this folder does the entire install on a fresh Ubuntu 24.04:
 system update, packages, desktop-as-server, remote access, tools, apps, the two
 logins, one reboot with automatic continuation, Jared's wizard headless, the
-face, the team, Home Assistant, the doctor, the first hello. `install/README.md`
-explains it; `~/.flint-setup/` holds progress, logs and the answers.
+face, the team, Home Assistant, the senses (camera, sounds, OCR, timers, the
+intercom), the connections (the phone, the Telegram bot, mail, calendars, news,
+the knowledge drop folder), guard duty, backups, the offline brain, the doctor,
+the first hello. `install/README.md` explains it; `~/.flint-setup/` holds
+progress, logs and the answers. The agent's tools live in `bin/` and are
+described in `04-full-power-agent.md` section 5b; the things only the person can
+do afterwards are: look at the camera once (`flint-presence enrol`), make a
+Telegram bot (`flint-telegram setup`), pair the phone (`flint-phone pair`),
+enable the Gmail and Calendar connectors on claude.ai, and save the backup
+password from `~/.config/flint/backup.env`.
 
 ## On the first message of a session, establish the state and act
 

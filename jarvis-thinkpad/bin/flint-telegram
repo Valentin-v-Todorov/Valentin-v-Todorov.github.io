@@ -1,0 +1,349 @@
+#!/usr/bin/env python3
+"""flint-telegram: the agent on your phone, through a Telegram bot. Two-way, free, works anywhere.
+
+  flint-telegram setup              paste the bot token from @BotFather; then send /start to the bot once
+  flint-telegram serve              the bot (flint-telegram.service keeps it running)
+  flint-telegram send "text" [--photo file.jpg] [--voice file.ogg]      to your chat (alerts use this)
+  flint-telegram status
+
+In the chat: plain text is a message to the agent (he answers as himself, from his home, with the vault);
+a voice note is transcribed locally first; a photo is saved and shown to him. Commands: /new (fresh
+conversation), /status, /look (the desk camera), /screen, /play <what>, /pause, /stop, /say <text> (speak in
+the house), /events (what happened), /voice on|off (answer with voice notes too), /help.
+
+Only the chat that sent /start first (TELEGRAM_CHAT_ID) is obeyed; everyone else is told so. The token and
+the chat id live in ~/.config/flint/telegram.env (chmod 600). Nothing is stored on Telegram's side by us.
+"""
+import json
+import mimetypes
+import os
+import shutil
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
+
+HOME = os.path.expanduser("~")
+ENV = os.path.join(HOME, ".config", "flint", "telegram.env")
+STATE_DIR = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(HOME, ".local", "state"), "flint")
+STATE = os.path.join(STATE_DIR, "telegram.json")
+os.makedirs(STATE_DIR, exist_ok=True)
+os.environ["PATH"] = os.path.join(HOME, ".local", "bin") + ":/usr/local/bin:" + os.environ.get("PATH", "")
+
+
+def read_env():
+    d = {}
+    try:
+        for line in open(ENV):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                d[k.strip()] = v.strip().strip("'\"")
+    except OSError:
+        pass
+    return d
+
+
+def write_env(d):
+    os.makedirs(os.path.dirname(ENV), exist_ok=True)
+    with open(ENV, "w") as f:
+        for k, v in d.items():
+            f.write(f"{k}={v}\n")
+    os.chmod(ENV, 0o600)
+
+
+def agent_home():
+    if os.environ.get("FLINT_AGENT_HOME"):
+        return os.environ["FLINT_AGENT_HOME"]
+    d = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    return d if os.path.exists(os.path.join(d, "CLAUDE.md")) else os.path.join(HOME, "my-agent")
+
+
+AH = agent_home()
+CFG = read_env()
+TOKEN = CFG.get("TELEGRAM_BOT_TOKEN", "")
+CHAT = CFG.get("TELEGRAM_CHAT_ID", "")
+API = f"https://api.telegram.org/bot{TOKEN}"
+
+
+def load_state():
+    try:
+        return json.load(open(STATE))
+    except Exception:
+        return {"offset": 0, "session_id": "", "voice": False}
+
+
+def save_state(s):
+    tmp = STATE + ".tmp"
+    json.dump(s, open(tmp, "w")); os.replace(tmp, STATE)
+
+
+def api(method, _timeout=60, **params):
+    data = urllib.parse.urlencode({k: v for k, v in params.items() if v is not None}).encode()
+    req = urllib.request.Request(f"{API}/{method}", data=data)
+    with urllib.request.urlopen(req, timeout=_timeout) as r:
+        out = json.load(r)
+    if not out.get("ok"):
+        raise RuntimeError(out.get("description", "telegram error"))
+    return out["result"]
+
+
+def api_file(method, field, path, **params):
+    boundary = "----flint" + uuid.uuid4().hex
+    body = b""
+    for k, v in params.items():
+        if v is None:
+            continue
+        body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n".encode()
+    ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
+    body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"{field}\"; filename=\"{os.path.basename(path)}\"\r\nContent-Type: {ctype}\r\n\r\n".encode()
+    body += open(path, "rb").read() + f"\r\n--{boundary}--\r\n".encode()
+    req = urllib.request.Request(f"{API}/{method}", data=body, headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        out = json.load(r)
+    if not out.get("ok"):
+        raise RuntimeError(out.get("description", "telegram error"))
+    return out["result"]
+
+
+def send_text(chat, text):
+    text = text or "(nothing to say)"
+    for i in range(0, len(text), 3900):
+        api("sendMessage", chat_id=chat, text=text[i:i + 3900], disable_web_page_preview="true")
+
+
+def send_photo(chat, path, caption=""):
+    api_file("sendPhoto", "photo", path, chat_id=chat, caption=caption[:1000] or None)
+
+
+def send_voice(chat, wav, caption=""):
+    ogg = wav[:-4] + ".ogg" if wav.endswith(".wav") else wav + ".ogg"
+    if subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "libopus", "-b:a", "32k", ogg], capture_output=True).returncode == 0:
+        api_file("sendVoice", "voice", ogg, chat_id=chat, caption=caption[:1000] or None)
+        os.remove(ogg)
+
+
+def download(file_id, dest_dir):
+    info = api("getFile", file_id=file_id)
+    url = f"https://api.telegram.org/file/bot{TOKEN}/{info['file_path']}"
+    dest = os.path.join(dest_dir, os.path.basename(info["file_path"]))
+    urllib.request.urlretrieve(url, dest)
+    return dest
+
+
+def sh(*args, timeout=120):
+    try:
+        r = subprocess.run(list(args), capture_output=True, text=True, timeout=timeout)
+        return (r.stdout + r.stderr).strip()
+    except Exception as e:
+        return f"error: {e}"
+
+
+def transcribe(path):
+    py = os.path.join(AH, "backtalk", ".venv", "bin", "python")
+    if not os.path.exists(py):
+        return ""
+    code = """
+import json, sys, warnings; warnings.filterwarnings("ignore")
+from faster_whisper import WhisperModel
+try: model = json.load(open(sys.argv[2])).get("stt_model", "small.en")
+except Exception: model = "small.en"
+m = WhisperModel(model, device="cpu", compute_type="int8")
+segs, _ = m.transcribe(sys.argv[1])
+print(" ".join(s.text.strip() for s in segs))
+"""
+    r = subprocess.run([py, "-c", code, path, os.path.join(AH, "backtalk", "backtalk.json")], capture_output=True, text=True, timeout=300)
+    return r.stdout.strip()
+
+
+SYSTEM_HINT = ("You are answering over Telegram, from your owner's phone, not from the desk: keep replies short "
+               "and plain, no markdown tables or code fences (Telegram shows them raw), never paste file paths. "
+               "You have the whole machine: run tools, look at the desk camera with flint-look, play music with "
+               "flint-play, speak in the house with flint-say, check the machine with flint-health.sh. When asked "
+               "to do something that changes money or sends messages to other people, ask first.")
+
+
+def ask(state, prompt):
+    env = {k: v for k, v in os.environ.items() if k not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
+    base = ["claude", "-p", prompt, "--output-format", "json", "--max-turns", "40", "--append-system-prompt", SYSTEM_HINT]
+    for attempt in (1, 2):
+        args = base + (["--resume", state["session_id"]] if state.get("session_id") and attempt == 1 else [])
+        try:
+            r = subprocess.run(args, cwd=AH, env=env, capture_output=True, text=True, timeout=900, stdin=subprocess.DEVNULL)
+        except subprocess.TimeoutExpired:
+            return "That took too long and I stopped it. Try a smaller ask."
+        try:
+            out = json.loads(r.stdout.strip().splitlines()[-1])
+        except (ValueError, IndexError):
+            out = {}
+        if out.get("session_id"):
+            state["session_id"] = out["session_id"]; save_state(state)
+        text = out.get("result") or ""
+        if text or r.returncode == 0:
+            return text or "(done, nothing to report)"
+        state["session_id"] = ""
+        save_state(state)
+    return "My brain did not answer (is Claude Code logged in and the plan not out of usage?): " + (r.stderr.strip()[-300:] if r.stderr else "")
+
+
+HELP = ("Talk to me like you would at the desk. Voice notes and photos work too.\n"
+        "/new fresh conversation\n/status the machine in one line\n/look the desk camera\n/screen the screen\n"
+        "/play <what>  /pause  /stop\n/say <text> speak it in the house\n/events what happened lately\n"
+        "/voice on|off answer with voice notes too")
+
+
+def handle(state, msg):
+    global CHAT
+    chat = str(msg["chat"]["id"])
+    text = (msg.get("text") or "").strip()
+    if not CHAT:
+        if text.startswith("/start"):
+            CHAT = chat
+            cfg = read_env(); cfg["TELEGRAM_CHAT_ID"] = chat; write_env(cfg)
+            send_text(chat, "Hello. This chat is now mine to answer. " + HELP)
+        else:
+            send_text(chat, "Send /start first.")
+        return
+    if chat != CHAT:
+        send_text(chat, "I only answer my owner.")
+        return
+    api("sendChatAction", chat_id=chat, action="typing")
+    if text.startswith("/start") or text.startswith("/help"):
+        send_text(chat, HELP); return
+    if text.startswith("/new"):
+        state["session_id"] = ""; save_state(state); send_text(chat, "Fresh conversation."); return
+    if text.startswith("/status"):
+        send_text(chat, sh("flint-health.sh", "--brief")); return
+    if text.startswith("/events"):
+        send_text(chat, sh("flint-notify", "--log", "12") or "nothing logged"); return
+    if text.startswith("/look") or text.startswith("/screen"):
+        out = sh("flint-look", "desk" if text.startswith("/look") else "screen")
+        if os.path.isfile(out):
+            send_photo(chat, out)
+        else:
+            send_text(chat, out or "no picture")
+        return
+    if text.startswith("/play"):
+        send_text(chat, sh("flint-play", *(text.split()[1:] or ["status"]))); return
+    if text.startswith("/pause") or text.startswith("/stop"):
+        send_text(chat, sh("flint-play", text.split()[0][1:])); return
+    if text.startswith("/say "):
+        sh("flint-say", text[5:]); send_text(chat, "Said."); return
+    if text.startswith("/voice"):
+        state["voice"] = text.split()[-1].lower() == "on"; save_state(state)
+        send_text(chat, "Voice notes " + ("on" if state["voice"] else "off")); return
+    prompt = text
+    if msg.get("voice") or msg.get("audio"):
+        f = download((msg.get("voice") or msg.get("audio"))["file_id"], STATE_DIR)
+        heard = transcribe(f)
+        os.remove(f)
+        if not heard:
+            send_text(chat, "I could not transcribe that."); return
+        send_text(chat, "Heard: " + heard)
+        prompt = heard
+    elif msg.get("photo"):
+        f = download(msg["photo"][-1]["file_id"], STATE_DIR)
+        prompt = f"{msg.get('caption') or 'What do you make of this photo?'} (the photo is saved at {f}; look at it)"
+    elif msg.get("document"):
+        f = download(msg["document"]["file_id"], STATE_DIR)
+        prompt = f"{msg.get('caption') or 'I sent you a file.'} (saved at {f})"
+    if not prompt:
+        return
+    reply = ask(state, prompt)
+    send_text(chat, reply)
+    if state.get("voice") and shutil.which("flint-say"):
+        wav = os.path.join(STATE_DIR, "tg-reply.wav")
+        if sh("flint-say", "--file", wav, reply[:600]) and os.path.exists(wav):
+            send_voice(chat, wav); os.remove(wav)
+
+
+def serve():
+    if not TOKEN:
+        sys.exit("no bot token: flint-telegram setup")
+    state = load_state()
+    me = api("getMe")
+    print(f"bot @{me.get('username')} up; owner chat: {CHAT or 'not yet (send /start)'}", flush=True)
+    while True:
+        try:
+            updates = api("getUpdates", _timeout=70, offset=state["offset"], timeout=50)
+        except (urllib.error.URLError, OSError, RuntimeError) as e:
+            print("poll error:", e, flush=True); time.sleep(5); continue
+        for u in updates:
+            state["offset"] = u["update_id"] + 1
+            save_state(state)
+            msg = u.get("message") or u.get("edited_message")
+            if not msg:
+                continue
+            try:
+                handle(state, msg)
+            except Exception as e:
+                print("handle error:", repr(e), flush=True)
+                try:
+                    send_text(str(msg["chat"]["id"]), f"Something broke on my side: {e}")
+                except Exception:
+                    pass
+
+
+def setup():
+    cfg = read_env()
+    tok = cfg.get("TELEGRAM_BOT_TOKEN") or ""
+    if sys.stdin.isatty():
+        print("1. In Telegram, talk to @BotFather: /newbot, pick a name and a username ending in 'bot'.")
+        print("2. Paste the token it gives you here (it is stored in ~/.config/flint/telegram.env, chmod 600).")
+        tok = input("token: ").strip() or tok
+    if not tok:
+        sys.exit("no token given")
+    cfg["TELEGRAM_BOT_TOKEN"] = tok
+    write_env(cfg)
+    global TOKEN, API
+    TOKEN, API = tok, f"https://api.telegram.org/bot{tok}"
+    try:
+        me = api("getMe")
+    except Exception as e:
+        sys.exit(f"Telegram rejected the token: {e}")
+    print(f"token ok: @{me.get('username')}. Now open t.me/{me.get('username')} on your phone and send /start.")
+    print("The bot service learns your chat id from that first /start (systemctl --user restart flint-telegram).")
+
+
+def status():
+    if not TOKEN:
+        print("not configured (flint-telegram setup)"); return 1
+    try:
+        me = api("getMe", _timeout=15)
+        print(f"bot @{me.get('username')}; owner chat {'set' if CHAT else 'NOT set: send /start to the bot'}; service {sh('systemctl', '--user', 'is-active', 'flint-telegram.service')}")
+        return 0
+    except Exception as e:
+        print(f"token present but Telegram unreachable: {e}"); return 1
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.strip()); return 0
+    c = argv[0]
+    if c == "setup":
+        return setup()
+    if c == "serve":
+        return serve()
+    if c == "status":
+        return status()
+    if c == "send":
+        if not TOKEN or not CHAT:
+            sys.exit("telegram not configured (token + /start)")
+        text = argv[1] if len(argv) > 1 else ""
+        photo = argv[argv.index("--photo") + 1] if "--photo" in argv else ""
+        voice = argv[argv.index("--voice") + 1] if "--voice" in argv else ""
+        if photo:
+            send_photo(CHAT, photo, text)
+        elif voice:
+            send_voice(CHAT, voice, text)
+        else:
+            send_text(CHAT, text)
+        print("sent"); return 0
+    sys.exit(f"unknown command: {c}")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)

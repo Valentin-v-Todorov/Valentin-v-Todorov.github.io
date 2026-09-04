@@ -194,12 +194,39 @@ the microphone and the X11 screen are Unix sockets the sandbox does not reach).
 | `flint-health.sh` | Machine and stack in one report with a verdict: load, temperature, memory, disk, battery and mains, network and Tailscale, audio and camera, services, Home Assistant, the stack, the agent's login, updates, journal errors, the last doctor. `--brief` is one line. | "Flint, how is the machine?" |
 | `flint-doctor.sh` | The installer's real tests (`setup.sh --check`, silent), usable from inside the agent; `--only NN` redoes a stage. | "Flint, run the doctor and fix what fails" |
 
-Two things run without anyone asking:
+The senses, the connections and the ops (stages 13 to 15), same rules:
+
+| Tool | What it does | Try |
+| --- | --- | --- |
+| `flint-look` | `desk` (a webcam frame), `screen`, `window "title"`, `text` (OCR with tesseract), `phone` (the phone's camera). He reads the picture. | "Flint, what's on my desk?", "read me the error on the screen" |
+| `flint-presence` | Your face, enrolled once (`enrol <name>`, six seconds at the camera; OpenCV YuNet + SFace, local). The watcher greets you by name, pauses the music when the desk empties, resumes when you are back, flags a stranger with a snapshot. `status` says who is here. | (it just happens) |
+| `flint-ears` | YAMNet on the open microphone: doorbell, knock, glass, smoke or fire alarm, siren, crying, a dog. Spoken when it matters, notified otherwise, with cool-downs. `test` shows the top sounds. | (it just happens; `flint-notify --log` afterwards) |
+| `flint-say` | His voice, here (`"text"`) or on any Home Assistant speaker (`--to media_player.kitchen`, `--to all`, `--players`); `--file` for voice notes. | "Flint, tell the kitchen dinner is ready" |
+| `flint-notify` | One door for alerts: screen, Telegram, the phone through Home Assistant, the voice; everything logged (`--log`). | "Flint, what happened while I was out?" |
+| `flint-timer` | Timers and reminders as systemd user timers, spoken and notified when they fire; they survive the voice line. | "Flint, timer ten minutes, the pasta", "remind me at half past seven" |
+| `flint-telegram` | The bot on your phone: text, voice notes (transcribed locally), photos both ways, `/look`, `/screen`, `/status`, `/play`, `/say`, `/events`, `/voice on`. One conversation, resumed across messages; `/new` starts over. Only your chat is obeyed. | `flint-telegram setup`, then `/start` in the chat |
+| `flint-phone` | KDE Connect: `ring`, `battery`, `notifications`, `sms <number> "text"`, `send <file|url>`, `clip "text"`, `photo`. | "Flint, where's my phone?" |
+| `flint-mail`, `flint-calendar` | Local IMAP/SMTP and private ICS links, for when the claude.ai connectors are not connected. Drafts freely; sends only with `--confirm`. | "Flint, anything urgent in the mail?", "what's on tomorrow?" |
+| `flint-news` | Your RSS feeds (`Flint/News Sources.md`), summarised into a two-minute briefing (`--brief`), spoken (`--read`). | "Flint, the news" |
+| `flint-ingest` | A PDF, a link, a YouTube video or a file becomes a vault note (summary, key points, quotes, why it matters) in `Knowledge/Inbox`, and he tells the gist. `Knowledge/Drop` is swept every ten minutes. | "Flint, read this and tell me the gist" |
+| `flint-ha` | Home Assistant by name from the shell: `on|off|toggle|set "<name>"`, `list`, `state`, `call`. The offline brain uses it. | "Flint, lights off in the kitchen" |
+| `flint-guard` | Every two minutes: SSH logins, fail2ban bans, new devices on the wifi (learned for an hour first; `name <mac>` them), motion in the house while you are away, with a camera snapshot. | "Flint, anything unusual?" |
+| `flint-backup` | restic, encrypted: `setup`, `run` (nightly at 02:30, thinned to 14 daily, 8 weekly, 12 monthly), `check` (monthly, a real restore of the vault), `restore <path>`. The password lives in `~/.config/flint/backup.env`: write it down. | "Flint, bring back yesterday's version of that note" |
+| `flint-offline` | Ollama with a small model (`qwen2.5:3b`). When the cloud is out the keeper starts `flint-offline serve`: the same ears, mouth, key and wake word; timers, lights, music, the time and the calendar keep working. | (it just happens; `flint-offline status`) |
+
+Things that run without anyone asking:
 
 - **The keeper** (`flint-keeper.timer`, every two minutes): a stack that died
   is restarted in its window; one you stopped is left alone; after three
   restarts in thirty minutes it stops trying and tells you (`notify-send`,
-  `~/.local/state/flint/keeper.log`); once a week it refreshes `yt-dlp`.
+  `~/.local/state/flint/keeper.log`); once a week it refreshes `yt-dlp`; when
+  the cloud is unreachable it starts the offline loop instead of restarting,
+  and stops it when the cloud is back.
+- **The watchers**: `flint-presence.service` (camera), `flint-ears.service`
+  (microphone), `flint-telegram.service` (the bot), `flint-guard.timer`,
+  `flint-ingest.timer`, `flint-backup.timer`, `flint-backup-check.timer`.
+  `systemctl --user list-timers 'flint-*'` and `systemctl --user status
+  'flint-*'` show them all.
 - **The nightly doctor** (a `schedules:` entry in `team.yaml`, 03:30): Flint
   runs `flint-health.sh` and `flint-doctor.sh`, repairs what he can from each
   piece's `TROUBLESHOOTING.md`, and appends to `Doctor Log.md` in the vault's

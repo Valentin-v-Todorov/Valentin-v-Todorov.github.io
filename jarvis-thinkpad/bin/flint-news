@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# flint-news: the news, from RSS feeds you choose, summarised by the agent and read aloud.
+#   flint-news                  headlines since the last look (up to 12 hours back), grouped by source
+#   flint-news --brief          a two-minute briefing written by the agent (plain text, spoken style)
+#   flint-news --read           the briefing, spoken through the speakers
+#   flint-news --sources        the feeds; they live in the vault: Flint/News Sources.md (one link per line)
+#   flint-news --add <url>      add a feed
+# Bash head, python body (the senses venv). Seeded with four feeds; add the ones you actually read.
+here="$(dirname "$(readlink -f "$0")")"; PY="$here/../senses/.venv/bin/python"
+[ -x "$PY" ] || { echo "no senses virtualenv at $PY (run: setup.sh --only 13)" >&2; exit 1; }
+exec "$PY" - "$@" <<'PY'
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+HOME = os.path.expanduser("~")
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(HOME, ".local", "state"), "flint")
+SEEN = os.path.join(STATE, "news-seen.json")
+os.makedirs(STATE, exist_ok=True)
+os.environ["PATH"] = os.path.join(HOME, ".local", "bin") + ":/usr/local/bin:" + os.environ.get("PATH", "")
+DEFAULT_FEEDS = ["http://feeds.bbci.co.uk/news/world/rss.xml", "https://hnrss.org/frontpage",
+                 "https://feeds.arstechnica.com/arstechnica/index", "https://www.theverge.com/rss/index.xml"]
+
+
+def setup_val(key, default):
+    try:
+        for line in open(os.path.join(HOME, ".flint-setup", "setup.env")):
+            m = re.match(rf'^{key}="?([^"#]*)"?', line.strip())
+            if m and m.group(1).strip():
+                return os.path.expandvars(m.group(1).strip())
+    except OSError:
+        pass
+    return default
+
+
+VAULT = setup_val("VAULT_DIR", os.path.join(HOME, "Brain"))
+AGENT_HOME = setup_val("AGENT_HOME", os.path.join(HOME, "my-agent"))
+SOURCES = os.path.join(VAULT, "Flint", "News Sources.md")
+
+
+def feeds():
+    if not os.path.exists(SOURCES):
+        os.makedirs(os.path.dirname(SOURCES), exist_ok=True)
+        with open(SOURCES, "w") as f:
+            f.write("# News sources\n\nOne feed link per line; Flint reads these for the news. Add the ones you actually read.\n\n"
+                    + "".join(f"- {u}\n" for u in DEFAULT_FEEDS))
+    return re.findall(r"https?://\S+", open(SOURCES).read())
+
+
+def fetch_all(hours=12):
+    import feedparser
+    seen = {}
+    try:
+        seen = json.load(open(SEEN))
+    except Exception:
+        pass
+    cutoff = time.time() - hours * 3600
+    items, now = [], time.time()
+    for url in feeds():
+        try:
+            d = feedparser.parse(url)
+        except Exception:
+            continue
+        src = (d.feed.get("title") or url)[:40]
+        for e in d.entries[:25]:
+            key = e.get("id") or e.get("link") or e.get("title")
+            ts = time.mktime(e.published_parsed) if e.get("published_parsed") else now
+            if ts < cutoff or key in seen:
+                continue
+            summ = re.sub(r"<[^>]+>", " ", e.get("summary", "") or "")
+            summ = " ".join(summ.split())[:220]
+            items.append({"source": src, "title": e.get("title", "").strip(), "link": e.get("link", ""), "summary": summ, "ts": ts})
+            seen[key] = now
+    for k in [k for k, t in seen.items() if now - t > 7 * 86400]:
+        seen.pop(k, None)
+    json.dump(seen, open(SEEN, "w"))
+    items.sort(key=lambda i: (i["source"], -i["ts"]))
+    return items
+
+
+def headlines(items):
+    if not items:
+        return "nothing new since the last look"
+    out, src = [], None
+    for i in items:
+        if i["source"] != src:
+            src = i["source"]; out.append(f"\n{src}")
+        out.append(f"  - {i['title']}")
+    return "\n".join(out).strip()
+
+
+def briefing(items):
+    if not items:
+        return "Nothing new in the news since the last look."
+    text = "\n".join(f"[{i['source']}] {i['title']}. {i['summary']}" for i in items[:60])
+    prompt = ("Write a two-minute spoken news briefing from these headlines. Plain sentences, no markdown, no lists, "
+              "no URLs, group by theme, name the source only when it matters, skip duplicates and fluff, end with one "
+              "line on what might matter to me today. Headlines:\n\n" + text)
+    env = {k: v for k, v in os.environ.items() if k not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
+    try:
+        r = subprocess.run(["claude", "-p", prompt, "--max-turns", "1", "--output-format", "text"], cwd=AGENT_HOME, env=env,
+                           capture_output=True, text=True, timeout=240, stdin=subprocess.DEVNULL)
+        if r.returncode == 0 and r.stdout.strip():
+            return r.stdout.strip()
+    except Exception:
+        pass
+    return "I could not write the briefing (is Claude Code logged in?). The headlines:\n" + headlines(items)
+
+
+def main(argv):
+    if argv and argv[0] == "--sources":
+        print(SOURCES); print("\n".join(feeds())); return 0
+    if argv and argv[0] == "--add":
+        feeds()
+        with open(SOURCES, "a") as f:
+            f.write(f"- {argv[1]}\n")
+        print("added"); return 0
+    items = fetch_all()
+    if argv and argv[0] == "--brief":
+        print(briefing(items)); return 0
+    if argv and argv[0] == "--read":
+        b = briefing(items); print(b)
+        subprocess.run(["flint-say", b]); return 0
+    print(headlines(items)); return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)
+PY

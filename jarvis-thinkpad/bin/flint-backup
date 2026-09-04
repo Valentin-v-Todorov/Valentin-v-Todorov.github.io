@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# flint-backup: encrypted backups with restic. The vault, the agent's home and configs, the secrets folder,
+# Home Assistant, Documents and Pictures. Nightly at 02:30 (flint-backup.timer), a restore test monthly.
+#
+#   flint-backup setup                 choose where (an external disk, a folder, S3/B2/rclone); makes the password
+#   flint-backup run                   back up now, then thin old snapshots (14 daily, 8 weekly, 12 monthly)
+#   flint-backup snapshots             what exists
+#   flint-backup restore <path> [--to dir] [--snapshot id]     a file or folder back (default: latest, ~/Restored/<date>)
+#   flint-backup check                 restic's integrity check + a real restore of the vault into a temp folder
+#   flint-backup status                repository, last snapshot, size
+#
+# Settings and the password: ~/.config/flint/backup.env (chmod 600). WRITE THE PASSWORD DOWN somewhere safe:
+# without it the backup is unreadable, which is the point. Extra folders: BACKUP_EXTRA="/path:/other".
+set -uo pipefail
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+ENV="$HOME/.config/flint/backup.env"; [ -f "$ENV" ] && { set -a; . "$ENV"; set +a; }
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/flint"; mkdir -p "$STATE"; LOG="$STATE/backup.log"
+log() { printf '%s %s\n' "$(date '+%F %T')" "$*" >> "$LOG"; }
+cfg() { sed -n "s/^$1=\"\{0,1\}\([^\"#]*\)\"\{0,1\}.*$/\1/p" "$HOME/.flint-setup/setup.env" 2>/dev/null | head -1; }
+VAULT="$(cfg VAULT_DIR)"; VAULT="${VAULT:-$HOME/Brain}"; VAULT="${VAULT/#\$HOME/$HOME}"
+AH="$(cfg AGENT_HOME)"; AH="${AH:-$HOME/my-agent}"; AH="${AH/#\$HOME/$HOME}"
+command -v restic >/dev/null || { echo "restic is not installed (sudo apt-get install -y restic)" >&2; exit 1; }
+need() { [ -n "${BACKUP_REPO:-}" ] && [ -n "${RESTIC_PASSWORD:-}" ] || { echo "no repository yet: flint-backup setup" >&2; exit 1; }; export RESTIC_REPOSITORY="$BACKUP_REPO"; }
+
+default_repo() {
+  local d; for d in /media/"$USER"/*/ /mnt/*/; do [ -d "$d" ] && [ -w "$d" ] && { echo "${d%/}/flint-backup"; return; }; done
+  echo "$HOME/Backups/restic"
+}
+writeenv() {  # writeenv KEY VALUE
+  mkdir -p "$(dirname "$ENV")"; touch "$ENV"; chmod 600 "$ENV"
+  if grep -q "^$1=" "$ENV"; then sed -i "s|^$1=.*|$1=$2|" "$ENV"; else echo "$1=$2" >> "$ENV"; fi
+}
+includes() {
+  printf '%s\n' "$VAULT" "$AH" "$HOME/.config/flint" "$HOME/.claude" "$HOME/homeassistant" "$HOME/Documents" "$HOME/Pictures" "$HOME/.flint-setup"
+  [ -n "${BACKUP_EXTRA:-}" ] && printf '%s\n' "${BACKUP_EXTRA//:/$'\n'}"
+}
+
+case "${1:-status}" in
+  setup)
+    repo="${2:-}"
+    if [ -z "$repo" ]; then
+      def="$(default_repo)"
+      if [ -t 0 ]; then read -r -p "repository [$def] (a folder, or s3:..., b2:..., rclone:remote:path): " repo; fi
+      repo="${repo:-$def}"
+    fi
+    [ -n "${RESTIC_PASSWORD:-}" ] || { pw="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"; writeenv RESTIC_PASSWORD "$pw"; echo "NEW PASSWORD (write it down; it is also in $ENV): $pw"; }
+    writeenv BACKUP_REPO "$repo"
+    . "$ENV"; export RESTIC_REPOSITORY="$BACKUP_REPO" RESTIC_PASSWORD
+    case "$repo" in /*) mkdir -p "$repo" ;; esac
+    if restic snapshots >/dev/null 2>&1; then echo "repository already initialised at $repo"; else restic init 2>&1 | tail -1 || { echo "restic init failed (is the disk mounted, the cloud credentials in $ENV?)" >&2; exit 1; }; fi
+    case "$repo" in "$HOME"/*) echo "NOTE: the repository is on the same disk as the data. Fine against mistakes, useless against a dead disk: put an external disk under /media and run flint-backup setup again, or use a cloud bucket." ;; esac
+    log "setup: $repo"; echo "done. First backup: flint-backup run" ;;
+  run)
+    need; case "$BACKUP_REPO" in /*) [ -d "$BACKUP_REPO" ] || { log "FAILED: repository $BACKUP_REPO not mounted"; flint-notify "Backup" "Skipped: the backup disk is not mounted ($BACKUP_REPO)" --quiet >/dev/null 2>&1; exit 1; } ;; esac
+    paths=(); while read -r p; do [ -e "$p" ] && paths+=("$p"); done < <(includes)
+    t0=$(date +%s)
+    if restic backup "${paths[@]}" --exclude '**/.venv' --exclude '**/node_modules' --exclude '**/__pycache__' --exclude '**/.cache' \
+         --exclude "$AH/logs" --exclude "$HOME/.claude/debug" --exclude '**/*.tmp' --tag flint --quiet >"$STATE/backup-last.out" 2>&1; then
+      restic forget --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune --quiet >>"$STATE/backup-last.out" 2>&1 || true
+      log "ok in $(( $(date +%s) - t0 ))s: ${#paths[@]} paths"; echo "backup done ($(( $(date +%s) - t0 ))s)"
+    else
+      log "FAILED: $(tail -1 "$STATE/backup-last.out")"; flint-notify "Backup" "Failed: $(tail -1 "$STATE/backup-last.out")" --quiet >/dev/null 2>&1; cat "$STATE/backup-last.out"; exit 1
+    fi ;;
+  snapshots) need; restic snapshots --compact ;;
+  restore)
+    need; [ -n "${2:-}" ] || { echo "usage: flint-backup restore <path> [--to dir] [--snapshot id]" >&2; exit 1; }
+    to="$HOME/Restored/$(date +%Y%m%d-%H%M)"; snap=latest; shift
+    what="$1"; shift; while [ $# -gt 0 ]; do case "$1" in --to) to="$2"; shift 2;; --snapshot) snap="$2"; shift 2;; *) shift;; esac; done
+    mkdir -p "$to"; restic restore "$snap" --target "$to" --include "$what" && echo "restored to $to$what" ;;
+  check)
+    need; t0=$(date +%s); ok=1
+    restic check --read-data-subset=5% >"$STATE/backup-check.out" 2>&1 || ok=0
+    tmp="$(mktemp -d "${TMPDIR:-/tmp}/flint-restore-test.XXXX")"
+    if restic restore latest --target "$tmp" --include "$VAULT" --quiet >>"$STATE/backup-check.out" 2>&1; then
+      live="$(find "$VAULT" -type f -name '*.md' | wc -l)"; got="$(find "$tmp" -type f -name '*.md' | wc -l)"
+      [ "$got" -ge $(( live * 9 / 10 )) ] || ok=0
+      echo "restore test: $got notes back of $live live"
+    else ok=0; fi
+    rm -rf "$tmp"
+    if [ "$ok" = 1 ]; then log "check ok in $(( $(date +%s) - t0 ))s"; echo "check ok"; else log "CHECK FAILED: $(tail -2 "$STATE/backup-check.out" | tr '\n' ' ')"; flint-notify "Backup" "The monthly restore test FAILED; see ~/.local/state/flint/backup-check.out" --quiet >/dev/null 2>&1; exit 1; fi ;;
+  status)
+    if [ -z "${BACKUP_REPO:-}" ]; then echo "not set up (flint-backup setup)"; exit 1; fi
+    export RESTIC_REPOSITORY="$BACKUP_REPO"
+    echo "repository: $BACKUP_REPO"
+    last="$(restic snapshots --latest 1 --json 2>/dev/null | python3 -c 'import json,sys,datetime; s=json.load(sys.stdin); print(s[-1]["time"][:16].replace("T"," ") if s else "none")' 2>/dev/null)"
+    echo "last snapshot: ${last:-unreachable}"; [ -f "$LOG" ] && echo "last log line: $(tail -1 "$LOG")"
+    restic stats --mode raw-data 2>/dev/null | grep -E "Total Size|Snapshots" | sed 's/^/  /' ;;
+  -h|--help) sed -n '2,13p' "$0" ;;
+  *) echo "unknown: $1 (flint-backup --help)" >&2; exit 1 ;;
+esac

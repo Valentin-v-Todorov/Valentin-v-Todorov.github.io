@@ -27,6 +27,9 @@ blocks it, or something harmful.
 | "clear the session" / "compact the session" / "usage report" | Housekeeping | voice console | ✓ |
 | "goodbye Flint" | He hangs up and stays down until started (launcher, or `flint-stack start`) | `flint-stack` | ✓ |
 | "Flint, switch your voice to af_heart" / "talk faster" | 28 local voices, speed; applies after `flint-stack restart` | `flint-voice` | ✓ |
+| "Флинт, колко е часът?" (Bulgarian, any time, mixed with English) | He hears Bulgarian (multilingual whisper, language detected per sentence) and answers in Bulgarian with a second local voice (Piper); English keeps his Kokoro voice. "Флинт?" gets "Да?" | `flint_voice` + Piper | ✓ |
+| "Flint, answer me in Bulgarian from now on" / "говори на английски" | The rule in his CLAUDE.md: answer in the language spoken, unless told otherwise | CLAUDE.md | ✓ |
+| "use one voice for both languages" | ElevenLabs speaks English and Bulgarian in the same voice (paid, your key) | `flint-voice elevenlabs` | ⚙ |
 | "use the premium voice" | ElevenLabs on your key (key in `~/.config/flint/elevenlabs.env`) | `flint-voice elevenlabs` | ⚙ |
 
 ## 2. The machine

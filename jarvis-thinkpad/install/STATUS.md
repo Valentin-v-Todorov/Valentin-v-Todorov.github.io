@@ -150,6 +150,15 @@ stages (13 senses, 14 connect, 15 guard-backup; the doctor and finish moved to
   Ollama's installer, the model pull and `flint-offline serve` reusing
   backtalk's `Ears`, `record_held`, `Mouth` and `PTTListener` (names verified
   against the clone at 84b3a6c).
+- **Bulgarian** (added the same day): the matcher is Unicode-aware, the name
+  is transliterated to Cyrillic for the wake words, Bulgarian summons and
+  acknowledgements exist, and Cyrillic sentences are routed to a Piper voice
+  by patching `backtalk.mouth.synth_stream`. Proven here: the six Bulgarian
+  matcher cases, `flint-say` writing a 22 kHz Bulgarian wav through Piper
+  1.7 in a virtualenv, and the routing (English stays on the Kokoro path,
+  Cyrillic gets Piper audio) against a stub mouth. Needs the ThinkPad:
+  whisper `small` hearing real Bulgarian speech (the doctor's optional
+  espeak-ng sample test), and the two voices in one conversation.
 - **Design choices to know**: the senses tools are bash heads that `exec` the
   senses virtualenv's Python on a heredoc body (so `bash -n` stays clean and
   no shebang has to know the path); `flint-telegram` obeys only the chat that

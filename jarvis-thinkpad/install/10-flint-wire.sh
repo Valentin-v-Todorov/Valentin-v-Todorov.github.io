@@ -29,6 +29,24 @@ EOF
   if "$AGENT_HOME/bin/voice-hook/install.sh" "$AGENT_HOME" >"$LOG_DIR/voice-hook.log" 2>&1; then ok "$(tail -1 "$LOG_DIR/voice-hook.log")"
   else warn "the voice hook could not be installed ($LOG_DIR/voice-hook.log); launch.sh retries at every start of the stack"; fi
 
+  if [ -n "$SECOND_LANGUAGE" ]; then
+    log "the second language ($SECOND_LANGUAGE): a Piper voice for it (Kokoro has none), multilingual hearing, the rule to answer in kind"
+    local pdir="$HOME/.local/share/flint/models/piper" pv="bg_BG-dimitar-medium"
+    case "$SECOND_LANGUAGE" in bg) pv="bg_BG-dimitar-medium"; purl="bg/bg_BG/dimitar/medium" ;; *) pv=""; warn "no Piper voice mapped for '$SECOND_LANGUAGE' yet; set piper_voice in backtalk.json to a downloaded .onnx (rhasspy/piper-voices)" ;; esac
+    if [ -n "$pv" ]; then
+      mkdir -p "$pdir"
+      for f in "$pv.onnx" "$pv.onnx.json"; do
+        [ -s "$pdir/$f" ] || curl -fsSL --retry 3 -m 900 -o "$pdir/$f.part" "https://huggingface.co/rhasspy/piper-voices/resolve/main/$purl/$f" && mv -f "$pdir/$f.part" "$pdir/$f" 2>/dev/null || warn "download of $f failed; later: setup.sh --only 10"
+      done
+      uv pip install --python "$AGENT_HOME/backtalk/.venv/bin/python" -q piper-tts >"$LOG_DIR/piper-pip.log" 2>&1 && ok "piper-tts in backtalk's venv; voice $pv" || warn "piper-tts install failed ($LOG_DIR/piper-pip.log)"
+      json_set "$AGENT_HOME/backtalk/backtalk.json" piper_voice "\"$pdir/$pv.onnx\""
+    fi
+    json_set "$AGENT_HOME/backtalk/backtalk.json" second_language "\"$SECOND_LANGUAGE\""
+    json_set "$AGENT_HOME/backtalk/backtalk.json" stt_model "\"$STT_MODEL\""
+    json_set "$AGENT_HOME/backtalk/backtalk.json" discipline_append "\"If the person speaks Bulgarian, answer in Bulgarian, in Cyrillic, same personality; if English, in English. Never mix scripts inside one sentence.\""
+    ok "backtalk.json: stt_model $STT_MODEL (auto-detects the language per utterance), answer in the language spoken"
+  fi
+
   log "the Orbitals face, the roster, the live hooks"
   "$GUIDE_DIR/command-face/install.sh" "$AGENT_HOME" "--default=$FACE" >"$LOG_DIR/command-face-install.log" 2>&1 && ok "faces core + command installed; default $FACE; hooks wired" || { cat "$LOG_DIR/command-face-install.log"; die "command-face/install.sh failed"; }
 
@@ -75,6 +93,9 @@ EOF
   does the same on its own and writes "Doctor Log.md" in the vault's ThinkPad folder.
 - Listening: hands-free, you only hear utterances that start or end with your name, and follow-ups within
   thirty seconds of your reply. If $YOUR_NAME asks why you did not answer, that is why: say the name, or hold the key.
+- Languages: $YOUR_NAME speaks English and Bulgarian. Answer in the language spoken to you, Bulgarian in Cyrillic
+  (a second voice speaks it), never mixing scripts in one sentence. Notes in the vault: the language they were
+  dictated in, unless asked otherwise. "Флинт, ..." is the same wake word.
 EOF
   ok "CLAUDE.md: team on screen, machine toolbox, music/screen/browser/voice/health"
 
@@ -252,6 +273,11 @@ check() {
   chk "flint-play, flint-voice, flint-stack, flint-health.sh, flint-doctor.sh on PATH" bash -c "for t in flint-play flint-voice flint-stack flint-health.sh flint-doctor.sh; do [ -x \"$HOME/.local/bin/\$t\" ] || exit 1; done"
   chk "wake-phrase hook in backtalk's virtualenv" "$AGENT_HOME/backtalk/.venv/bin/python" -c "import flint_voice, sys; sys.exit(0 if flint_voice.installed() else 1)"
   chk "CLAUDE.md has the music/screen/browser/voice/health section" grep -q "flint-play" "$AGENT_HOME/CLAUDE.md"
+  if [ -n "$SECOND_LANGUAGE" ]; then
+    chk "second language: multilingual whisper pinned ($STT_MODEL)" bash -c "[ \"\$(json_get '$AGENT_HOME/backtalk/backtalk.json' stt_model)\" = '$STT_MODEL' ]"
+    chk "second language: piper-tts importable in backtalk's venv" "$AGENT_HOME/backtalk/.venv/bin/python" -c "import piper"
+    chk "second language: the Piper voice file present" bash -c "[ -s \"\$(json_get '$AGENT_HOME/backtalk/backtalk.json' piper_voice)\" ]"
+  fi
   [ "$KEEPER" = 1 ] && chk "keeper timer active" systemctl --user is-active flint-keeper.timer
   [ "$VAULT_GIT" = 1 ] && chk "vault backup timer active" systemctl --user is-active flint-vault-backup.timer
   [ "$REMOTE_CONTROL" = 1 ] && chk "flint-rc.service enabled" systemctl --user is-enabled flint-rc.service

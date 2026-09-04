@@ -45,6 +45,22 @@ done
 
 synth() {  # synth "text" out.wav  -> 0 when a wav was written
   local text="$1" out="$2"
+  # Cyrillic: the second-language voice (Piper), because Kokoro has no Bulgarian
+  if [ -x "$PY" ] && [ "$ENGINE" != "espeak" ] && printf '%s' "$text" | grep -q '[А-Яа-яЁёЀ-ӿ]'; then
+    ( cd "$BT" && timeout 120 "$PY" - "$text" "$out" "$(cfgv piper_voice "$HOME/.local/share/flint/models/piper/bg_BG-dimitar-medium.onnx")" "$(cfgv speed 1.0)" <<'PY' 2>/dev/null
+import os, sys, wave
+import numpy as np
+from piper import PiperVoice, SynthesisConfig
+text, out, model, speed = sys.argv[1], sys.argv[2], os.path.expanduser(sys.argv[3]), float(sys.argv[4] or 1.0)
+v = PiperVoice.load(model)
+chunks = list(v.synthesize(text, syn_config=SynthesisConfig(length_scale=1.0 / max(0.5, min(2.0, speed)))))
+pcm = np.concatenate([np.frombuffer(c.audio_int16_bytes, dtype=np.int16) for c in chunks])
+with wave.open(out, "wb") as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(chunks[0].sample_rate); w.writeframes(pcm.tobytes())
+PY
+    ) && [ -s "$out" ] && return 0
+    espeak-ng -v bg -w "$out" -s 150 "$text" 2>/dev/null && [ -s "$out" ] && return 0
+  fi
   if [ -x "$PY" ] && [ "$ENGINE" != "espeak" ]; then
     ( cd "$BT" && timeout 120 "$PY" - "$(cfgv voice bm_lewis)" "$text" "$out" "$(cfgv speed 1.0)" <<'PY' 2>/dev/null
 import sys, wave, warnings; warnings.filterwarnings("ignore")

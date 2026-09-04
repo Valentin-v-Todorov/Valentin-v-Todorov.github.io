@@ -114,6 +114,15 @@ seconds of an exchange; holding the key still always works. `"duck_music":
 false` would stop the music dipping while he talks. `flint-voice set <id>`
 changes the voice, `flint-voice speed 1.15` the pace.
 
+Bulgarian (`SECOND_LANGUAGE="bg"` in setup.env, the default): `"stt_model":
+"small"` (multilingual, the language detected per utterance; `medium` hears
+Bulgarian better and is slower), `"second_language": "bg"`, `"piper_voice":
+"~/.local/share/flint/models/piper/bg_BG-dimitar-medium.onnx"` and a
+`"discipline_append"` telling him to answer in the language spoken. The hook
+sends Cyrillic sentences to Piper (Kokoro has no Bulgarian) and adds "флинт",
+"хей флинт" to the wake words by transliteration; list an exact spelling in
+`wake_words` if the transcriber writes it differently.
+
 Other keys you may add later (defaults live in `backtalk/backtalk/config.py`):
 `"speed": 1.15` (brisker voice), `"mic_device": "<name from python -m sounddevice>"`,
 `"deep_model": "claude-opus-5"`, `"effort": "low"`, `"thinking_sound": ""`,

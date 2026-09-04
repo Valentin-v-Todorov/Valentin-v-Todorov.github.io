@@ -51,8 +51,11 @@ WAKE = None           # the Wake instance, built from backtalk's config on first
 
 # ----------------------------------------------------------------------------- matching
 _HEAD_FILLERS = {"hey", "hi", "hello", "ok", "okay", "yo", "oi", "so", "um", "uh", "and", "now",
-                 "right", "well", "alright", "excuse", "me", "please", "psst"}
-_AFTER_FILLERS = {"um", "uh", "so", "hey", "please"}
+                 "right", "well", "alright", "excuse", "me", "please", "psst",
+                 # Bulgarian
+                 "ей", "хей", "окей", "добре", "ало", "моля", "и", "а", "е", "ами", "така", "виж", "слушай",
+                 "здравей", "здрасти", "извинявай", "извинете"}
+_AFTER_FILLERS = {"um", "uh", "so", "hey", "please", "ами", "моля", "значи"}
 _SUMMONS = {
     "", "question", "question for you", "a question for you", "i have a question for you",
     "i have a question", "i've got a question for you", "i've got a question", "i got a question",
@@ -62,11 +65,39 @@ _SUMMONS = {
     "listen up", "listen to me", "wake up", "hello", "hi", "hey", "come here", "can you hear me",
     "do you hear me", "i need you", "need you", "i need your help", "help me", "come in",
     "you awake", "are you awake", "over here", "hello there", "yo", "hey there", "you up",
+    # Bulgarian
+    "въпрос", "имам въпрос", "имам един въпрос", "въпрос за теб", "един въпрос", "имам задача за теб",
+    "задача за теб", "имам работа за теб", "работа за теб", "имам нещо за теб", "тук ли си", "чуваш ли ме",
+    "чуваш ли", "слушай", "слушаш ли", "слушай ме", "ела", "ела тук", "здравей", "здрасти", "ей", "ало",
+    "трябваш ми", "имам нужда от теб", "събуди се", "буден ли си", "помогни ми", "чуй ме",
 }
+_ACKS_BG = ["Да?", "Слушам.", "Кажи."]
+_CYRILLIC = re.compile(r"[Ѐ-ӿ]")
+_LAT2CYR = [("sh", "ш"), ("ch", "ч"), ("zh", "ж"), ("ts", "ц"), ("ya", "я"), ("yu", "ю"), ("kh", "х"), ("ph", "ф"),
+            ("a", "а"), ("b", "б"), ("c", "к"), ("d", "д"), ("e", "е"), ("f", "ф"), ("g", "г"), ("h", "х"), ("i", "и"),
+            ("j", "дж"), ("k", "к"), ("l", "л"), ("m", "м"), ("n", "н"), ("o", "о"), ("p", "п"), ("q", "к"), ("r", "р"),
+            ("s", "с"), ("t", "т"), ("u", "у"), ("v", "в"), ("w", "в"), ("x", "кс"), ("y", "й"), ("z", "з")]
+
+
+def has_cyrillic(text: str) -> bool:
+    return bool(_CYRILLIC.search(text or ""))
+
+
+def to_cyrillic(word: str) -> str:
+    """A Latin name the way the Bulgarian transcriber will spell it ("flint" -> "флинт"). Rough on purpose:
+    the matcher is loose, and you can always list the exact spelling in wake_words."""
+    out, s = "", word.lower()
+    while s:
+        for lat, cyr in _LAT2CYR:
+            if s.startswith(lat):
+                out += cyr; s = s[len(lat):]; break
+        else:
+            out += s[0]; s = s[1:]
+    return out
 
 
 def _norm_token(tok: str) -> str:
-    t = re.sub(r"[^a-z0-9']+", "", tok.lower())
+    t = re.sub(r"[^\w']+", "", tok.lower()).replace("_", "")
     if t.endswith("'s"):
         t = t[:-2]
     return t.strip("'")
@@ -142,6 +173,10 @@ class Wake:
         words = [str(w).strip().lower() for w in (cfg.get("wake_words") or []) if str(w).strip()]
         if name and name not in words:
             words.insert(0, name)
+        # a second language spelled in Cyrillic: the transcriber writes the name the way it sounds
+        if name and not has_cyrillic(name) and str(cfg.get("second_language") or "bg") and not any(has_cyrillic(w) for w in words):
+            cyr = to_cyrillic(name)
+            words += [cyr, "хей " + cyr, "ей " + cyr]
         self.matcher = Matcher(words)
         self.window = float(cfg.get("wake_window_s", 30) or 0)
         self.required = bool(cfg.get("wake_required", True))
@@ -163,7 +198,7 @@ class Wake:
             self.last_addressed = now
             if _norm_phrase(rem) in _SUMMONS:
                 _log(f"[wake] summoned: {text!r}")
-                _say(random.choice(self.acks))
+                _say(random.choice(_ACKS_BG if has_cyrillic(text) else self.acks))
                 return ""
             _log(f"[wake] for me: {text!r}")
             return rem or text
@@ -364,6 +399,52 @@ def _patch_signals(mod):
     mod.reply_done = reply_done
 
 
+# ----------------------------------------------------------------------------- a second voice (Piper)
+_PIPER = None            # the loaded PiperVoice, once
+
+
+def piper_voice_path() -> str:
+    try:
+        from backtalk.config import CFG
+        p = str(CFG.get("piper_voice") or "")
+    except Exception:
+        p = ""
+    if not p:
+        p = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"),
+                         "flint", "models", "piper", "bg_BG-dimitar-medium.onnx")
+    return os.path.expanduser(p)
+
+
+def piper_ready() -> bool:
+    if not os.path.exists(piper_voice_path()):
+        return False
+    try:
+        import piper  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def stream_piper(text: str):
+    """One sentence in the second language -> (rate, int16 pcm) chunks, like backtalk's Kokoro path."""
+    global _PIPER
+    import numpy as np
+    from piper import PiperVoice, SynthesisConfig
+    if _PIPER is None:
+        _PIPER = PiperVoice.load(piper_voice_path())
+        _log(f"[voice] second-language voice loaded: {os.path.basename(piper_voice_path())}")
+    try:
+        from backtalk.config import CFG
+        speed = float(CFG.get("speed") or 1.0)
+    except Exception:
+        speed = 1.0
+    cfg = SynthesisConfig(length_scale=1.0 / max(0.5, min(2.0, speed)))
+    for chunk in _PIPER.synthesize(text, syn_config=cfg):
+        pcm = np.frombuffer(chunk.audio_int16_bytes, dtype=np.int16)
+        if pcm.size:
+            yield chunk.sample_rate, pcm
+
+
 def _patch_mouth(mod):
     orig = mod.Mouth.__init__
 
@@ -379,6 +460,22 @@ def _patch_mouth(mod):
                 enabled = True
             self.ducker = LinuxDucker(enabled)
     mod.Mouth.__init__ = __init__
+
+    # Cyrillic sentences go to the Piper voice (Kokoro has no Bulgarian); ElevenLabs, when on, speaks every language itself
+    orig_synth = getattr(mod, "synth_stream", None)
+    if orig_synth is None:
+        return
+    ready = getattr(mod, "_elevenlabs_ready", lambda: False)
+
+    def synth_stream(text, timeout=30.0):
+        if has_cyrillic(text) and not ready() and piper_ready():
+            try:
+                yield from stream_piper(text)
+                return
+            except Exception as e:
+                _log(f"[voice] piper failed ({str(e)[:80]}); falling back")
+        yield from orig_synth(text, timeout)
+    mod.synth_stream = synth_stream
 
 
 _PATCHES = {"backtalk.ears": _patch_ears, "backtalk.signals": _patch_signals,
@@ -447,11 +544,19 @@ CASES = [
     ("I told Flint yesterday that the plan is off and we should move on", False, ""),
     ("print the report", False, ""),
     ("", False, ""),
+    # Bulgarian (the transcriber writes the name in Cyrillic)
+    ("Флинт, колко е часът?", True, "Колко е часът"),
+    ("Хей Флинт, пусни малко музика.", True, "Пусни малко музика"),
+    ("Флинт?", True, None),
+    ("Флинт, имам въпрос.", True, None),
+    ("Имам задача за теб, Флинт.", True, None),
+    ("Днес времето е хубаво.", False, ""),
 ]
 
 
 def selftest(verbose=True) -> bool:
-    m = Matcher(["flint", "hey flint"])
+    m = Matcher(["flint", "hey flint", to_cyrillic("flint"), "хей " + to_cyrillic("flint")])
+    assert to_cyrillic("flint") == "флинт", to_cyrillic("flint")
     bad = 0
     for text, want_addr, want_rem in CASES:
         addr, rem = m.address(text)

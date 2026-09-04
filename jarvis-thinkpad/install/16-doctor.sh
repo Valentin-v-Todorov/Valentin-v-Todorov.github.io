@@ -106,6 +106,16 @@ check() {
   tee_chk "hands server" hands_test
   tee_chk "the agent boots as $AGENT_NAME and the hooks record it" agent_test
   tee_chk "wake phrase: the hook loads in backtalk and its cases pass" wake_test
+  if [ -n "$SECOND_LANGUAGE" ]; then
+    tee_chk "Bulgarian voice: Piper says a line (you should have heard it)" bash -c "flint-say --file /tmp/flint-bg.wav 'Здравей, $YOUR_NAME. Всички системи са онлайн.' >/dev/null && [ \$(stat -c %s /tmp/flint-bg.wav) -gt 40000 ] && { [ \"\${FLINT_QUIET:-0}\" = 1 ] || paplay /tmp/flint-bg.wav 2>/dev/null || true; }"
+    tee_warn "Bulgarian hearing: whisper ($STT_MODEL) understands a Bulgarian sample" bash -c "espeak-ng -v bg -w /tmp/flint-stt-bg.wav -s 140 'здравей флинт, колко е часът' && cd '$BT' && .venv/bin/python -c \"
+import sys, warnings; warnings.filterwarnings('ignore')
+from faster_whisper import WhisperModel
+m = WhisperModel('$STT_MODEL', device='cpu', compute_type='int8')
+segs, info = m.transcribe('/tmp/flint-stt-bg.wav')
+t = ' '.join(s.text for s in segs).lower(); print(info.language, t)
+assert info.language == 'bg' or any(w in t for w in ('здравей', 'флинт', 'часът', 'колко')), t\""
+  fi
   tee_warn "spoken reply budget under 3 s (ears + brain + mouth)" latency_test
   [ -f "$STATE_DIR/.lat-total" ] && printf -- '- reply budget: %s\n' "$(cat "$STATE_DIR/.lat-total")" >> "$REPORT"
   [ "$MUSIC" = 1 ] && tee_chk "music: mpv plays a tone, yt-dlp present" flint-play --selftest

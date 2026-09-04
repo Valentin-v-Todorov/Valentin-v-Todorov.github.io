@@ -209,6 +209,7 @@ phone or any browser. See `04-full-power-agent.md`.
 | Guard duty (20) | Yes. fail2ban on SSH; `flint-guard` every two minutes: SSH logins, bans, new devices on the wifi (named by you), motion while you are away with a camera snapshot |
 | Backups (21) | Yes. restic, encrypted, nightly at 02:30 to an external disk or a cloud bucket, thinned; a real restore test on the first of the month; `flint-backup restore <path>` brings anything back |
 | Offline mode (22) | Yes. Ollama with a small model; when the cloud is out the keeper starts `flint-offline` and timers, lights, music and the time still work by voice, with the same wake word |
+| Understands and speaks Bulgarian | Yes, three parts. The brain (Claude) is fluent. The ears use the multilingual whisper model (`SECOND_LANGUAGE="bg"` sets `small`; `medium` hears better, slower) and detect the language per utterance, so English and Bulgarian mix freely. The mouth: Kokoro has no Bulgarian, so Cyrillic replies go to a local Piper voice (`bg_BG-dimitar-medium`, free, offline); English keeps the Kokoro voice. "Флинт, ..." is the same wake word (Cyrillic spelling matched automatically). ElevenLabs, if you ever pay for it, speaks both languages in one voice |
 
 ---
 

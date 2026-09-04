@@ -31,7 +31,8 @@ if [ -f "$ENV_FILE" ]; then . "$ENV_FILE"; fi
 : "${WAKE_WINDOW_S:=30}"
 : "${VOICE_EFFORT:=}"                    # "" = the model's default; "low" is the fastest spoken reply
 : "${VOICE:=bm_lewis}"
-: "${STT_MODEL:=small.en}"
+: "${SECOND_LANGUAGE=bg}"                # a language besides English he must hear and speak (bg = Bulgarian); "" in setup.env = English only
+: "${STT_MODEL:=$( [ -n "$SECOND_LANGUAGE" ] && echo small || echo small.en )}"   # multilingual whisper when a second language is on
 : "${VOICE_PERMISSIONS:=ask}"
 : "${FACE:=core}"
 : "${TIMEZONE:=}"
@@ -73,7 +74,7 @@ if [ -f "$ENV_FILE" ]; then . "$ENV_FILE"; fi
 : "${PRIORITIES:=Get the agent, the team and the home automation working end to end}"
 : "${RECURRING:=Morning brief; Inbox triage; Weekly finance review; Vault backup}"
 export YOUR_NAME AGENT_NAME AGENT_HOME VAULT_DIR PTT_KEY MIC_MODE VOICE STT_MODEL VOICE_PERMISSIONS FACE WAKE_WORDS WAKE_WINDOW_S VOICE_EFFORT MUSIC KEEPER
-export SENSES PHONE TELEGRAM GUARD BACKUP OFFLINE OFFLINE_MODEL
+export SENSES PHONE TELEGRAM GUARD BACKUP OFFLINE OFFLINE_MODEL SECOND_LANGUAGE
 # the machine's secrets (chmod 600 files written by the stages) as environment, by name
 for _f in "$HOME"/.config/flint/*.env; do [ -f "$_f" ] && { set -a; . "$_f"; set +a; }; done; unset _f
 

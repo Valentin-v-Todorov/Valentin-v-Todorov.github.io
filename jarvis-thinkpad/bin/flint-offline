@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# flint-offline: the small local brain for when the internet or the Claude plan is out. Timers, lights, music,
+# the time, the calendar, the machine's health, by voice, with the same ears, mouth, key and wake phrase.
+#   flint-offline serve          the offline voice loop (flint-offline.service; the keeper starts it when the
+#                                brain is unreachable and stops it when it is back)
+#   flint-offline ask "text"     one question to the local model, printed (a test)
+#   flint-offline status         is Ollama up, is the model there, is the loop running
+#   flint-offline pull           fetch the model (about two gigabytes, once)
+# The model: OLLAMA_MODEL or OFFLINE_MODEL in setup.env (default qwen2.5:3b, runs on the CPU).
+# Bash head, python body in backtalk's venv (it reuses backtalk's ears and mouth, and the flint_voice wake filter).
+here="$(dirname "$(readlink -f "$0")")"; AH="$(cd "$here/.." && pwd)"; PY="$AH/backtalk/.venv/bin/python"
+[ -x "$PY" ] || { echo "no backtalk virtualenv at $PY" >&2; exit 1; }
+export FLINT_AGENT_HOME="$AH" PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+cd "$AH/backtalk" && exec "$PY" - "$@" <<'PY'
+import datetime
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import urllib.request
+
+HOME = os.path.expanduser("~")
+OLLAMA = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+def setup_val(key, default):
+    try:
+        for line in open(os.path.join(HOME, ".flint-setup", "setup.env")):
+            m = re.match(rf'^{key}="?([^"#]*)"?', line.strip())
+            if m and m.group(1).strip():
+                return m.group(1).strip()
+    except OSError:
+        pass
+    return default
+MODEL = os.environ.get("OLLAMA_MODEL") or setup_val("OFFLINE_MODEL", "qwen2.5:3b")
+ALLOWED = ("flint-play", "flint-timer", "flint-say", "flint-health.sh", "flint-calendar", "flint-ha", "flint-look",
+           "flint-news", "flint-stack", "flint-notify", "date")
+
+SYSTEM = """You are Flint, a voice assistant on a Linux laptop, currently OFFLINE (no cloud). Answer ONLY with one JSON
+object: {"say": "<one or two short spoken sentences>", "run": "<one shell command from the list, or empty>"}.
+Commands you may run (nothing else):
+  flint-play "<song or artist>"        play music (YouTube needs internet; local files: flint-play --local "<words>")
+  flint-play pause | resume | next | stop | volume <0-100>
+  flint-timer <10m|1h30m> "<what>"     a timer;   flint-timer at HH:MM "<what>"   a reminder;   flint-timer list
+  flint-ha on|off|toggle "<light or device name>"      flint-ha set "<name>" <0-100>     flint-ha list light
+  flint-calendar today|tomorrow|next      flint-health.sh --brief      flint-news
+  flint-say --to all "<text>"             speak in the house on every speaker
+Say the time or date yourself from the context. If the request needs the internet or thinking you cannot do
+offline, say so briefly. Keep "say" natural and short; never mention JSON."""
+
+
+def ollama(messages, timeout=120):
+    req = urllib.request.Request(f"{OLLAMA}/api/chat", data=json.dumps({"model": MODEL, "messages": messages, "stream": False,
+                                 "format": "json", "options": {"temperature": 0.2, "num_predict": 200}}).encode(),
+                                 headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.load(r)["message"]["content"]
+
+
+def decide(text, history):
+    ctx = f"Now: {datetime.datetime.now().strftime('%A %d %B %Y, %H:%M')}."
+    msgs = [{"role": "system", "content": SYSTEM + "\n" + ctx}] + history[-6:] + [{"role": "user", "content": text}]
+    try:
+        raw = ollama(msgs)
+        d = json.loads(raw)
+    except Exception as e:
+        return {"say": "My offline brain stumbled. Say that again?", "run": "", "error": repr(e)}
+    return {"say": str(d.get("say") or "").strip(), "run": str(d.get("run") or "").strip()}
+
+
+def run_cmd(cmd):
+    import shlex
+    try:
+        parts = shlex.split(cmd)
+    except ValueError:
+        return "", "bad command"
+    if not parts or parts[0] not in ALLOWED:
+        return "", f"not allowed: {cmd}"
+    try:
+        r = subprocess.run(parts, capture_output=True, text=True, timeout=90)
+        return (r.stdout.strip() or r.stderr.strip())[:400], ""
+    except Exception as e:
+        return "", repr(e)
+
+
+def status():
+    up = False
+    try:
+        with urllib.request.urlopen(f"{OLLAMA}/api/tags", timeout=5) as r:
+            tags = [m["name"] for m in json.load(r).get("models", [])]
+        up = True
+    except Exception:
+        tags = []
+    have = any(t == MODEL or t.split(":")[0] == MODEL.split(":")[0] for t in tags)
+    loop = subprocess.run(["systemctl", "--user", "is-active", "flint-offline.service"], capture_output=True, text=True).stdout.strip()
+    print(f"ollama {'up' if up else 'DOWN'}; model {MODEL} {'present' if have else 'MISSING (flint-offline pull)'}; loop {loop or 'inactive'}")
+    return 0 if up and have else 1
+
+
+def pull():
+    return subprocess.call(["ollama", "pull", MODEL])
+
+
+def ask(text):
+    d = decide(text, [])
+    print(json.dumps(d, indent=1))
+    if d.get("run"):
+        out, err = run_cmd(d["run"])
+        print("ran:", d["run"], "->", out or err)
+    return 0
+
+
+def serve():
+    import asyncio
+    import warnings
+    warnings.filterwarnings("ignore")
+    from backtalk.config import CFG
+    from backtalk.ears import Ears, record_held, warm as warm_ears
+    from backtalk.mouth import Mouth, warm as warm_mouth
+    from backtalk.ptt import PTTListener
+    from backtalk import signals
+    mouth = Mouth(); ears = Ears(); ptt = PTTListener(CFG["ptt_key"])
+    open_mic = CFG.get("mic_mode") == "open"
+    mouth.say(f"Offline mode. No cloud right now; I can still do timers, lights, music and the basics. "
+              f"{'Say my name' if open_mic else 'Hold the key'} when you need me.")
+    warm_mouth(); warm_ears()
+    history = []
+    print(f"[offline] up: model {MODEL}, mic {'open' if open_mic else 'ptt'}", flush=True)
+    loop = asyncio.new_event_loop()
+
+    async def main_loop():
+        press = None; mic = None
+        while True:
+            if press is None:
+                press = loop.run_in_executor(None, ptt.wait_press)
+            waiters = {press}
+            if open_mic and mic is None:
+                mic = loop.run_in_executor(None, lambda: ears.listen_once(gate=lambda: mouth.speaking))
+            if mic is not None:
+                waiters.add(mic)
+            done, _ = await asyncio.wait(waiters, return_when=asyncio.FIRST_COMPLETED)
+            text = None
+            if press in done:
+                press = None
+                mouth.shut_up(); signals.set_state("listening")
+                text = await loop.run_in_executor(None, lambda: record_held(ptt.is_held))
+            elif mic is not None and mic in done:
+                try:
+                    text = mic.result()
+                except Exception as e:
+                    print("[offline] mic error:", e, flush=True); await asyncio.sleep(2)
+                mic = None
+            if not text:
+                signals.set_state("idle"); continue
+            print("[you]", text, flush=True)
+            if any(q in text.lower() for q in CFG.get("quit_phrases", ())):
+                mouth.say("Offline line closing."); mouth.wait_done(20); return
+            signals.set_state("thinking")
+            d = await loop.run_in_executor(None, decide, text, history)
+            said = d["say"]
+            if d.get("run"):
+                out, err = await loop.run_in_executor(None, run_cmd, d["run"])
+                print("[offline] ran:", d["run"], "->", out or err, flush=True)
+                if not said:
+                    said = out.splitlines()[0] if out else (err or "Done.")
+                elif err:
+                    said += " That did not work, though."
+            history += [{"role": "user", "content": text}, {"role": "assistant", "content": json.dumps(d)}]
+            print("[flint]", said, flush=True)
+            mouth.say(said or "Done."); mouth.wait_done(60); signals.set_state("idle")
+    try:
+        loop.run_until_complete(main_loop())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        mouth.shutdown(); signals.set_state("idle")
+
+
+def main(argv):
+    c = argv[0] if argv else "status"
+    if c == "serve":
+        return serve()
+    if c == "ask":
+        return ask(" ".join(argv[1:]))
+    if c == "status":
+        return status()
+    if c == "pull":
+        return pull()
+    print("flint-offline serve | ask \"text\" | status | pull"); return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)
+PY

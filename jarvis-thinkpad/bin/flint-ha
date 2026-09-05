@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# flint-ha: Home Assistant from the shell, by name. The offline brain uses it; the online one has the MCP server too.
+#   flint-ha list [domain]                entities (light, switch, media_player, climate, sensor, ...)
+#   flint-ha state <entity|name>          one entity's state
+#   flint-ha on|off|toggle <entity|name>  lights, switches, fans, media players
+#   flint-ha set <entity|name> <value>    a light's brightness (0-100), a thermostat's temperature, a cover's position
+#   flint-ha call <domain.service> '{"entity_id": "..."}'    anything else
+# Names match loosely ("kitchen" finds light.kitchen_ceiling). Needs HA_URL and HA_TOKEN (~/.config/flint/ha.env).
+set -uo pipefail
+for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] && { set -a; . "$f"; set +a; }; done
+[ -n "${HA_URL:-}" ] && [ -n "${HA_TOKEN:-}" ] || { echo "no Home Assistant (HA_URL/HA_TOKEN in ~/.config/flint/ha.env)" >&2; exit 1; }
+H=(-H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json")
+states() { curl -fsS -m 10 "${H[@]}" "$HA_URL/api/states"; }
+resolve() {  # resolve "<entity or loose name>" [domains]
+  states | python3 -c '
+import json, sys
+want = sys.argv[1].lower().strip(); domains = sys.argv[2].split(",") if len(sys.argv) > 2 and sys.argv[2] else []
+st = json.load(sys.stdin)
+if "." in want and any(s["entity_id"] == want for s in st): print(want); sys.exit()
+key = want.replace(" ", "_")
+cands = [s for s in st if (not domains or s["entity_id"].split(".")[0] in domains)]
+for s in cands:
+    if key in s["entity_id"] or want in (s["attributes"].get("friendly_name") or "").lower(): print(s["entity_id"]); sys.exit()
+sys.exit(1)' "$1" "${2:-}"
+}
+call() { curl -fsS -m 15 "${H[@]}" -X POST "$HA_URL/api/services/$1" -d "$2" >/dev/null && echo "ok: $1 $2"; }
+
+case "${1:-list}" in
+  list) states | python3 -c '
+import json, sys
+d = sys.argv[1] if len(sys.argv) > 1 else ""
+for s in sorted(json.load(sys.stdin), key=lambda s: s["entity_id"]):
+    if not d or s["entity_id"].startswith(d + "."):
+        print(f"{s[\"entity_id\"]:45} {s[\"state\"]:14} {s[\"attributes\"].get(\"friendly_name\", \"\")}")' "${2:-}" ;;
+  state) e="$(resolve "${2:-}")" || { echo "nothing matches '${2:-}'" >&2; exit 1; }
+    curl -fsS -m 10 "${H[@]}" "$HA_URL/api/states/$e" | python3 -c 'import json,sys; s=json.load(sys.stdin); a=s["attributes"]; print(s["entity_id"], "=", s["state"], {k:a[k] for k in ("brightness","temperature","current_temperature","volume_level","media_title","battery_level") if k in a})' ;;
+  on|off|toggle)
+    e="$(resolve "${2:-}" "light,switch,fan,media_player,input_boolean,automation,script,cover,climate,humidifier,siren,lock")" || { echo "nothing matches '${2:-}'" >&2; exit 1; }
+    d="${e%%.*}"; svc="turn_$1"; [ "$1" = toggle ] && svc=toggle
+    case "$d" in cover) [ "$1" = on ] && svc=open_cover || svc=close_cover; [ "$1" = toggle ] && svc=toggle ;; lock) [ "$1" = on ] && svc=lock || svc=unlock ;; esac
+    call "$d/$svc" "{\"entity_id\":\"$e\"}" ;;
+  set)
+    e="$(resolve "${2:-}")" || { echo "nothing matches '${2:-}'" >&2; exit 1; }; v="${3:-}"; d="${e%%.*}"
+    case "$d" in
+      light) call light/turn_on "{\"entity_id\":\"$e\",\"brightness_pct\":$v}" ;;
+      climate) call climate/set_temperature "{\"entity_id\":\"$e\",\"temperature\":$v}" ;;
+      cover) call cover/set_cover_position "{\"entity_id\":\"$e\",\"position\":$v}" ;;
+      media_player) call media_player/volume_set "{\"entity_id\":\"$e\",\"volume_level\":$(python3 -c "print($v/100)")}" ;;
+      fan) call fan/set_percentage "{\"entity_id\":\"$e\",\"percentage\":$v}" ;;
+      *) echo "don't know how to set a $d" >&2; exit 1 ;;
+    esac ;;
+  call) [ -n "${2:-}" ] || { echo "usage: flint-ha call domain.service '{json}'" >&2; exit 1; }; call "${2/./\/}" "${3:-{\}}" ;;
+  -h|--help) sed -n '2,8p' "$0" ;;
+  *) echo "unknown: $1 (flint-ha --help)" >&2; exit 1 ;;
+esac

@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# flint-ears: hears the house. A sound classifier (YAMNet, on the CPU) on the open microphone flags a
+# doorbell, a knock, glass breaking, a smoke or fire alarm, a siren, crying, a dog, and tells you.
+#   flint-ears watch            the listener (flint-ears.service runs it)
+#   flint-ears test [file.wav]  top sounds in a file, or in three seconds from the microphone
+#   flint-ears classes          what it can hear (the 521 AudioSet classes) and which ones raise an alert
+# Bash head, python body (the senses venv). Environment: FLINT_EARS_THRESHOLD (0.45), FLINT_MIC (device name part).
+here="$(dirname "$(readlink -f "$0")")"; PY="$here/../senses/.venv/bin/python"
+[ -x "$PY" ] || { echo "no senses virtualenv at $PY (run: setup.sh --only 13)" >&2; exit 1; }
+exec "$PY" - "$@" <<'PY'
+"""flint-ears: YAMNet on the open microphone; alerts through flint-notify (screen, Telegram, phone, voice)."""
+import csv
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.request
+
+import numpy as np
+
+HOME = os.path.expanduser("~")
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(HOME, ".local", "state"), "flint")
+MODELS = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.join(HOME, ".local", "share"), "flint", "models")
+MODEL = os.path.join(MODELS, "yamnet.tflite")
+CLASSES = os.path.join(MODELS, "yamnet_class_map.csv")
+URLS = {MODEL: "https://storage.googleapis.com/mediapipe-models/audio_classifier/yamnet/float32/latest/yamnet.tflite",
+        CLASSES: "https://raw.githubusercontent.com/tensorflow/models/master/research/audioset/yamnet/yamnet_class_map.csv"}
+RATE, WINDOW = 16000, 15600                    # YAMNet: 16 kHz, 0.975 s frames
+THRESHOLD = float(os.environ.get("FLINT_EARS_THRESHOLD", "0.45") or 0.45)
+os.makedirs(STATE, exist_ok=True); os.makedirs(MODELS, exist_ok=True)
+os.environ["PATH"] = os.path.join(HOME, ".local", "bin") + ":" + os.environ.get("PATH", "")
+
+# class-name fragment -> (what to say aloud, or "" for a silent notification; cool-down seconds)
+ALERTS = {
+    "Doorbell": ("Someone is at the door.", 30),
+    "Knock": ("Someone is knocking.", 30),
+    "Glass": ("I heard glass breaking.", 60),
+    "Shatter": ("I heard glass breaking.", 60),
+    "Smoke detector, smoke alarm": ("Smoke alarm! Check the house.", 20),
+    "Fire alarm": ("Fire alarm! Check the house.", 20),
+    "Siren": ("", 120),
+    "Civil defense siren": ("", 120),
+    "Crying, sobbing": ("I hear crying.", 120),
+    "Baby cry, infant cry": ("I hear a baby crying.", 60),
+    "Dog": ("", 120),
+    "Bark": ("", 120),
+    "Gunshot, gunfire": ("I heard what sounded like a gunshot.", 60),
+    "Explosion": ("I heard an explosion.", 60),
+    "Alarm": ("An alarm is going off.", 60),
+    "Beep, bleep": ("", 300),
+}
+
+
+def ensure_models():
+    for path, url in URLS.items():
+        if os.path.exists(path) and os.path.getsize(path) > 1000:
+            continue
+        print(f"downloading {os.path.basename(path)}...", flush=True)
+        urllib.request.urlretrieve(url, path + ".part")
+        os.replace(path + ".part", path)
+
+
+def load():
+    ensure_models()
+    try:
+        from ai_edge_litert.interpreter import Interpreter
+    except ImportError:
+        from tflite_runtime.interpreter import Interpreter
+    interp = Interpreter(model_path=MODEL, num_threads=2)
+    inp = interp.get_input_details()[0]
+    interp.resize_tensor_input(inp["index"], [WINDOW] if len(inp["shape"]) == 1 else [1, WINDOW])
+    interp.allocate_tensors()
+    inp = interp.get_input_details()[0]
+    outs = interp.get_output_details()
+    scores_out = next(o for o in outs if o["shape"][-1] == 521)
+    names = [row["display_name"] for row in csv.DictReader(open(CLASSES))]
+    return interp, inp, scores_out, names
+
+
+def classify(interp, inp, scores_out, pcm):
+    x = np.asarray(pcm, dtype=np.float32)
+    if len(x) < WINDOW:
+        x = np.pad(x, (0, WINDOW - len(x)))
+    x = x[:WINDOW]
+    interp.set_tensor(inp["index"], x.reshape(inp["shape"]))
+    interp.invoke()
+    s = interp.get_tensor(scores_out["index"])
+    return s.reshape(-1, 521).mean(axis=0)
+
+
+def mic_index():
+    import sounddevice as sd
+    want = (os.environ.get("FLINT_MIC") or "").lower()
+    if not want:
+        return None
+    for i, d in enumerate(sd.query_devices()):
+        if d.get("max_input_channels", 0) > 0 and want in d["name"].lower():
+            return i
+    return None
+
+
+def top(scores, names, n=5):
+    idx = np.argsort(scores)[::-1][:n]
+    return [(names[i], float(scores[i])) for i in idx]
+
+
+def cmd_test(path=None):
+    interp, inp, out, names = load()
+    if path:
+        import wave
+        with wave.open(path, "rb") as w:
+            assert w.getframerate() == RATE and w.getnchannels() == 1, "give me a 16 kHz mono wav"
+            pcm = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32) / 32768
+    else:
+        import sounddevice as sd
+        print("listening for three seconds...", flush=True)
+        pcm = sd.rec(RATE * 3, samplerate=RATE, channels=1, dtype="float32", device=mic_index())
+        sd.wait(); pcm = pcm[:, 0]
+    scores = np.mean([classify(interp, inp, out, pcm[i:i + WINDOW]) for i in range(0, max(1, len(pcm) - WINDOW + 1), WINDOW // 2)], axis=0)
+    for name, s in top(scores, names):
+        print(f"  {s:.2f}  {name}")
+    return 0
+
+
+def cmd_classes():
+    ensure_models()
+    names = [row["display_name"] for row in csv.DictReader(open(CLASSES))]
+    for n in names:
+        flag = "  <- alert" if any(k.lower() in n.lower() for k in ALERTS) else ""
+        print(n + flag)
+    return 0
+
+
+def cmd_watch():
+    import sounddevice as sd
+    interp, inp, out, names = load()
+    watched = [(i, n) for i, n in enumerate(names) if any(k.lower() == n.lower() or k.lower() in n.lower() for k in ALERTS)]
+    last = {}
+    print(f"listening on {sd.query_devices(mic_index() or sd.default.device[0])['name']}; threshold {THRESHOLD}; "
+          f"{len(watched)} alert classes", flush=True)
+    buf = np.zeros(0, dtype=np.float32)
+    with sd.InputStream(samplerate=RATE, channels=1, dtype="float32", blocksize=WINDOW // 2, device=mic_index()) as stream:
+        while True:
+            block, _ = stream.read(WINDOW // 2)
+            buf = np.concatenate([buf, block[:, 0]])[-WINDOW:]
+            if len(buf) < WINDOW:
+                continue
+            scores = classify(interp, inp, out, buf)
+            now = time.time()
+            for i, n in watched:
+                if scores[i] < THRESHOLD:
+                    continue
+                key = next(k for k in ALERTS if k.lower() == n.lower() or k.lower() in n.lower())
+                say, cool = ALERTS[key]
+                if now - last.get(key, 0) < cool:
+                    continue
+                last[key] = now
+                msg = f"{n} ({scores[i]:.0%})"
+                args = ["flint-notify", "Sound", say or f"I heard: {n}", "--quiet"]
+                if say:
+                    args.append("--say")
+                subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print(time.strftime("%H:%M:%S"), msg, flush=True)
+                break
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.strip()); print("  flint-ears watch | test [file.wav] | classes"); return 0
+    if argv[0] == "watch":
+        return cmd_watch()
+    if argv[0] == "test":
+        return cmd_test(argv[1] if len(argv) > 1 else None)
+    if argv[0] == "classes":
+        return cmd_classes()
+    sys.exit(f"unknown command: {argv[0]}")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)
+PY

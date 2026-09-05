@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# flint-voice: list, hear and set the agent's voice (Kokoro: local, free, offline; ElevenLabs optional).
+#
+#   flint-voice list                       every voice with its quality grade; the current one marked
+#   flint-voice current
+#   flint-voice try bm_george ["text"]     hear one voice through the speakers
+#   flint-voice audition [b|a|all]         one line in every British (b), American (a) or every voice
+#   flint-voice set bm_george              write it to backtalk.json; takes effect at the next start
+#                                          of the voice line (flint-stack restart)
+#   flint-voice speed 1.15                 0.7 slow .. 1.0 native .. 1.5 brisk
+#   flint-voice elevenlabs on <voice_id> ["name"] | off
+#                                          the premium voice on your own key, which lives in
+#                                          ~/.config/flint/elevenlabs.env as ELEVENLABS_API_KEY=...
+#
+# The first letter of a voice id picks the accent pipeline (a American, b British); keep them matched.
+set -euo pipefail
+
+agent_home() {
+  if [ -n "${FLINT_AGENT_HOME:-}" ]; then echo "$FLINT_AGENT_HOME"; return; fi
+  local d; d="$(cd "$(dirname "$(readlink -f "$0")")/.." 2>/dev/null && pwd)" || d=""
+  if [ -n "$d" ] && [ -d "$d/backtalk" ]; then echo "$d"; return; fi
+  echo "$HOME/my-agent"
+}
+AH="$(agent_home)"; BT="$AH/backtalk"; CFG="$BT/backtalk.json"; PY="$BT/.venv/bin/python"
+YOUR_NAME="$( { sed -n 's/^YOUR_NAME="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$HOME/.flint-setup/setup.env" 2>/dev/null || true; } | head -1)"; YOUR_NAME="${YOUR_NAME:-there}"
+
+# id|grade|description  (grades from hexgrad/Kokoro-82M VOICES.md)
+VOICES="bm_lewis|D+|British male, the butler register (the default)
+bm_george|C|British male, warm and even
+bm_fable|C|British male, lighter, a storyteller
+bm_daniel|D|British male, plain
+bf_emma|B-|British female, clear
+bf_isabella|C|British female, soft
+bf_alice|D|British female
+bf_lily|D|British female
+af_heart|A|American female, the best-rated voice
+af_bella|A-|American female, warm
+af_nicole|B-|American female, breathy
+af_aoede|C+|American female
+af_kore|C+|American female
+af_sarah|C+|American female
+af_nova|C|American female
+af_alloy|C|American female
+af_sky|C-|American female
+af_jessica|D|American female
+af_river|D|American female
+am_fenrir|C+|American male, deep
+am_michael|C+|American male, even
+am_puck|C+|American male, bright
+am_onyx|D|American male, deep
+am_echo|D|American male
+am_eric|D|American male
+am_liam|D|American male
+am_adam|F+|American male
+am_santa|D-|American male, Santa"
+
+need_cfg() { [ -f "$CFG" ] || { echo "no $CFG: is the voice installed? (agent home: $AH)" >&2; exit 1; }; }
+need_py() { [ -x "$PY" ] || { echo "no backtalk virtualenv at $PY (run backtalk/install.sh)" >&2; exit 1; }; }
+cur() { python3 -c "import json;d=json.load(open('$CFG'));print(d.get('$1', '$2'))" 2>/dev/null || echo "$2"; }
+setkey() {  # setkey key json-value
+  python3 - "$CFG" "$1" "$2" <<'PY'
+import json, os, sys
+p, k, v = sys.argv[1:4]
+d = json.load(open(p)); d[k] = json.loads(v)
+tmp = p + ".tmp"; json.dump(d, open(tmp, "w"), indent=2); os.replace(tmp, p)
+PY
+}
+valid_id() { printf '%s' "$1" | grep -Eq '^[ab][fm]_[a-z]+$'; }
+
+speak() {  # speak voice "text"
+  need_py
+  local out="${XDG_RUNTIME_DIR:-/tmp}/flint-voice-$$.wav"
+  ( cd "$BT" && timeout 300 "$PY" - "$1" "$2" "$out" "$(cur speed 1.0)" <<'PY'
+import sys, wave, warnings; warnings.filterwarnings("ignore")
+import numpy as np
+from kokoro import KPipeline
+voice, text, out, speed = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4] or 1.0)
+pipe = KPipeline(lang_code=voice[0], repo_id="hexgrad/Kokoro-82M")
+chunks = [np.asarray(a, dtype=np.float32) for _, _, a in pipe(text, voice=voice, speed=speed)]
+pcm = (np.concatenate(chunks) * 32767).astype(np.int16)
+with wave.open(out, "wb") as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(pcm.tobytes())
+print(f"   {voice}: {len(pcm) / 24000:.1f}s of audio")
+PY
+  ) || { echo "   $1: synthesis failed (unknown voice, or the model is not downloaded yet: run the stack once)" >&2; return 1; }
+  if [ "${FLINT_QUIET:-0}" != 1 ]; then paplay "$out" 2>/dev/null || aplay -q "$out" 2>/dev/null || echo "   (no audio output reachable from here; the wav is $out)"; fi
+  rm -f "$out"
+}
+
+case "${1:-list}" in
+  list)
+    local_cur="$(cur voice bm_lewis)"
+    printf '%-12s %-5s %s\n' "voice" "grade" "description"
+    printf '%s\n' "$VOICES" | while IFS='|' read -r id grade desc; do
+      printf '%-12s %-5s %s%s\n' "$id" "$grade" "$desc" "$( [ "$id" = "$local_cur" ] && printf '   <- current')"
+    done
+    echo; echo "elevenlabs: $(cur elevenlabs '{}' | grep -q "'enabled': True" && echo on || echo off)   speed: $(cur speed 1.0)"
+    echo "hear one: flint-voice try af_heart      choose:  flint-voice set af_heart   (then: flint-stack restart)" ;;
+  current)
+    need_cfg; echo "voice: $(cur voice bm_lewis)   speed: $(cur speed 1.0)   elevenlabs: $(cur elevenlabs '{}' | grep -q "'enabled': True" && echo on || echo off)" ;;
+  try)
+    [ -n "${2:-}" ] || { echo "usage: flint-voice try <voice_id> [text]" >&2; exit 1; }
+    valid_id "$2" || { echo "not a Kokoro English voice id: $2 (flint-voice list)" >&2; exit 1; }
+    speak "$2" "${3:-Hello $YOUR_NAME. This is the voice called ${2#*_}. All systems online. What are we working on today?}" ;;
+  audition)
+    pick="${2:-b}"; [ "$pick" = all ] && pat='^' || pat="^$pick"
+    printf '%s\n' "$VOICES" | grep "$pat" | while IFS='|' read -r id grade desc; do
+      echo "== $id ($grade): $desc"
+      speak "$id" "Hello $YOUR_NAME. This is ${id#*_}. What are we working on today?" || true
+    done ;;
+  set)
+    need_cfg; [ -n "${2:-}" ] || { echo "usage: flint-voice set <voice_id>" >&2; exit 1; }
+    valid_id "$2" || { echo "not a Kokoro English voice id: $2 (flint-voice list)" >&2; exit 1; }
+    setkey voice "\"$2\""; echo "voice = $2. It takes effect at the next start of the voice line: flint-stack restart" ;;
+  speed)
+    need_cfg; s="${2:-}"; python3 -c "s=float('$s'); assert 0.5 <= s <= 2.0" 2>/dev/null || { echo "usage: flint-voice speed 0.7..1.5" >&2; exit 1; }
+    setkey speed "$s"; echo "speed = $s (next start of the voice line: flint-stack restart)" ;;
+  elevenlabs)
+    need_cfg
+    case "${2:-}" in
+      on)
+        [ -n "${3:-}" ] || { echo "usage: flint-voice elevenlabs on <voice_id> [name]" >&2; exit 1; }
+        [ -f "$HOME/.config/flint/elevenlabs.env" ] || echo "note: no ~/.config/flint/elevenlabs.env yet; put ELEVENLABS_API_KEY=... there (chmod 600) or the voice falls back to Kokoro"
+        python3 - "$CFG" "$3" "${4:-}" <<'PY'
+import json, os, sys
+p, vid, note = sys.argv[1:4]
+d = json.load(open(p)); e = d.get("elevenlabs") if isinstance(d.get("elevenlabs"), dict) else {}
+e.update({"enabled": True, "voice_id": vid}); note and e.update({"voice_note": note}); d["elevenlabs"] = e
+tmp = p + ".tmp"; json.dump(d, open(tmp, "w"), indent=2); os.replace(tmp, p)
+PY
+        echo "elevenlabs on, voice $3${4:+ ($4)}. Next start of the voice line: flint-stack restart" ;;
+      off)
+        python3 - "$CFG" <<'PY'
+import json, os, sys
+p = sys.argv[1]; d = json.load(open(p)); e = d.get("elevenlabs") if isinstance(d.get("elevenlabs"), dict) else {}
+e["enabled"] = False; d["elevenlabs"] = e
+tmp = p + ".tmp"; json.dump(d, open(tmp, "w"), indent=2); os.replace(tmp, p)
+PY
+        echo "elevenlabs off; Kokoro $(cur voice bm_lewis) speaks at the next start" ;;
+      *) echo "usage: flint-voice elevenlabs on <voice_id> [name] | off" >&2; exit 1 ;;
+    esac ;;
+  -h|--help|help) sed -n '2,15p' "$0" ;;
+  *) echo "unknown command: $1 (flint-voice --help)" >&2; exit 1 ;;
+esac

@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+# flint-ingest: drop a PDF, a link, a YouTube video or a text file; it becomes a vault note with a summary,
+# the key points and quotes, and the agent tells you the gist.
+#   flint-ingest <file.pdf | https://... | youtube url | file.md|txt> [--say] [--tags a,b]
+#   flint-ingest --sweep         everything in the vault folder Knowledge/Drop (a timer runs this every ten minutes)
+# Notes land in <vault>/Knowledge/Inbox/<title>.md. Bash head, python body (the senses venv: trafilatura).
+# PDFs need poppler-utils (pdftotext); videos use yt-dlp's transcript, or whisper when there is none.
+here="$(dirname "$(readlink -f "$0")")"; PY="$here/../senses/.venv/bin/python"
+[ -x "$PY" ] || { echo "no senses virtualenv at $PY (run: setup.sh --only 13)" >&2; exit 1; }
+exec "$PY" - "$@" <<'PY'
+import glob
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+
+HOME = os.path.expanduser("~")
+os.environ["PATH"] = os.path.join(HOME, ".local", "bin") + ":/usr/local/bin:" + os.environ.get("PATH", "")
+
+
+def setup_val(key, default):
+    try:
+        for line in open(os.path.join(HOME, ".flint-setup", "setup.env")):
+            m = re.match(rf'^{key}="?([^"#]*)"?', line.strip())
+            if m and m.group(1).strip():
+                return os.path.expandvars(m.group(1).strip())
+    except OSError:
+        pass
+    return default
+
+
+VAULT = setup_val("VAULT_DIR", os.path.join(HOME, "Brain"))
+AGENT_HOME = setup_val("AGENT_HOME", os.path.join(HOME, "my-agent"))
+INBOX = os.path.join(VAULT, "Knowledge", "Inbox")
+DROP = os.path.join(VAULT, "Knowledge", "Drop")
+MAX_CHARS = 60000
+
+
+def sh(args, timeout=600, **kw):
+    return subprocess.run(args, capture_output=True, text=True, timeout=timeout, **kw)
+
+
+def vtt_to_text(path):
+    lines, last = [], ""
+    for line in open(path, encoding="utf-8", errors="replace"):
+        line = line.strip()
+        if not line or "-->" in line or line.startswith(("WEBVTT", "Kind:", "Language:")) or line.isdigit():
+            continue
+        line = re.sub(r"<[^>]+>", "", line)
+        if line != last:
+            lines.append(line); last = line
+    return " ".join(lines)
+
+
+def youtube_text(url):
+    tmp = tempfile.mkdtemp(prefix="flint-yt-")
+    title = sh(["yt-dlp", "--print", "title", "--skip-download", url], timeout=120).stdout.strip() or url
+    sh(["yt-dlp", "--skip-download", "--write-auto-sub", "--write-sub", "--sub-lang", "en.*,en,bg", "--sub-format", "vtt",
+        "-o", os.path.join(tmp, "v"), url], timeout=300)
+    vtts = glob.glob(os.path.join(tmp, "*.vtt"))
+    if vtts:
+        return title, vtt_to_text(vtts[0])
+    # no transcript published: hear it
+    sh(["yt-dlp", "-x", "--audio-format", "wav", "--postprocessor-args", "ffmpeg:-ar 16000 -ac 1", "-o", os.path.join(tmp, "a.%(ext)s"), url], timeout=1200)
+    wavs = glob.glob(os.path.join(tmp, "*.wav"))
+    py = os.path.join(AGENT_HOME, "backtalk", ".venv", "bin", "python")
+    if not wavs or not os.path.exists(py):
+        return title, ""
+    code = ("import sys, warnings; warnings.filterwarnings('ignore')\nfrom faster_whisper import WhisperModel\n"
+            "m = WhisperModel('small', device='cpu', compute_type='int8')\nsegs, _ = m.transcribe(sys.argv[1])\n"
+            "print(' '.join(s.text.strip() for s in segs))")
+    return title, sh([py, "-c", code, wavs[0]], timeout=3600).stdout.strip()
+
+
+def extract(src):
+    """-> (title, text, kind)"""
+    if re.match(r"https?://(www\.)?(youtube\.com|youtu\.be)/", src):
+        t, x = youtube_text(src); return t, x, "video"
+    if src.startswith(("http://", "https://")):
+        import trafilatura
+        html = trafilatura.fetch_url(src)
+        if not html:
+            raise SystemExit(f"could not fetch {src}")
+        meta = trafilatura.extract_metadata(html)
+        text = trafilatura.extract(html, include_comments=False, include_tables=True) or ""
+        if not text.strip():
+            r = sh(["lynx", "-dump", "-nolist", src], timeout=60)
+            text = r.stdout
+        return (meta.title if meta and meta.title else src), text, "article"
+    p = os.path.expanduser(src)
+    if not os.path.exists(p):
+        raise SystemExit(f"no such file or URL: {src}")
+    ext = os.path.splitext(p)[1].lower()
+    if ext == ".pdf":
+        r = sh(["pdftotext", "-layout", p, "-"], timeout=300)
+        return os.path.splitext(os.path.basename(p))[0], r.stdout, "pdf"
+    if ext in (".md", ".txt", ".html", ".htm"):
+        text = open(p, encoding="utf-8", errors="replace").read()
+        if ext in (".html", ".htm"):
+            import trafilatura
+            text = trafilatura.extract(text) or re.sub(r"<[^>]+>", " ", text)
+        return os.path.splitext(os.path.basename(p))[0], text, "file"
+    if ext in (".mp3", ".wav", ".m4a", ".ogg", ".opus"):
+        py = os.path.join(AGENT_HOME, "backtalk", ".venv", "bin", "python")
+        code = ("import sys, warnings; warnings.filterwarnings('ignore')\nfrom faster_whisper import WhisperModel\n"
+                "m = WhisperModel('small', device='cpu', compute_type='int8')\nsegs, _ = m.transcribe(sys.argv[1])\n"
+                "print(' '.join(s.text.strip() for s in segs))")
+        return os.path.splitext(os.path.basename(p))[0], sh([py, "-c", code, p], timeout=3600).stdout, "audio"
+    raise SystemExit(f"I don't know how to read {ext or 'that'}")
+
+
+def slug(title):
+    s = re.sub(r"[^\w\s-]", "", title, flags=re.U).strip()
+    s = re.sub(r"\s+", " ", s)[:80].strip()
+    return s or time.strftime("ingest-%Y%m%d-%H%M")
+
+
+def summarise(title, text, src, kind, tags):
+    body = text[:MAX_CHARS] + ("\n\n[truncated]" if len(text) > MAX_CHARS else "")
+    prompt = (f"You are filing a {kind} into my vault. Write ONE markdown note and nothing else, in this shape:\n"
+              f"---\nsource: {src}\nkind: {kind}\ningested: {time.strftime('%Y-%m-%d')}\ntags: [{tags or 'inbox'}]\n---\n"
+              f"# {title}\n\n## Summary\n(five to eight sentences)\n\n## Key points\n(bullets)\n\n## Quotes worth keeping\n(bullets, verbatim, short)\n\n"
+              f"## Why it matters to me\n(two sentences, from what you know about my work)\n\nGIST: (two spoken sentences, plain, for me to hear)\n\n"
+              f"The content:\n\n{body}")
+    env = {k: v for k, v in os.environ.items() if k not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
+    r = subprocess.run(["claude", "-p", prompt, "--max-turns", "1", "--output-format", "text"], cwd=AGENT_HOME, env=env,
+                       capture_output=True, text=True, timeout=600, stdin=subprocess.DEVNULL)
+    if r.returncode != 0 or not r.stdout.strip():
+        raise SystemExit("the summary failed (is Claude Code logged in?): " + r.stderr.strip()[-300:])
+    return r.stdout.strip()
+
+
+def ingest(src, say=False, tags=""):
+    title, text, kind = extract(src)
+    if len(text.strip()) < 200:
+        raise SystemExit(f"too little text to work with ({len(text.strip())} characters) in {src}")
+    note = summarise(title, text, src, kind, tags)
+    m = re.search(r"^GIST:\s*(.+)$", note, flags=re.M | re.S)
+    gist = " ".join(m.group(1).split()) if m else ""
+    os.makedirs(INBOX, exist_ok=True)
+    path = os.path.join(INBOX, slug(title) + ".md")
+    i = 1
+    while os.path.exists(path):
+        i += 1; path = os.path.join(INBOX, f"{slug(title)} {i}.md")
+    open(path, "w").write(note.replace("GIST:", "**Gist:**", 1) + "\n")
+    print(f"note: {path}\n\n{gist}")
+    if say and gist:
+        subprocess.run(["flint-say", gist])
+    return path
+
+
+def sweep():
+    os.makedirs(DROP, exist_ok=True); done = os.path.join(DROP, "done"); os.makedirs(done, exist_ok=True)
+    n = 0
+    for p in sorted(glob.glob(os.path.join(DROP, "*"))):
+        if os.path.isdir(p):
+            continue
+        try:
+            if p.endswith(".url") or (p.endswith(".txt") and os.path.getsize(p) < 500 and open(p).read().strip().startswith("http")):
+                for u in re.findall(r"https?://\S+", open(p).read()):
+                    ingest(u); n += 1
+            else:
+                ingest(p); n += 1
+            shutil.move(p, os.path.join(done, os.path.basename(p)))
+        except SystemExit as e:
+            print(f"skipped {p}: {e}")
+    print(f"{n} ingested")
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print("flint-ingest <file|url> [--say] [--tags a,b]   |   flint-ingest --sweep"); return 0
+    if argv[0] == "--sweep":
+        return sweep()
+    tags = argv[argv.index("--tags") + 1] if "--tags" in argv else ""
+    ingest(argv[0], "--say" in argv, tags)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)
+PY

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!-- Mockup lab, round three: Halo x Command Deck. One design system, ten compositions. lab3.html?v=1..10 -->
+<html lang="en"><head><meta charset="UTF-8"><title>Flint face mockups, round three</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+"use strict";
+const Q = new URLSearchParams(location.search), V = +(Q.get("v") || 1), T = +(Q.get("t") || 3.2);
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+const W = innerWidth, H = innerHeight, DPR = Math.min(2, devicePixelRatio || 1);
+cv.width = W * DPR; cv.height = H * DPR; g.setTransform(DPR, 0, 0, DPR, 0, 0);
+const CX = W / 2, CY = H / 2, M = Math.min(W, H);
+const NAME = "Flint", ENV = 0.7;
+let seed = 5; const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+const SAMPLES = Array.from({ length: 64 }, (_, i) => Math.abs(Math.sin(i * .55 + T * 9) * .6 + Math.sin(i * 1.7 - T * 13) * .4) * (.35 + .65 * Math.abs(Math.sin(T * 2.6 + i * .1))));
+const TEAM = [
+  { id: "comms", name: "Comms", workers: [["comms-inbox-triage", "Triage the inbox"], ["comms-reply-drafter", "Draft replies"], ["comms-crm-pipeline", "Keep the pipeline current"]], tools: 3, load: .72 },
+  { id: "finance", name: "Finance", workers: [["finance-ledger", "Keep the ledger"], ["finance-invoices", "Chase invoices"], ["finance-weekly-review", "Weekly review"]], tools: 3, load: .58 },
+  { id: "content", name: "Content", workers: [["content-writer", "Write posts and emails"], ["content-scheduler", "Content calendar"], ["content-lead-magnets", "Lead magnets"]], tools: 4, load: .18 },
+  { id: "knowledge", name: "Knowledge", workers: [["knowledge-librarian", "Vault hygiene"], ["knowledge-researcher", "Research"]], tools: 3, load: .11 },
+  { id: "automations", name: "Automations", workers: [["automations-home", "Run the house"], ["automations-machine", "ThinkPad health"], ["automations-timers", "Scheduled jobs"]], tools: 4, load: .26 },
+];
+const ACTIVE = new Set(["comms-inbox-triage", "finance-ledger"]);
+const YOU = "Get the inbox sorted and the ledger, then tell me what finance looks like.";
+const SAYS = "Comms is on the inbox, Finance is reading September. Two things need your call, sir.";
+const LOG = [["19:08:29", "finance-ledger", "reading Finance/exports/09.csv · 212 rows"], ["19:08:12", "comms-inbox-triage", "14 threads · 3 need a reply"], ["19:07:40", "Flint", "dispatched comms-lead and finance-lead"], ["19:07:38", "You", "“get the inbox sorted and the ledger”"], ["19:06:01", "automations-machine", "vault backup pushed · disk 61%"], ["19:00:00", "timer", "morning brief written to 00 - Inbox"]];
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const SANS = '"Inter","Helvetica Neue",Helvetica,Arial,"DejaVu Sans",sans-serif', MONO = '"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace', SERIF = 'Georgia,"Times New Roman","DejaVu Serif",serif';
+/* ------------------------------------------------------------ tokens */
+let P = {};
+const WARM = { bg: "#0b0a09", tile: [255, 250, 245], text: [246, 241, 236], muted: [160, 150, 140], dim: [98, 90, 84], line: [255, 245, 235], accent: [255, 122, 92], green: [96, 222, 152], amber: [255, 190, 110], blue: [130, 170, 255] };
+const COOL = { bg: "#090c12", tile: [225, 236, 255], text: [238, 243, 250], muted: [145, 158, 180], dim: [88, 98, 118], line: [220, 232, 255], accent: [255, 122, 92], green: [96, 222, 152], amber: [255, 190, 110], blue: [130, 170, 255] };
+const glows = {};
+function sprite(c, s = 64) { const k = c.join() + s; if (glows[k]) return glows[k]; const o = document.createElement("canvas"); o.width = o.height = s; const x = o.getContext("2d"); const gr = x.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2); gr.addColorStop(0, rgba(c, 1)); gr.addColorStop(.3, rgba(c, .5)); gr.addColorStop(1, rgba(c, 0)); x.fillStyle = gr; x.fillRect(0, 0, s, s); return glows[k] = o; }
+function dot(x, y, r, c, a = 1, halo = 2.4) { if (r > 1.2 && halo) { g.globalAlpha = a; g.drawImage(sprite(c), x - r * halo, y - r * halo, r * halo * 2, r * halo * 2); g.globalAlpha = 1; } g.fillStyle = rgba(c, Math.min(1, a * 1.2)); g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill(); }
+function text(s, x, y, size, c, o = {}) { const { a = 1, align = "left", ls = 0, font = SANS, weight = "", base = "middle", style = "" } = o; g.font = `${style} ${weight} ${size}px ${font}`.trim(); g.textBaseline = base; g.fillStyle = rgba(c, a); if (ls) { const chars = [...s]; const w = chars.reduce((t, ch) => t + g.measureText(ch).width + ls, 0) - ls; let x0 = align === "center" ? x - w / 2 : align === "right" ? x - w : x; g.textAlign = "left"; for (const ch of chars) { g.fillText(ch, x0, y); x0 += g.measureText(ch).width + ls; } return w; } g.textAlign = align; g.fillText(s, x, y); return g.measureText(s).width; }
+const label = (s, x, y, o = {}) => text(s.toUpperCase(), x, y, o.size || 9, o.c || P.dim, { ls: 2.6, font: MONO, align: o.align || "left" });
+function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function tile(x, y, w, h, o = {}) { const r = o.r ?? 16; g.save(); g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 30; g.shadowOffsetY = 10; rr(x, y, w, h, r); g.fillStyle = o.fill || rgba(P.tile, .035); g.fill(); g.restore(); rr(x, y, w, h, r); const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, rgba(P.tile, .035)); gr.addColorStop(1, rgba(P.tile, 0)); g.fillStyle = gr; g.fill(); g.strokeStyle = rgba(P.line, o.border ?? .09); g.lineWidth = 1; g.stroke(); const hl = g.createLinearGradient(x, y, x + w, y); hl.addColorStop(0, rgba(P.line, 0)); hl.addColorStop(.5, rgba(P.line, .28)); hl.addColorStop(1, rgba(P.line, 0)); g.strokeStyle = hl; g.beginPath(); g.moveTo(x + r, y + .5); g.lineTo(x + w - r, y + .5); g.stroke(); if (o.title) label(o.title, x + 22, y + 26); }
+function grain(a = .05) { const s = 3, w = Math.ceil(W / s), h = Math.ceil(H / s), o = document.createElement("canvas"); o.width = w; o.height = h; const x = o.getContext("2d"), id = x.createImageData(w, h); for (let i = 0; i < id.data.length; i += 4) { const v = 128 + (rnd() - .5) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } x.putImageData(id, 0, 0); g.globalAlpha = a; g.globalCompositeOperation = "overlay"; g.drawImage(o, 0, 0, W, H); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; }
+function vignette(a = .5, inner = .5) { const gr = g.createRadialGradient(CX, CY, M * inner, CX, CY, M * 1.1); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, `rgba(0,0,0,${a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function blob(x, y, r, c, a) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgba(c, a)); gr.addColorStop(1, rgba(c, 0)); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function stars(n, c, maxr = 1.2) { for (let i = 0; i < n; i++) dot(rnd() * W, rnd() * H, rnd() * maxr, c, .15 + rnd() * .5, 1.4); }
+function noise1(t) { const i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f); const h = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }; return h(i) * (1 - u) + h(i + 1) * u; }
+function fib(n, j = 0) { const p = [], ga = Math.PI * (3 - Math.sqrt(5)); for (let i = 0; i < n; i++) { const y = 1 - i / (n - 1) * 2, r = Math.sqrt(1 - y * y), a = ga * i + j * Math.sin(i * 12.9898) * .6; p.push([Math.cos(a) * r, y, Math.sin(a) * r]); } return p; }
+function rot(p, ay, ax) { const cy = Math.cos(ay), sy = Math.sin(ay), cx = Math.cos(ax), sx = Math.sin(ax); const x = p[0] * cy + p[2] * sy, z = -p[0] * sy + p[2] * cy; return [x, p[1] * cx - z * sx, p[1] * sx + z * cx]; }
+function proj(p, R, ox, oy) { const f = 1 / (1 - p[2] * .28); return { x: ox + p[0] * R * f, y: oy + p[1] * R * f, f, d: (p[2] + 1) / 2 }; }
+const isOn = d => d.workers.some(w => ACTIVE.has(w[0]));
+/* ------------------------------------------------------------ components */
+function ring(cx, cy, R, o = {}) {
+  const flex = o.flex ?? .06, acc = o.accent || P.accent;
+  if (o.halo !== false) blob(cx, cy, R * 1.6, o.haloColor || [120, 60, 40], o.haloA ?? .55);
+  g.globalCompositeOperation = "lighter";
+  [[[255, 70, 50], -2.2], [[70, 255, 130], 0], [[70, 130, 255], 2.2]].forEach(([c, dx]) => { g.beginPath(); for (let i = 0; i <= 256; i++) { const a = i / 256 * 6.2832, s = SAMPLES[i % 64] * ENV, r = R * (1 + s * flex); i ? g.lineTo(cx + dx + Math.cos(a) * r, cy + Math.sin(a) * r) : g.moveTo(cx + dx + Math.cos(a) * r, cy + Math.sin(a) * r); } g.closePath(); g.strokeStyle = rgba(c, .55); g.lineWidth = 2; g.stroke(); });
+  for (let i = 0; i < 256; i++) { const a = i / 256 * 6.2832, s = SAMPLES[i % 64] * ENV; if (s < .28) continue; g.strokeStyle = rgba(acc, (s - .28) * .9); g.lineWidth = 1; g.beginPath(); g.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); g.lineTo(cx + Math.cos(a) * R * (1 + s * flex * 2.2), cy + Math.sin(a) * R * (1 + s * flex * 2.2)); g.stroke(); }
+  g.globalCompositeOperation = "source-over";
+  g.strokeStyle = rgba(P.text, .95); g.lineWidth = 1.4; g.beginPath(); g.arc(cx, cy, R, 0, 6.2832); g.stroke();
+  if (o.inner !== false) { g.strokeStyle = rgba(P.line, .08); g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, R * .82, 0, 6.2832); g.stroke(); }
+}
+function constellation(cx, cy, R, o = {}) {
+  const labels = o.labels !== false, acc = o.accent || P.accent;
+  TEAM.forEach((d, i) => { const a = -1.5708 + i / 5 * 6.2832 + (o.spin || 0), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R, on = isOn(d); g.strokeStyle = rgba(P.line, .1); g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy); g.lineTo(x, y); g.stroke(); dot(x, y, on ? 4.5 : 3.2, on ? P.green : P.text, 1, on ? 2.8 : 1.6); d.workers.forEach((w, j) => { const b = a + (j - (d.workers.length - 1) / 2) * .5, wx = x + Math.cos(b) * R * .34, wy = y + Math.sin(b) * R * .34, act = ACTIVE.has(w[0]); g.strokeStyle = rgba(P.line, .08); g.beginPath(); g.moveTo(x, y); g.lineTo(wx, wy); g.stroke(); dot(wx, wy, act ? 3 : 1.7, act ? P.green : P.muted, 1, act ? 2.6 : 0); }); if (labels) { const out = Math.sin(a) < -.1 ? -1 : 1; label(d.name, x, y + out * (R * .34 + 16), { c: on ? P.green : P.muted, align: "center" }); } });
+  dot(cx, cy, 5, P.text, 1, 3);
+}
+function spark(x, y, w, h, c, sd = 1, fill = true) { seed = 90 + sd; const pts = Array.from({ length: 28 }, (_, i) => [x + i / 27 * w, y + h - (.25 + .7 * noise1(i * .55 + sd * 7)) * h]); if (fill) { const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, rgba(c, .25)); gr.addColorStop(1, rgba(c, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(pts[0][0], y + h); pts.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(pts[pts.length - 1][0], y + h); g.closePath(); g.fill(); } g.strokeStyle = rgba(c, .95); g.lineWidth = 1.5; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); dot(pts[pts.length - 1][0], pts[pts.length - 1][1], 2.5, c, 1, 2); }
+function bar(x, y, w, h, v, c) { rr(x, y, w, h, h / 2); g.fillStyle = rgba(P.line, .08); g.fill(); if (v > 0) { rr(x, y, Math.max(h, w * v), h, h / 2); g.fillStyle = rgba(c, 1); g.fill(); } }
+function chip(x, y, s, c, o = {}) { g.font = `600 10px ${SANS}`; const w = g.measureText(s).width + 22, h = 22; const xx = o.align === "right" ? x - w : x; rr(xx, y - h / 2, w, h, 11); g.fillStyle = rgba(c, .16); g.fill(); g.strokeStyle = rgba(c, .35); g.lineWidth = 1; g.stroke(); text(s, xx + w / 2, y + .5, 10, c, { align: "center", weight: "600" }); return w; }
+function kpi(x, y, w, h, o) { tile(x, y, w, h); const c = o.color || P.text; text(o.value, x + 22, o.labelUnder ? y + h * .42 : y + h * .46, o.size || 38, c, { weight: "700" }); label(o.label, x + 22, o.labelUnder ? y + h * .42 + (o.size || 38) * .8 : y + h - 22); if (o.delta) chip(x + w - 22, y + 30, o.delta, o.deltaColor || P.green, { align: "right" }); if (o.spark != null) spark(x + w * .5, y + h * .3, w * .5 - 22, h * .36, c, o.spark); if (o.bar != null) bar(x + 22, y + h - 40, w - 44, 5, o.bar, c); }
+function deptRows(x, y, w, o = {}) { const rh = o.rowH || 54; TEAM.forEach((d, i) => { const yy = y + i * rh, on = isOn(d); text(d.name, x, yy, 15, P.text, { weight: "600" }); text(`${d.workers.length} agents · ${d.tools} tools`, x, yy + 19, 11, P.muted); bar(x + w - 226, yy - 3, 120, 6, d.load, on ? P.green : P.blue); chip(x + w, yy, on ? "active" : "idle", on ? P.green : P.dim, { align: "right" }); if (i < 4) { g.strokeStyle = rgba(P.line, .07); g.beginPath(); g.moveTo(x, yy + rh - 12); g.lineTo(x + w, yy + rh - 12); g.stroke(); } }); return TEAM.length * rh; }
+function agentTable(x, y, w, o = {}) { const cols = [0, .2, .42, .68, .8, .9]; ["Department", "Agent", "Job", "Status", "Last run", "Tokens"].forEach((h, i) => label(h, x + cols[i] * w, y)); g.strokeStyle = rgba(P.line, .12); g.beginPath(); g.moveTo(x, y + 16); g.lineTo(x + w, y + 16); g.stroke(); let yy = y + 42; seed = 3; TEAM.forEach(d => d.workers.forEach((wk, j) => { const on = ACTIVE.has(wk[0]); if (j === 0) text(d.name, x, yy, 13, P.text, { weight: "600" }); text(wk[0], x + cols[1] * w, yy, 12, on ? P.text : P.muted, { font: MONO }); text(wk[1], x + cols[2] * w, yy, 12, P.muted); dot(x + cols[3] * w + 4, yy, 3, on ? P.green : P.dim, 1, on ? 2.5 : 0); text(on ? "running" : "idle", x + cols[3] * w + 14, yy, 12, on ? P.green : P.dim); text(on ? "now" : `${(rnd() * 5 | 0) + 1}h ago`, x + cols[4] * w, yy, 12, P.muted, { font: MONO }); text((on ? 12 + rnd() * 20 | 0 : rnd() * 9 | 0) + "k", x + cols[5] * w, yy, 12, P.muted, { font: MONO }); g.strokeStyle = rgba(P.line, .06); g.beginPath(); g.moveTo(x, yy + 14); g.lineTo(x + w, yy + 14); g.stroke(); yy += 28; })); return yy - y; }
+function activity(x, y, w, n = 6, o = {}) { LOG.slice(0, n).forEach(([t, who, what], i) => { const yy = y + i * (o.rowH || 38), c = who === "Flint" ? P.accent : who === "You" ? P.text : ACTIVE.has(who) ? P.green : P.muted; text(t, x, yy, 10, P.dim, { font: MONO }); text(who, x + 74, yy - 7, 12, c, { weight: "600" }); text(what, x + 74, yy + 9, 11, P.muted); }); }
+function transcript(x, y, w, o = {}) { label("you · 19:07", x, y); text(YOU, x, y + 22, o.size || 15, P.muted); label(NAME + " · speaking", x, y + 58, { c: P.accent }); text(SAYS, x, y + 82, (o.size || 15) + 3, P.text, { weight: "500" }); }
+function waveline(x, y, w, h, c) { g.strokeStyle = rgba(c, .9); g.lineWidth = 1.5; g.beginPath(); SAMPLES.forEach((s, i) => { const px = x + i / 63 * w, py = y + h / 2 - Math.sin(i * .7 + T * 9) * s * ENV * h / 2; i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.stroke(); }
+function arcGauge(cx, cy, r, v, c, o = {}) { g.lineCap = "round"; g.strokeStyle = rgba(P.line, .1); g.lineWidth = o.w || 6; g.beginPath(); g.arc(cx, cy, r, 2.35, 7.07); g.stroke(); g.strokeStyle = rgba(c, 1); g.beginPath(); g.arc(cx, cy, r, 2.35, 2.35 + 4.72 * v); g.stroke(); g.lineCap = "butt"; text(Math.round(v * 100) + "%", cx, cy + 2, o.size || 15, P.text, { align: "center", weight: "700" }); if (o.label) label(o.label, cx, cy + r + 18, { align: "center" }); }
+function wordmark(x, y, o = {}) { text(NAME, x, y, o.size || 30, P.text, { font: SERIF, style: "italic", align: o.align || "left" }); if (o.sub) label(o.sub, x + (o.align === "center" ? 0 : 0), y + (o.size || 30) * .8, { c: P.dim, align: o.align || "left" }); }
+function statePill(x, y, o = {}) { const w = 160, h = 36; const xx = o.align === "right" ? x - w : x; rr(xx, y - h / 2, w, h, 18); g.fillStyle = rgba(P.green, .12); g.fill(); g.strokeStyle = rgba(P.green, .3); g.stroke(); dot(xx + 20, y, 4, P.green, 1, 2.5); text("Speaking", xx + 34, y + .5, 13, P.text, { weight: "600" }); text("19:08", xx + w - 16, y + .5, 11, P.muted, { align: "right", font: MONO }); }
+function bg(p) { P = p; g.fillStyle = P.bg; g.fillRect(0, 0, W, H); }
+const Mg = 56, G = 16;
+
+/* ================================================================ 1. HALO DECK */
+function v1() { bg(WARM); stars(180, [255, 220, 200]);
+  wordmark(Mg, 64, { size: 34, sub: "operating partner · online" }); statePill(W - Mg, 64, { align: "right" });
+  const rx = W - Mg - 640, cx = Mg + (rx - G - Mg) / 2, cy = 470, R = 250;
+  ring(cx, cy, R); constellation(cx, cy, R * .5, { labels: false });
+  text(NAME, cx, cy + R + 66, 64, P.text, { font: SERIF, style: "italic", align: "center" }); text("speaking", cx, cy + R + 112, 13, P.accent, { align: "center", ls: 5 });
+  waveline(cx - 160, cy + R + 140, 320, 26, P.accent);
+  const kw = (640 - G) / 2, ky = 118; [["2", "agents working", P.green, 1, "+1"], ["14", "in the team", P.text, 2], ["34%", "5-hour window", P.blue, 3], ["61%", "7-day window", P.amber, 4]].forEach(([v, l, c, s, d], i) => kpi(rx + (i % 2) * (kw + G), ky + Math.floor(i / 2) * (128 + G), kw, 128, { value: v, label: l, color: c, spark: s, delta: d }));
+  const dy = ky + 2 * 144 + 4; tile(rx, dy, 640, 330, { title: "departments" }); deptRows(rx + 22, dy + 66, 596);
+  tile(rx, dy + 346, 640, H - Mg - (dy + 346), { title: "activity" }); activity(rx + 22, dy + 346 + 62, 596, 4, { rowH: 36 });
+  transcript(Mg, H - 176, rx - G - Mg); grain(.04); vignette(.35, .6);
+}
+/* ================================================================ 2. SPLIT STAGE */
+function v2() { bg(COOL); blob(W * .28, H * .5, M * .8, [20, 40, 90], .5); stars(260, [200, 220, 255]);
+  const sx = W * .56; g.strokeStyle = rgba(P.line, .08); g.beginPath(); g.moveTo(sx, Mg); g.lineTo(sx, H - Mg); g.stroke();
+  const cx = sx / 2 + 20, cy = CY - 20, R = 300; ring(cx, cy, R, { haloColor: [40, 80, 160], haloA: .6 }); constellation(cx, cy, R * .56);
+  text(NAME, Mg, 92, 40, P.text, { font: SERIF, style: "italic" }); label("split stage · connected", Mg, 126);
+  text("SPEAKING", cx, cy + R + 44, 12, P.accent, { align: "center", ls: 6, font: MONO });
+  const x = sx + 40, w = W - Mg - x; statePill(W - Mg, 70, { align: "right" });
+  label("conversation", x, 70); transcript(x, 104, w);
+  label("departments", x, 262); TEAM.forEach((d, i) => { const yy = 300 + i * 50, on = isOn(d); dot(x + 5, yy, 3.5, on ? P.green : P.dim, 1, on ? 2.5 : 0); text(d.name, x + 20, yy, 14, P.text, { weight: "600" }); text(`${d.workers.length} agents · ${d.tools} tools`, x + 140, yy, 11, P.muted); bar(x + w - 250, yy - 3, 140, 6, d.load, on ? P.green : P.blue); text(Math.round(d.load * 100) + "%", x + w - 70, yy, 12, P.muted, { align: "right", font: MONO }); chip(x + w, yy, on ? "active" : "idle", on ? P.green : P.dim, { align: "right" }); });
+  const kw = (w - 3 * G) / 4, ky = H - Mg - 120; [["2", "working", P.green, 1], ["142", "turns", P.text, 2], ["34%", "5h", P.blue, 3], ["61%", "7d", P.amber, 4]].forEach(([v, l, c, s], i) => kpi(x + i * (kw + G), ky, kw, 120, { value: v, label: l, color: c, size: 32, bar: [.3, .5, .34, .61][i] }));
+  label("activity", x, 566); activity(x, 600, w, 4, { rowH: 40 }); grain(.04);
+}
+/* ================================================================ 3. ORBIT BAR */
+function v3() { bg(WARM); stars(200, [255, 225, 205]);
+  const cx = CX, cy = 400, R = 270; ring(cx, cy, R); dot(cx, cy, 4, P.text, 1, 3);
+  TEAM.forEach((d, i) => { const a = -1.5708 + i / 5 * 6.2832 + .35, x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R, on = isOn(d); dot(x, y, on ? 7 : 5, on ? P.green : P.text, 1, on ? 3 : 2); const lx = cx + Math.cos(a) * (R + 62), ly = cy + Math.sin(a) * (R + 62); g.strokeStyle = rgba(P.line, .18); g.beginPath(); g.moveTo(x + Math.cos(a) * 12, y + Math.sin(a) * 12); g.lineTo(lx - Math.cos(a) * 14, ly - Math.sin(a) * 14); g.stroke(); const al = Math.cos(a) > .3 ? "left" : Math.cos(a) < -.3 ? "right" : "center"; text(d.name, lx, ly - 8, 13, P.text, { align: al, weight: "600" }); text(`${d.workers.filter(w => ACTIVE.has(w[0])).length}/${d.workers.length} working · ${Math.round(d.load * 100)}% load`, lx, ly + 10, 10, on ? P.green : P.muted, { align: al }); });
+  text(NAME, cx, cy + 34, 22, P.text, { font: SERIF, style: "italic", align: "center" }); text("speaking", cx, cy + 56, 10, P.accent, { align: "center", ls: 4 });
+  wordmark(Mg, 64, { size: 34, sub: "orbit · connected" }); statePill(W - Mg, 64, { align: "right" });
+  const kw = (W - 2 * Mg - 4 * G) / 5, ky = H - Mg - 190; [["2", "agents working", P.green, 1], ["142", "turns today", P.text, 2], ["34%", "5-hour window", P.blue, 3], ["61%", "7-day window", P.amber, 4], ["412 ms", "first audio", P.text, 5]].forEach(([v, l, c, s], i) => kpi(Mg + i * (kw + G), ky, kw, 120, { value: v, label: l, color: c, size: 32, spark: s }));
+  tile(Mg, ky + 136, W - 2 * Mg, 54); label("activity", Mg + 22, ky + 163); LOG.slice(0, 4).forEach(([t, who, what], i) => { const x = Mg + 130 + i * 430; text(t, x, ky + 163, 10, P.dim, { font: MONO }); text(who, x + 62, ky + 163, 11, who === "Flint" ? P.accent : ACTIVE.has(who) ? P.green : P.text, { weight: "600" }); text(what.length > 30 ? what.slice(0, 30) + "…" : what, x + 62 + g.measureText(who).width + 10, ky + 163, 11, P.muted); });
+  grain(.04); vignette(.3, .6);
+}
+/* ================================================================ 4. LEDGER */
+function v4() { bg(WARM);
+  text(NAME, Mg, 120, 96, P.text, { font: SERIF, style: "italic" }); text("is speaking.", Mg + 250, 120, 40, P.muted, { font: SERIF, style: "italic" });
+  label("operating partner · session 09-02 · 19:08:29", Mg, 178);
+  const cx = W - Mg - 240, cy = 210, R = 150; ring(cx, cy, R, { haloA: .4 }); constellation(cx, cy, R * .5, { labels: false });
+  g.strokeStyle = rgba(P.line, .2); g.beginPath(); g.moveTo(Mg, 400); g.lineTo(W - Mg, 400); g.stroke();
+  agentTable(Mg, 430, W - 2 * Mg);
+  const ky = H - Mg - 100, kw = (W - 2 * Mg - 4 * G) / 5; g.strokeStyle = rgba(P.line, .2); g.beginPath(); g.moveTo(Mg, ky - 24); g.lineTo(W - Mg, ky - 24); g.stroke();
+  [["2", "agents working", P.green], ["14", "agents in the team", P.text], ["142", "turns today", P.text], ["34% · 61%", "5h · 7d windows", P.amber], ["412 ms", "first audio", P.text]].forEach(([v, l, c], i) => { const x = Mg + i * (kw + G); text(v, x, ky + 30, 40, c, { weight: "700" }); label(l, x, ky + 72); });
+  text(SAYS, W - Mg, ky - 56, 16, P.muted, { align: "right", font: SERIF, style: "italic" }); grain(.04);
+}
+/* ================================================================ 5. DUAL CORE */
+function v5() { bg(COOL); stars(200, [200, 215, 255]);
+  wordmark(Mg, 64, { size: 34, sub: "dual core · connected" }); statePill(W - Mg, 64, { align: "right" });
+  const tw = (W - 2 * Mg - G) / 2, ty = 116, th = 560;
+  tile(Mg, ty, tw, th, { title: "voice" }); tile(Mg + tw + G, ty, tw, th, { title: "structure" });
+  const cx1 = Mg + tw / 2, cy = ty + th / 2 - 30; g.save(); rr(Mg, ty, tw, th, 16); g.clip(); ring(cx1, cy, 172, { haloColor: [40, 70, 150], haloA: .6 }); g.restore(); text(NAME, cx1, cy + 172 + 40, 34, P.text, { font: SERIF, style: "italic", align: "center" }); text("speaking", cx1, cy + 172 + 68, 11, P.accent, { align: "center", ls: 4 }); waveline(Mg + 40, ty + th - 40, tw - 80, 24, P.accent);
+  const cx2 = Mg + tw + G + tw / 2; g.strokeStyle = rgba(P.line, .08); [.36, .62].forEach(f => { g.beginPath(); g.arc(cx2, cy, 200 * f, 0, 6.2832); g.stroke(); }); constellation(cx2, cy, 200 * .62, { labels: true }); text(NAME, cx2, cy + 4, 10, P.dim, { align: "center", ls: 3, font: MONO }); text("5 leads · 14 workers · 2 working", cx2, ty + th - 40, 11, P.muted, { align: "center", font: MONO });
+  const ky = ty + th + G, kw = (W - 2 * Mg - 3 * G) / 4; [["2", "agents working", P.green, 1, "+1"], ["142", "turns today", P.text, 2], ["34%", "5-hour window", P.blue, 3], ["61%", "7-day window", P.amber, 4]].forEach(([v, l, c, s, d], i) => kpi(Mg + i * (kw + G), ky, kw, 120, { value: v, label: l, color: c, size: 32, spark: s, delta: d }));
+  tile(Mg, ky + 136, W - 2 * Mg, H - Mg - (ky + 136)); text(SAYS, Mg + 22, ky + 136 + (H - Mg - (ky + 136)) / 2, 16, P.text, { weight: "500" }); label("flint · speaking", W - Mg - 22, ky + 136 + (H - Mg - (ky + 136)) / 2, { c: P.accent, align: "right" });
+  grain(.04);
+}
+/* ================================================================ 6. CONSOLE RINGS */
+function v6() { bg(COOL); blob(CX, CY, M * .7, [40, 60, 120], .35); stars(220, [210, 225, 255]);
+  const cx = CX, cy = CY - 10, R = 230; ring(cx, cy, R, { haloColor: [40, 80, 170], haloA: .55 });
+  [[.34, P.blue, R + 34, "5h"], [.61, P.amber, R + 52, "7d"]].forEach(([v, c, r, l]) => { g.lineCap = "round"; g.strokeStyle = rgba(P.line, .08); g.lineWidth = 8; g.beginPath(); g.arc(cx, cy, r, -1.5708, 4.712); g.stroke(); g.strokeStyle = rgba(c, .9); g.beginPath(); g.arc(cx, cy, r, -1.5708, -1.5708 + 6.2832 * v); g.stroke(); g.lineCap = "butt"; const a = -1.5708 + 6.2832 * v; text(l.toUpperCase() + " " + Math.round(v * 100) + "%", cx + Math.cos(a) * (r + 22), cy + Math.sin(a) * (r + 22), 9, c, { font: MONO, ls: 2, align: Math.cos(a) < 0 ? "right" : "left" }); });
+  constellation(cx, cy, R * .5, { labels: false }); text(NAME + "  ·  speaking", cx, cy + R + 82, 11, P.accent, { align: "center", ls: 4, font: MONO });
+  TEAM.forEach((d, i) => { const a = -1.5708 + i / 5 * 6.2832 + .32, on = isOn(d), px = cx + Math.cos(a) * (R + 215), py = cy + Math.sin(a) * (R + 215) * .86; g.strokeStyle = rgba(P.line, .15); g.beginPath(); g.moveTo(cx + Math.cos(a) * (R + 62), cy + Math.sin(a) * (R + 62)); g.lineTo(px, py); g.stroke(); const w = 178; rr(px - w / 2, py - 24, w, 48, 12); g.fillStyle = rgba(P.tile, .05); g.fill(); g.strokeStyle = rgba(on ? P.green : P.line, on ? .5 : .12); g.stroke(); dot(px - w / 2 + 18, py, 3.5, on ? P.green : P.dim, 1, on ? 2.5 : 0); text(d.name, px - w / 2 + 30, py - 8, 13, P.text, { weight: "600" }); text(`${d.workers.length} agents · ${Math.round(d.load * 100)}%`, px - w / 2 + 30, py + 10, 10, P.muted); });
+  wordmark(Mg, 64, { size: 30, sub: "console · connected" }); statePill(W - Mg, 64, { align: "right" });
+  tile(Mg, 118, 380, 226, { title: "conversation" }); transcript(Mg + 22, 158, 336, { size: 13 });
+  tile(Mg, 360, 380, 200, { title: "voice" }); waveline(Mg + 22, 400, 336, 60, P.accent); [["engine", "kokoro · bm_lewis"], ["first audio", "412 ms"], ["effort", "low · fast tier"]].forEach(([k, v], i) => { label(k, Mg + 22, 490 + i * 20); text(v, Mg + 358, 490 + i * 20, 11, P.text, { align: "right", font: MONO }); });
+  tile(W - Mg - 380, 118, 380, 442, { title: "activity" }); activity(W - Mg - 358, 160, 336, 6, { rowH: 40 }); text("142 turns · 2 working", W - Mg - 22, 540, 11, P.muted, { align: "right", font: MONO });
+  const kw = (W - 2 * Mg - 4 * G) / 5; [["2", "agents working", P.green], ["14", "in the team", P.text], ["142", "turns today", P.text], ["3", "need your call", P.accent], ["61%", "disk on the thinkpad", P.muted]].forEach(([v, l, c], i) => kpi(Mg + i * (kw + G), H - Mg - 104, kw, 104, { value: v, label: l, color: c, size: 30 }));
+  grain(.04);
+}
+/* ================================================================ 7. BLUEPRINT */
+function v7() { P = { ...COOL, bg: "#0a1f3a", tile: [220, 235, 255], text: [235, 243, 255], muted: [150, 180, 215], dim: [95, 130, 170], line: [220, 235, 255], accent: [255, 200, 120] }; g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
+  g.strokeStyle = rgba(P.line, .06); for (let x = 0; x < W; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); } for (let y = 0; y < H; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const cx = 560, cy = CY + 10, R = 280; g.strokeStyle = rgba(P.line, .35); g.setLineDash([4, 6]); g.beginPath(); g.arc(cx, cy, R * 1.22, 0, 6.2832); g.stroke(); g.beginPath(); g.moveTo(cx - R * 1.4, cy); g.lineTo(cx + R * 1.4, cy); g.moveTo(cx, cy - R * 1.4); g.lineTo(cx, cy + R * 1.4); g.stroke(); g.setLineDash([]);
+  for (let i = 0; i < 72; i++) { const a = i / 72 * 6.2832, l = i % 6 ? 5 : 12; g.strokeStyle = rgba(P.line, .5); g.beginPath(); g.moveTo(cx + Math.cos(a) * (R * 1.22), cy + Math.sin(a) * (R * 1.22)); g.lineTo(cx + Math.cos(a) * (R * 1.22 + l), cy + Math.sin(a) * (R * 1.22 + l)); g.stroke(); }
+  ring(cx, cy, R, { halo: false, flex: .05 }); constellation(cx, cy, R * .55, { labels: true });
+  const dim = (x1, y1, x2, y2, s) => { g.strokeStyle = rgba(P.accent, .8); g.lineWidth = 1; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); [[x1, y1], [x2, y2]].forEach(([x, y]) => { g.beginPath(); g.moveTo(x - 4, y - 4); g.lineTo(x + 4, y + 4); g.stroke(); }); text(s, (x1 + x2) / 2, (y1 + y2) / 2 - 12, 10, P.accent, { align: "center", font: MONO, ls: 1 }); };
+  dim(cx - R, cy + R + 40, cx + R, cy + R + 40, "Ø 560 · VOICE ENVELOPE 70%"); dim(cx + R + 40, cy - R, cx + R + 40, cy, "R 280");
+  text("FIG. 1 — THE VOICE, WITH THE TEAM INSIDE", cx, cy + R + 76, 10, P.muted, { align: "center", font: MONO, ls: 2 });
+  text(NAME, Mg, 90, 40, P.text, { font: SERIF, style: "italic" }); label("blueprint · sheet 09-02 · rev 2.1", Mg, 124); text("SPEAKING", W - Mg, 90, 14, P.accent, { align: "right", font: MONO, ls: 6 }); text("19:08:29", W - Mg, 116, 10, P.muted, { align: "right", font: MONO, ls: 2 });
+  const x = 1060, w = W - Mg - x; text("FIG. 2 — STRUCTURE", x, 160, 10, P.muted, { font: MONO, ls: 2 });
+  const cmd = { x: x + w / 2, y: 236 }; rr(cmd.x - 70, cmd.y - 22, 140, 44, 4); g.strokeStyle = rgba(P.text, .9); g.stroke(); text(NAME.toUpperCase() + " · COMMAND", cmd.x, cmd.y, 10, P.text, { align: "center", font: MONO, ls: 2 });
+  TEAM.forEach((d, i) => { const bx = x + i * (w / 5) + w / 10, by = 340, on = isOn(d); g.strokeStyle = rgba(P.line, .5); g.beginPath(); g.moveTo(cmd.x, cmd.y + 22); g.lineTo(cmd.x, 290); g.lineTo(bx, 290); g.lineTo(bx, by - 22); g.stroke(); rr(bx - 66, by - 22, 132, 44, 4); g.fillStyle = rgba(P.bg, 1); g.fill(); g.strokeStyle = rgba(on ? P.accent : P.line, on ? .95 : .55); g.stroke(); text(d.name.toUpperCase(), bx, by - 4, 10, P.text, { align: "center", font: MONO, ls: 2 }); text(`${d.workers.length} AGENTS · ${d.tools} TOOLS`, bx, by + 12, 7.5, P.muted, { align: "center", font: MONO, ls: 1 }); d.workers.forEach((wk, j) => { const wy = by + 60 + j * 34, act = ACTIVE.has(wk[0]); g.strokeStyle = rgba(P.line, .4); g.beginPath(); g.moveTo(bx, by + 22); g.lineTo(bx, wy); g.stroke(); rr(bx - 62, wy - 12, 124, 24, 3); g.fillStyle = rgba(P.bg, 1); g.fill(); g.strokeStyle = rgba(act ? P.accent : P.line, act ? .95 : .35); g.stroke(); text(wk[0].replace(d.id + "-", ""), bx, wy, 8.5, act ? P.accent : P.muted, { align: "center", font: MONO }); }); });
+  text("FIG. 3 — READOUTS", x, 520, 10, P.muted, { font: MONO, ls: 2 });
+  [["AGENTS WORKING", "2", P.accent], ["TURNS TODAY", "142"], ["5H WINDOW", "34%"], ["7D WINDOW", "61%"], ["FIRST AUDIO", "412 MS"], ["NEED YOUR CALL", "3", P.accent]].forEach(([k, v, c], i) => { const rx = x + (i % 3) * (w / 3), ry = 566 + Math.floor(i / 3) * 78; g.strokeStyle = rgba(P.line, .35); g.strokeRect(rx + .5, ry + .5, w / 3 - 16, 62); text(v, rx + 16, ry + 26, 26, c || P.text, { weight: "700" }); text(k, rx + 16, ry + 50, 8, P.muted, { font: MONO, ls: 2 }); });
+  text("FIG. 4 — TRANSCRIPT", x, 760, 10, P.muted, { font: MONO, ls: 2 }); text("YOU  " + YOU, x, 792, 12, P.muted, { font: MONO }); text("FLINT  " + SAYS, x, 818, 12, P.text, { font: MONO });
+  g.strokeStyle = rgba(P.line, .5); g.strokeRect(Mg / 2 + .5, Mg / 2 + .5, W - Mg - 1, H - Mg - 1); text("VALENTIN TODOROV · THINKPAD · UBUNTU 24.04 · SCALE 1:1", W - Mg, H - Mg + 8, 8, P.muted, { align: "right", font: MONO, ls: 2 });
+}
+/* ================================================================ 8. WARM GLASS DECK */
+function v8() { bg({ ...WARM, bg: "#150d0c" }); blob(W * .2, H * .3, M * .9, [180, 70, 40], .35); blob(W * .8, H * .7, M * .9, [120, 40, 90], .35); blob(W * .55, H * .1, M * .6, [220, 140, 60], .18); stars(120, [255, 230, 210]);
+  wordmark(Mg, 64, { size: 34, sub: "warm glass · connected" }); statePill(W - Mg, 64, { align: "right" });
+  const tw = W * .55, th = 590, ty = 112; tile(Mg, ty, tw, th, { fill: rgba([255, 240, 230], .05), border: .16 });
+  const cx = Mg + tw / 2, cy = ty + th / 2 - 10; g.save(); rr(Mg, ty, tw, th, 16); g.clip(); ring(cx, cy, 196, { haloColor: [200, 100, 60], haloA: .5 }); g.restore(); constellation(cx, cy, 100, { labels: false }); text(NAME, cx, cy + 246, 36, P.text, { font: SERIF, style: "italic", align: "center" }); label("speaking · 412 ms", cx, cy + 276, { c: P.accent, align: "center" });
+  const rx = Mg + tw + G, rw = W - Mg - rx, kh = (th - G) / 2; [["2", "agents working", P.green, 1, "+1"], ["61%", "7-day window", P.amber, 4]].forEach(([v, l, c, s, d], i) => kpi(rx, ty + i * (kh + G), rw, kh, { value: v, label: l, color: c, spark: s, delta: d, size: 56, labelUnder: true }));
+  const by = ty + th + G, cw = (W - 2 * Mg - 4 * G) / 5; TEAM.forEach((d, i) => { const x = Mg + i * (cw + G), on = isOn(d); tile(x, by, cw, H - Mg - by, { fill: rgba(on ? P.green : [255, 240, 230], on ? .06 : .04), border: on ? .3 : .12 }); dot(x + 24, by + 30, 4, on ? P.green : P.muted, 1, on ? 2.5 : 0); text(d.name, x + 38, by + 30, 15, P.text, { weight: "600" }); text(`${d.workers.length} agents · ${d.tools} tools`, x + cw - 20, by + 30, 10, P.muted, { align: "right" }); spark(x + 22, by + 54, cw - 44, 70, on ? P.green : P.muted, i + 1); d.workers.slice(0, 2).forEach((wk, j) => { const act = ACTIVE.has(wk[0]); text(wk[0], x + 22, by + 150 + j * 22, 11, act ? P.text : P.muted); chip(x + cw - 20, by + 150 + j * 22, act ? "running" : "idle", act ? P.green : P.dim, { align: "right" }); }); });
+  grain(.05);
+}
+/* ================================================================ 9. TIMELINE STAGE */
+function v9() { bg(WARM); stars(160, [255, 225, 205]);
+  const cx = 420, cy = 282, R = 172; ring(cx, cy, R); constellation(cx, cy, R * .5, { labels: false }); text(NAME, cx, cy + R + 46, 36, P.text, { font: SERIF, style: "italic", align: "center" }); label("speaking", cx, cy + R + 74, { c: P.accent, align: "center" });
+  const kx = 760, kw = (W - Mg - kx - 3 * G) / 4; [["2", "agents working", P.green, 1, "+1"], ["142", "turns today", P.text, 2], ["34%", "5-hour window", P.blue, 3], ["61%", "7-day window", P.amber, 4]].forEach(([v, l, c, s, d], i) => kpi(kx + i * (kw + G), 112, kw, 128, { value: v, label: l, color: c, spark: s, delta: d }));
+  tile(kx, 256, W - Mg - kx, 262, { title: "conversation" }); transcript(kx + 22, 298, W - Mg - kx - 44); label("3 things need your call · say “show me” to open them", kx + 22, 490, { c: P.accent });
+  label("flint", Mg, 64); label("timeline · connected", Mg, 84, { c: P.dim }); statePill(W - Mg, 64, { align: "right" });
+  const ty = 594, lx = Mg + 150, lw = W - Mg - lx, lh = 62; tile(Mg, ty - 30, W - 2 * Mg, H - Mg - ty + 30, { title: "the team's day" });
+  for (let h = 0; h <= 24; h += 2) { const x = lx + h / 24 * lw; g.strokeStyle = rgba(P.line, h % 6 ? .05 : .12); g.beginPath(); g.moveTo(x, ty + 10); g.lineTo(x, ty + 5 * lh + 10); g.stroke(); text(String(h).padStart(2, "0") + ":00", x, ty + 5 * lh + 30, 9, P.dim, { align: "center", font: MONO }); }
+  TEAM.forEach((d, i) => { const y = ty + 10 + i * lh, on = isOn(d); text(d.name, Mg + 22, y + lh / 2, 13, on ? P.text : P.muted, { weight: "600" }); seed = 60 + i; for (let k = 0; k < 7; k++) { const a = rnd() * .76, b = a + .02 + rnd() * .07; rr(lx + a * lw, y + 18, (b - a) * lw, lh - 36, 6); g.fillStyle = rgba(P.blue, .3); g.fill(); } if (on) { rr(lx + .78 * lw, y + 16, .06 * lw, lh - 32, 6); g.fillStyle = rgba(P.green, .95); g.shadowColor = rgba(P.green, .8); g.shadowBlur = 14; g.fill(); g.shadowBlur = 0; text(d.workers.find(w => ACTIVE.has(w[0]))[0].replace(d.id + "-", ""), lx + .78 * lw + 10, y + lh / 2, 10, [10, 20, 14], { weight: "700" }); } });
+  const nx = lx + .8 * lw; g.strokeStyle = rgba(P.accent, .9); g.beginPath(); g.moveTo(nx, ty - 4); g.lineTo(nx, ty + 5 * lh + 14); g.stroke(); label("now · 19:08", nx, ty - 16, { c: P.accent, align: "center" }); grain(.04);
+}
+/* ================================================================ 10. FOCUS */
+function v10() { bg(WARM); stars(240, [255, 225, 205]); blob(CX, CY, M * .9, [70, 30, 20], .5);
+  const cx = CX, cy = CY - 70, R = 300; ring(cx, cy, R, { flex: .07 }); constellation(cx, cy, R * .48, { labels: false });
+  text(NAME, cx, cy + R + 84, 84, P.text, { font: SERIF, style: "italic", align: "center" }); text("speaking", cx, cy + R + 140, 14, P.accent, { align: "center", ls: 6 });
+  text(SAYS, cx, cy + R + 190, 18, P.muted, { align: "center", font: SERIF, style: "italic" });
+  [[Mg, 64, "2", "agents working", "left", P.green], [W - Mg, 64, "34% · 61%", "5h · 7d windows", "right", P.amber], [Mg, H - 96, "142", "turns today", "left", P.text], [W - Mg, H - 96, "412 ms", "first audio", "right", P.text]].forEach(([x, y, v, l, al, c]) => { text(v, x, y, 30, c, { align: al, weight: "700" }); label(l, x, y + 30, { align: al }); });
+  const y0 = H - 40, cw = 220; TEAM.forEach((d, i) => { const x = cx + (i - 2) * cw, on = isOn(d); label(d.name, x, y0 - 34, { c: on ? P.text : P.dim, align: "center" }); bar(x - 50, y0 - 18, 100, 3, d.load, on ? P.green : P.dim); d.workers.forEach((w, j) => dot(x + (j - (d.workers.length - 1) / 2) * 14, y0, ACTIVE.has(w[0]) ? 3 : 1.6, ACTIVE.has(w[0]) ? P.green : P.dim, 1, ACTIVE.has(w[0]) ? 2.5 : 0)); });
+  grain(.06); vignette(.5, .5);
+}
+[v1, v2, v3, v4, v5, v6, v7, v8, v9, v10][V - 1]();
+document.title = "ready";
+</script></body></html>

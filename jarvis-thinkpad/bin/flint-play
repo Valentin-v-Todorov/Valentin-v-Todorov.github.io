@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+"""flint-play: play music on this machine with mpv (YouTube through yt-dlp, local files, streams).
+
+  flint-play "eminem lose yourself"            the first YouTube match, audio only
+  flint-play --album "eminem the marshall mathers lp"   the album (a "full album" upload)
+  flint-play --queue "90s hip hop"             ten matches, played in a row
+  flint-play --local "beatles abbey"           files under ~/Music whose path has every word
+  flint-play https://... | /path/song.mp3      a URL (YouTube video or playlist, radio stream) or a file
+  flint-play pause | resume | toggle | stop | next | previous
+  flint-play volume 60 | volume up | volume down | mute
+  flint-play seek +30 | seek -30
+  flint-play status [--json] | what            what is playing
+  flint-play like | dislike                    note the current song in the vault (Flint/Music Taste.md)
+  flint-play taste                             what gets replayed, what gets skipped, the liked and disliked lists
+  flint-play --for focus|morning|dinner|party|sleep|workout|chill|me     a mood (moods live in the taste note)
+  flint-play --selftest                        plays one second of a tone (FLINT_QUIET=1: no sound)
+
+The player runs detached with an IPC socket ($XDG_RUNTIME_DIR/flint-mpv.sock). The voice line's
+ducker talks to the same socket, so the music dips while the agent speaks. Extra music folders:
+FLINT_MUSIC_DIRS="/media/usb/music:/srv/music". Log: ~/.local/state/flint/mpv.log
+"""
+import glob
+import json
+import os
+import shutil
+import socket
+import subprocess
+import sys
+import time
+import wave
+import math
+import struct
+
+SOCK = os.environ.get("FLINT_MPV_SOCK") or os.path.join(os.environ.get("XDG_RUNTIME_DIR") or "/tmp", "flint-mpv.sock")
+if len(SOCK) > 100:                      # a Unix socket path is limited to 107 bytes
+    SOCK = f"/tmp/flint-mpv-{os.getuid()}.sock"
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "flint")
+LOG = os.path.join(STATE, "mpv.log")
+PIDFILE = os.path.join(STATE, "mpv.pid")
+AUDIO_EXT = {".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wav", ".aac", ".wma", ".aiff", ".mp4", ".webm"}
+QUIET = os.environ.get("FLINT_QUIET") == "1"
+MUSIC_LOG = os.path.join(STATE, "music-log.jsonl")
+MOODS = {"focus": "deep focus instrumental music", "morning": "upbeat morning playlist", "dinner": "dinner jazz playlist",
+         "party": "party hits playlist", "sleep": "sleep ambient music", "workout": "workout mix", "chill": "chill lofi beats"}
+
+
+def setup_val(key, default):
+    import re
+    try:
+        for line in open(os.path.expanduser("~/.flint-setup/setup.env")):
+            m = re.match(rf'^{key}="?([^"#]*)"?', line.strip())
+            if m and m.group(1).strip():
+                return os.path.expandvars(m.group(1).strip())
+    except OSError:
+        pass
+    return default
+
+
+TASTE = os.path.join(setup_val("VAULT_DIR", os.path.expanduser("~/Brain")), "Flint", "Music Taste.md")
+
+
+def log_music(action, title=None, extra=None):
+    try:
+        os.makedirs(STATE, exist_ok=True)
+        with open(MUSIC_LOG, "a") as f:
+            f.write(json.dumps({"ts": time.time(), "action": action, "title": title or prop("media-title") or "",
+                                "pos": prop("time-pos"), "duration": prop("duration"), **(extra or {})}) + "\n")
+    except OSError:
+        pass
+
+
+def taste_lists():
+    """-> (liked, disliked, moods) from the vault note."""
+    liked, disliked, moods, section = [], [], dict(MOODS), ""
+    try:
+        for line in open(TASTE):
+            s = line.strip()
+            if s.startswith("## "):
+                section = s[3:].lower(); continue
+            if s.startswith("- ") and section:
+                item = s[2:].strip()
+                if section.startswith("liked"):
+                    liked.append(item)
+                elif section.startswith("disliked"):
+                    disliked.append(item)
+                elif section.startswith("moods") and ":" in item:
+                    k, v = item.split(":", 1); moods[k.strip().lower()] = v.strip()
+    except OSError:
+        pass
+    return liked, disliked, moods
+
+
+def taste_add(section, item):
+    os.makedirs(os.path.dirname(TASTE), exist_ok=True)
+    text = open(TASTE).read() if os.path.exists(TASTE) else "# Music taste\n\n## Liked\n\n## Disliked\n\n## Moods\n"
+    head = f"## {section}"
+    if head not in text:
+        text += f"\n{head}\n"
+    lines = text.split("\n")
+    i = lines.index(head) + 1
+    while i < len(lines) and not lines[i].startswith("## "):
+        i += 1
+    lines.insert(i, f"- {item}")
+    open(TASTE, "w").write("\n".join(lines))
+
+
+def which(name):
+    p = shutil.which(name)
+    if p:
+        return p
+    for d in (os.path.expanduser("~/.local/bin"), "/usr/local/bin", "/usr/bin"):
+        c = os.path.join(d, name)
+        if os.access(c, os.X_OK):
+            return c
+    return None
+
+
+def ipc(cmd, timeout=2.0):
+    """One JSON IPC command to mpv -> (ok, data-or-error)."""
+    if not os.path.exists(SOCK):
+        return False, "not running"
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(timeout)
+    try:
+        s.connect(SOCK)
+        s.sendall((json.dumps({"command": cmd, "request_id": 77}) + "\n").encode())
+        buf = b""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            buf += chunk
+            lines = buf.split(b"\n")
+            buf = lines.pop()
+            for line in lines:
+                try:
+                    msg = json.loads(line)
+                except ValueError:
+                    continue
+                if msg.get("request_id") == 77:
+                    if msg.get("error") == "success":
+                        return True, msg.get("data")
+                    return False, msg.get("error")
+        return False, "timeout"
+    except (OSError, socket.timeout) as e:
+        return False, str(e)
+    finally:
+        s.close()
+
+
+def running():
+    ok, _ = ipc(["get_property", "pid"], timeout=0.8)
+    return ok
+
+
+def prop(name, default=None):
+    ok, v = ipc(["get_property", name], timeout=0.8)
+    return v if ok else default
+
+
+def _our_pid():
+    """The pid of the player this tool started, if that process is still an mpv on our socket."""
+    try:
+        pid = int(open(PIDFILE).read().strip())
+        cmd = open(f"/proc/{pid}/cmdline", "rb").read()
+        if b"mpv" in cmd and SOCK.encode() in cmd:
+            return pid
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def stop_player(wait=3.0):
+    if running():
+        ipc(["quit"], timeout=0.8)
+        t = time.monotonic()
+        while time.monotonic() - t < wait and running():
+            time.sleep(0.1)
+    pid = _our_pid()
+    if pid:
+        for sig in (15, 9):
+            try:
+                os.kill(pid, sig)
+            except OSError:
+                break
+            t = time.monotonic()
+            while time.monotonic() - t < 2 and _our_pid():
+                time.sleep(0.1)
+            if not _our_pid():
+                break
+    for p in (SOCK, PIDFILE):
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
+
+def start(targets, label, extra=()):
+    mpv = which("mpv")
+    if not mpv:
+        sys.exit("mpv is not installed (sudo apt-get install -y mpv)")
+    stop_player()
+    os.makedirs(STATE, exist_ok=True)
+    args = [mpv, "--no-video", "--really-quiet", "--no-terminal", "--force-window=no", "--audio-display=no",
+            f"--input-ipc-server={SOCK}", "--ytdl-format=bestaudio/best", "--volume=70", "--idle=no", "--keep-open=no"]
+    ytdlp = which("yt-dlp")
+    if ytdlp:
+        args.append(f"--script-opts=ytdl_hook-ytdl_path={ytdlp}")
+    if QUIET:
+        args.append("--ao=null")
+    args += list(extra) + list(targets)
+    with open(LOG, "a") as log:
+        log.write(f"\n== {time.strftime('%Y-%m-%d %H:%M:%S')} {label}\n   {' '.join(args)}\n")
+        proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True)
+    with open(PIDFILE, "w") as f:
+        f.write(str(proc.pid))
+    # wait for the socket, then for a real title (a YouTube search takes a few seconds to resolve)
+    t = time.monotonic()
+    came_up = False
+    while time.monotonic() - t < 15 and proc.poll() is None:
+        if running():
+            came_up = True
+            break
+        time.sleep(0.2)
+    title = None
+    while came_up and time.monotonic() - t < 45 and proc.poll() is None:
+        mt = prop("media-title") or ""
+        pos = prop("playback-time")
+        if mt and not mt.startswith("ytsearch") and mt not in targets and (pos is not None):
+            title = mt
+            break
+        time.sleep(0.5)
+    if proc.poll() is not None:
+        if came_up or proc.returncode == 0:
+            print(f"Played to the end already: {label}")
+            return 0
+        tail = ""
+        try:
+            tail = "".join(open(LOG).readlines()[-6:])
+        except OSError:
+            pass
+        sys.exit(f"the player stopped right away ({label}). Log tail:\n{tail}")
+    log_music("play", title or label, {"label": label})
+    if title:
+        print(f"Playing: {title}")
+    else:
+        print(f"Started: {label} (title not available yet; flint-play status in a moment)")
+    return 0
+
+
+def cmd_taste():
+    liked, disliked, _ = taste_lists()
+    plays, skips = {}, {}
+    try:
+        for line in open(MUSIC_LOG):
+            e = json.loads(line)
+            t = e.get("title") or ""
+            if not t or t.startswith("ytsearch"):
+                continue
+            if e["action"] == "play":
+                plays[t] = plays.get(t, 0) + 1
+            elif e["action"] == "skip" and (e.get("pos") or 0) < 45:
+                skips[t] = skips.get(t, 0) + 1
+    except OSError:
+        pass
+    print("liked: " + (", ".join(liked) or "nothing yet"))
+    print("disliked: " + (", ".join(disliked) or "nothing yet"))
+    top = sorted(plays.items(), key=lambda x: -x[1])[:8]
+    print("most played: " + (", ".join(f"{t} ({n}x)" for t, n in top) or "no history yet"))
+    sk = sorted(skips.items(), key=lambda x: -x[1])[:5]
+    print("skipped early: " + (", ".join(f"{t} ({n}x)" for t, n in sk) or "nothing"))
+    return 0
+
+
+def local_files(query):
+    dirs = [os.path.expanduser("~/Music")] + [d for d in os.environ.get("FLINT_MUSIC_DIRS", "").split(":") if d]
+    words = [w.lower() for w in query.split() if w]
+    hits = []
+    for d in dirs:
+        for root, _, files in os.walk(os.path.expanduser(d)):
+            for f in files:
+                p = os.path.join(root, f)
+                if os.path.splitext(f)[1].lower() in AUDIO_EXT and all(w in p.lower() for w in words):
+                    hits.append(p)
+    return sorted(hits)
+
+
+def fmt_t(x):
+    try:
+        x = int(x)
+    except (TypeError, ValueError):
+        return "?"
+    return f"{x // 60}:{x % 60:02d}"
+
+
+def status(as_json=False):
+    if not running():
+        if as_json:
+            print(json.dumps({"running": False}))
+        else:
+            print("Nothing is playing.")
+        return 1
+    d = {"running": True, "title": prop("media-title"), "paused": bool(prop("pause")), "position": prop("time-pos"),
+         "duration": prop("duration"), "volume": prop("volume"), "muted": bool(prop("mute")),
+         "track": (prop("playlist-pos") or 0) + 1, "tracks": prop("playlist-count"), "source": prop("path")}
+    if as_json:
+        print(json.dumps(d))
+    else:
+        state = "Paused" if d["paused"] else "Playing"
+        track = f", track {d['track']} of {d['tracks']}" if (d["tracks"] or 0) > 1 else ""
+        vol = f"{int(d['volume'] or 0)}%" + (" muted" if d["muted"] else "")
+        print(f"{state}: {d['title']} ({fmt_t(d['position'])} / {fmt_t(d['duration'])}, volume {vol}{track})")
+    return 0
+
+
+def need_running():
+    if not running():
+        sys.exit("Nothing is playing.")
+
+
+def selftest():
+    mpv = which("mpv")
+    ytdlp = which("yt-dlp")
+    if not mpv:
+        print("mpv: missing (sudo apt-get install -y mpv)")
+        return 1
+    os.makedirs(STATE, exist_ok=True)
+    tone = os.path.join(STATE, "selftest-tone.wav")
+    with wave.open(tone, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050)
+        w.writeframes(b"".join(struct.pack("<h", int(12000 * math.sin(2 * math.pi * 440 * i / 22050))) for i in range(22050)))
+    args = [mpv, "--no-video", "--really-quiet", "--no-terminal", "--no-config", "--length=1", tone]
+    if QUIET:
+        args.insert(1, "--ao=null")
+    r = subprocess.run(args, capture_output=True, text=True, timeout=30)
+    ver = subprocess.run([mpv, "--version"], capture_output=True, text=True).stdout.splitlines()[:1]
+    print(f"mpv: {'plays' if r.returncode == 0 else 'FAILED rc=' + str(r.returncode) + ' ' + r.stderr.strip()[:200]} ({ver[0] if ver else '?'})")
+    if ytdlp:
+        v = subprocess.run([ytdlp, "--version"], capture_output=True, text=True).stdout.strip()
+        print(f"yt-dlp: {v} ({ytdlp})")
+    else:
+        print("yt-dlp: missing (uv tool install yt-dlp)")
+    return 0 if r.returncode == 0 and ytdlp else 1
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0
+    a = argv[0]
+    rest = argv[1:]
+    if a == "--selftest":
+        return selftest()
+    if a in ("status", "what"):
+        return status("--json" in rest)
+    if a == "stop":
+        if running():
+            log_music("stop")
+        stop_player()
+        print("Stopped.")
+        return 0
+    if a in ("like", "dislike"):
+        need_running()
+        t = prop("media-title") or ""
+        taste_add("Liked" if a == "like" else "Disliked", t)
+        log_music(a, t)
+        print(f"{a}d: {t} (noted in {os.path.basename(TASTE)})")
+        return 0
+    if a == "taste":
+        return cmd_taste()
+    if a == "--for":
+        import random
+        mood = (rest[0] if rest else "focus").lower()
+        liked, disliked, moods = taste_lists()
+        if mood == "me":
+            picks = random.sample(liked, min(3, len(liked))) if liked else []
+            if not picks:
+                sys.exit("nothing in the liked list yet (flint-play like while something plays)")
+            return start([f"ytsearch3:{p}" for p in picks], "from the liked list: " + ", ".join(picks))
+        q = moods.get(mood)
+        if not q:
+            sys.exit(f"unknown mood {mood!r}; known: {', '.join(sorted(moods))}, me")
+        return start([f"ytsearch5:{q}"], f"{mood}: {q}")
+    if a in ("pause", "resume", "toggle"):
+        need_running()
+        ipc(["set_property", "pause", True] if a == "pause" else ["set_property", "pause", False] if a == "resume" else ["cycle", "pause"])
+        return status()
+    if a in ("next", "previous", "prev"):
+        need_running()
+        if a == "next":
+            log_music("skip")
+        ok, err = ipc(["playlist-next" if a == "next" else "playlist-prev", "weak"])
+        if not ok:
+            sys.exit(f"cannot skip: {err}")
+        time.sleep(1.5)
+        return status()
+    if a == "volume":
+        need_running()
+        if not rest:
+            print(f"volume {int(prop('volume') or 0)}%")
+            return 0
+        v = prop("volume") or 0
+        want = v + 10 if rest[0] == "up" else v - 10 if rest[0] == "down" else float(rest[0].rstrip("%"))
+        want = max(0, min(130, want))
+        ipc(["set_property", "volume", want])
+        print(f"volume {int(want)}%")
+        return 0
+    if a == "mute":
+        need_running()
+        ipc(["cycle", "mute"])
+        return status()
+    if a == "seek":
+        need_running()
+        ipc(["seek", float(rest[0]) if rest else 30, "relative"])
+        return status()
+    if a == "--album":
+        q = " ".join(rest)
+        if not q:
+            sys.exit("--album needs a query")
+        return start([f"ytsearch1:{q} full album"], f"album: {q}")
+    if a == "--queue":
+        q = " ".join(rest)
+        if not q:
+            sys.exit("--queue needs a query")
+        return start([f"ytsearch10:{q}"], f"queue: {q}")
+    if a == "--local":
+        q = " ".join(rest)
+        hits = local_files(q)
+        if not hits:
+            sys.exit(f"no local file matches {q!r} under ~/Music" + (" and FLINT_MUSIC_DIRS" if os.environ.get("FLINT_MUSIC_DIRS") else ""))
+        print(f"{len(hits)} file(s)")
+        return start(hits, f"local: {q}")
+    q = " ".join(argv)
+    if q.startswith(("http://", "https://")) or os.path.exists(os.path.expanduser(q)):
+        return start([os.path.expanduser(q)], q)
+    if not which("yt-dlp"):
+        sys.exit("yt-dlp is not installed (uv tool install yt-dlp), so YouTube search is off; a URL or a local file still works")
+    return start([f"ytsearch1:{q}"], f"search: {q}")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)

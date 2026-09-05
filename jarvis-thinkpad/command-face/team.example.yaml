@@ -1,0 +1,131 @@
+# team.yaml: the roster of Flint's team. Single source of truth.
+#   uv run ~/my-agent/bin/team-sync.py            -> faces/command/team.json (the picture)
+#   uv run ~/my-agent/bin/team-sync.py --agents   -> creates missing .claude/agents/<dept>/<name>.md
+# Rules: worker names are lowercase-with-hyphens and unique; one worker owns one Job;
+# a Job is a note at "<department folder>/Jobs/<job>.md" in the vault.
+operator: Valentin
+command: flint
+
+departments:
+  - id: comms
+    name: Comms
+    lead: comms-lead
+    folder: "02 - Business/Comms"
+    workers:
+      - name: comms-inbox-triage
+        job: Triage the inbox
+        description: "Sorts mail into reply-today, this-week, FYI and spam, and writes the triage note."
+        tools: [gmail, vault]
+      - name: comms-reply-drafter
+        job: Draft replies
+        description: "Drafts replies in Valentin's voice into 00 - Inbox/Drafts."
+        tools: [vault]
+      - name: comms-crm-pipeline
+        job: Keep the pipeline current
+        description: "Moves leads between stages and keeps the pipeline note true."
+        tools: [vault, sheets]
+
+  - id: finance
+    name: Finance
+    lead: finance-lead
+    folder: "02 - Business/Finance"
+    workers:
+      - name: finance-ledger
+        job: Keep the ledger
+        description: "Imports CSV exports and keeps Ledger.md the single source of truth."
+        tools: [vault, csv]
+      - name: finance-invoices
+        job: Chase and file invoices
+        description: "Tracks open invoices and drafts reminders."
+        tools: [vault, gmail]
+      - name: finance-weekly-review
+        job: Write the weekly finance review
+        description: "One note per week: income, expenses by category, anomalies."
+        tools: [vault]
+
+  - id: content
+    name: Content
+    lead: content-lead
+    folder: "02 - Business/Content"
+    workers:
+      - name: content-writer
+        job: Write posts and emails
+        description: "Drafts with the jaredrhod-marketing skill loaded."
+        tools: [marketing-skill, vault]
+      - name: content-scheduler
+        job: Keep the content calendar
+        description: "Plans and schedules what goes out when."
+        tools: [vault, calendar]
+      - name: content-lead-magnets
+        job: Build lead magnets
+        description: "Opt-in offers and the pages behind them."
+        tools: [marketing-skill, vault, browser]
+
+  - id: knowledge
+    name: Knowledge
+    lead: knowledge-lead
+    folder: "06 - Resources"
+    workers:
+      - name: knowledge-librarian
+        job: Keep the vault healthy
+        description: "Frontmatter, folder indexes, broken links, archive candidates."
+        tools: [vault, obsidian]
+      - name: knowledge-researcher
+        job: Research a question
+        description: "Web research with sources and a recommendation."
+        tools: [web-search, web-fetch, vault]
+
+  - id: automations
+    name: Automations
+    lead: automations-lead
+    folder: "05 - Home and Machine"
+    workers:
+      - name: automations-home
+        job: Run the house
+        description: "Lights, climate, media and Home Assistant automations."
+        tools: [home-assistant, vault]
+      - name: automations-machine
+        job: Keep the ThinkPad healthy
+        description: "Disk, updates, Docker, services, backups, the Flint stack."
+        tools: [bash, docker, systemd, vault]
+      - name: automations-timers
+        job: Own the scheduled jobs
+        description: "The systemd timers that run the team on their own, and their logs."
+        tools: [systemd, vault]
+
+# Scheduled work (systemd user timers made by bin/team-timers.py; edit, then re-run it with --apply).
+# agent "" = Flint himself with the whole vault; or a subagent name from above. Keep max_turns modest:
+# every run counts against the plan's usage windows. Set enabled: false to pause a job.
+schedules:
+  - name: morning-brief
+    description: Morning brief
+    on_calendar: "Mon..Fri 07:00"
+    agent: ""
+    prompt: "Run the morning routine: read Active Priorities and yesterday's daily note; today's calendar (the Calendar connector if claude mcp list shows it connected, else flint-calendar today); the unread mail (the Gmail connector, else flint-mail unread 10) triaged into needs-a-reply / just-know / ignore; the news in six lines (flint-news --brief); flint-health.sh --brief and flint-notify --log 20 for what happened overnight (backups, guard, sounds). Ask comms-lead for the inbox triage and automations-machine for a one-line machine report. Write '00 - Inbox/Morning Brief.md' with today's priorities, the calendar, the triage, the news and the report, then say it in under two minutes with flint-say. Finish with: flint-notify 'Flint' 'Morning brief ready'."
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
+    max_turns: 60
+    enabled: true
+  - name: finance-weekly
+    description: Weekly finance review
+    on_calendar: "Fri 18:00"
+    agent: finance-lead
+    prompt: "Produce this week's finance review from the Finance folder and update the ledger note. Write the result to the Finance folder and add one line to today's daily note."
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
+    max_turns: 40
+    enabled: true
+  - name: vault-hygiene
+    description: Vault hygiene
+    on_calendar: "Sun 20:00"
+    agent: knowledge-librarian
+    prompt: "Check every folder index in the vault against its folder, fix broken wikilinks, archive notes whose status is done, and write a short hygiene report to the Knowledge folder."
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
+    max_turns: 40
+    enabled: true
+  - name: nightly-doctor
+    description: Nightly self-check and repair of the machine and the stack
+    on_calendar: "*-*-* 03:30"
+    agent: ""
+    prompt: "You are the mechanic tonight. Run bin/flint-health.sh, then bin/flint-doctor.sh (the installer's own checks; a few minutes, silent). For every failure: read the TROUBLESHOOTING.md of the piece it belongs to (backtalk, ai-visualizer, barehands, ai-memory-vault) and the installer's logs in ~/.flint-setup/logs, fix the cause, and run the failing check again (bin/flint-doctor.sh --only NN redoes one stage). Then append a dated section to the note 'Doctor Log.md' in the vault's ThinkPad project folder (create it if missing) saying what was checked, what you fixed and what you could not, and finish with: notify-send 'Flint' '<one line>'. Never reboot, never change a config you were not asked about, never touch ~/.config/flint."
+    permission_mode: ""           # empty = the machine's default (auto); or acceptEdits | bypassPermissions
+    max_turns: 80
+    enabled: true

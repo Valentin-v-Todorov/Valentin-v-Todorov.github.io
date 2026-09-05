@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# flint-say: speak a line in the agent's own voice, here or on any speaker in the house.
+#
+#   flint-say "Dinner is ready."                      the ThinkPad's speakers (Kokoro, the configured voice)
+#   flint-say --to media_player.kitchen "Dinner!"     a Home Assistant speaker (intercom): the line is synthesised
+#                                                     here, put in HA's www folder and played on the device
+#   flint-say --to all "Everyone, dinner!"            every media player HA knows
+#   flint-say --players                               list HA media players and their state
+#   flint-say --file out.wav "text"                   write the audio instead of playing it (voice notes)
+#   flint-say --engine ha --to media_player.x "text"  use HA's own TTS entity instead of Kokoro
+#
+# Falls back to espeak-ng when Kokoro is not available. Reads the voice and speed from backtalk.json.
+set -uo pipefail
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] && { set -a; . "$f"; set +a; }; done
+agent_home() {
+  if [ -n "${FLINT_AGENT_HOME:-}" ]; then echo "$FLINT_AGENT_HOME"; return; fi
+  local d; d="$(cd "$(dirname "$(readlink -f "$0")")/.." 2>/dev/null && pwd)" || d=""
+  if [ -n "$d" ] && [ -d "$d/backtalk" ]; then echo "$d"; return; fi
+  echo "$HOME/my-agent"
+}
+AH="$(agent_home)"; BT="$AH/backtalk"; PY="$BT/.venv/bin/python"; CFG="$BT/backtalk.json"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/flint"; mkdir -p "$STATE"
+cfgv() { python3 -c "import json;print(json.load(open('$CFG')).get('$1','$2'))" 2>/dev/null || echo "$2"; }
+
+TO=""; OUT=""; ENGINE="kokoro"; TEXT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --to) TO="$2"; shift 2 ;;
+    --file) OUT="$2"; shift 2 ;;
+    --engine) ENGINE="$2"; shift 2 ;;
+    --players)
+      [ -n "${HA_URL:-}" ] && [ -n "${HA_TOKEN:-}" ] || { echo "no Home Assistant (HA_URL/HA_TOKEN in ~/.config/flint/ha.env)" >&2; exit 1; }
+      curl -fsS -m 10 -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/states" | python3 -c '
+import json, sys
+for s in json.load(sys.stdin):
+    if s["entity_id"].startswith("media_player."):
+        print(f"{s[\"entity_id\"]:40} {s[\"state\"]:10} {s[\"attributes\"].get(\"friendly_name\", \"\")}")'
+      exit $? ;;
+    -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
+    *) TEXT="${TEXT:+$TEXT }$1"; shift ;;
+  esac
+done
+[ -n "$TEXT" ] || { echo "usage: flint-say [--to media_player.x|all] [--file out.wav] \"text\"" >&2; exit 1; }
+
+synth() {  # synth "text" out.wav  -> 0 when a wav was written
+  local text="$1" out="$2"
+  # Cyrillic: the second-language voice (Piper), because Kokoro has no Bulgarian
+  if [ -x "$PY" ] && [ "$ENGINE" != "espeak" ] && printf '%s' "$text" | grep -q '[А-Яа-яЁёЀ-ӿ]'; then
+    ( cd "$BT" && timeout 120 "$PY" - "$text" "$out" "$(cfgv piper_voice "$HOME/.local/share/flint/models/piper/bg_BG-dimitar-medium.onnx")" "$(cfgv speed 1.0)" <<'PY' 2>/dev/null
+import os, sys, wave
+import numpy as np
+from piper import PiperVoice, SynthesisConfig
+text, out, model, speed = sys.argv[1], sys.argv[2], os.path.expanduser(sys.argv[3]), float(sys.argv[4] or 1.0)
+v = PiperVoice.load(model)
+chunks = list(v.synthesize(text, syn_config=SynthesisConfig(length_scale=1.0 / max(0.5, min(2.0, speed)))))
+pcm = np.concatenate([np.frombuffer(c.audio_int16_bytes, dtype=np.int16) for c in chunks])
+with wave.open(out, "wb") as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(chunks[0].sample_rate); w.writeframes(pcm.tobytes())
+PY
+    ) && [ -s "$out" ] && return 0
+    espeak-ng -v bg -w "$out" -s 150 "$text" 2>/dev/null && [ -s "$out" ] && return 0
+  fi
+  if [ -x "$PY" ] && [ "$ENGINE" != "espeak" ]; then
+    ( cd "$BT" && timeout 120 "$PY" - "$(cfgv voice bm_lewis)" "$text" "$out" "$(cfgv speed 1.0)" <<'PY' 2>/dev/null
+import sys, wave, warnings; warnings.filterwarnings("ignore")
+import numpy as np
+from kokoro import KPipeline
+voice, text, out, speed = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4] or 1.0)
+pipe = KPipeline(lang_code=voice[0] if voice[0] in "abefhijpz" else "a", repo_id="hexgrad/Kokoro-82M")
+chunks = [np.asarray(a, dtype=np.float32) for _, _, a in pipe(text, voice=voice, speed=speed)]
+pcm = (np.concatenate(chunks) * 32767).astype(np.int16)
+with wave.open(out, "wb") as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(pcm.tobytes())
+PY
+    ) && [ -s "$out" ] && return 0
+  fi
+  espeak-ng -w "$out" -s 150 "$text" 2>/dev/null && [ -s "$out" ]
+}
+
+# ---- a file
+if [ -n "$OUT" ]; then synth "$TEXT" "$OUT" && echo "$OUT" || { echo "could not synthesise" >&2; exit 1; }; exit 0; fi
+
+# ---- the house (Home Assistant)
+if [ -n "$TO" ]; then
+  [ -n "${HA_URL:-}" ] && [ -n "${HA_TOKEN:-}" ] || { echo "no Home Assistant (HA_URL/HA_TOKEN in ~/.config/flint/ha.env)" >&2; exit 1; }
+  hapost() { curl -fsS -m 15 -o /dev/null -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json" -X POST "$HA_URL/api/services/$1" -d "$2"; }
+  players="$TO"
+  if [ "$TO" = all ]; then
+    players="$(curl -fsS -m 10 -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/states" | python3 -c 'import json,sys; print(",".join(s["entity_id"] for s in json.load(sys.stdin) if s["entity_id"].startswith("media_player.") and s["state"] != "unavailable"))')"
+    [ -n "$players" ] || { echo "Home Assistant has no media players" >&2; exit 1; }
+  fi
+  www="$HOME/homeassistant/config/www/flint"
+  if [ "$ENGINE" != ha ] && mkdir -p "$www" 2>/dev/null && synth "$TEXT" "$www/say-$$.wav"; then
+    ip="${HA_LAN_URL:-http://$(hostname -I 2>/dev/null | awk '{print $1}'):8123}"
+    ok=0
+    for p in ${players//,/ }; do
+      hapost media_player/play_media "{\"entity_id\":\"$p\",\"media_content_id\":\"$ip/local/flint/say-$$.wav\",\"media_content_type\":\"music\"}" && ok=1
+    done
+    ( sleep 120; rm -f "$www/say-$$.wav" ) >/dev/null 2>&1 &
+    [ "$ok" = 1 ] && { echo "said on $players (my voice)"; exit 0; }
+    echo "play_media failed; trying Home Assistant's own TTS" >&2
+  fi
+  tts="$(curl -fsS -m 10 -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/states" | python3 -c 'import json,sys; print(next((s["entity_id"] for s in json.load(sys.stdin) if s["entity_id"].startswith("tts.")), ""))')"
+  [ -n "$tts" ] || { echo "Home Assistant has no TTS entity: add one (Settings > Devices & services > Add > Google Translate text-to-speech, free)" >&2; exit 1; }
+  msg="$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$TEXT")"
+  hapost tts/speak "{\"entity_id\":\"$tts\",\"media_player_entity_id\":\"$players\",\"message\":$msg}" && { echo "said on $players ($tts)"; exit 0; }
+  echo "Home Assistant refused tts.speak for $players" >&2; exit 1
+fi
+
+# ---- here
+wav="$STATE/say-$$.wav"
+if synth "$TEXT" "$wav"; then
+  if [ "${FLINT_QUIET:-0}" != 1 ]; then paplay "$wav" 2>/dev/null || aplay -q "$wav" 2>/dev/null || mpv --no-video --really-quiet "$wav" 2>/dev/null || echo "(no audio output reachable; wav at $wav)"; fi
+  rm -f "$wav"
+else
+  echo "could not synthesise (no Kokoro in $BT and no espeak-ng)" >&2; exit 1
+fi

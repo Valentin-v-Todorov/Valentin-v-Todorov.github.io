@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# flint-notify: one door for every alert. Screen, Telegram, the phone through Home Assistant, the voice.
+#
+#   flint-notify "Doorbell" "Someone is at the door"            screen + Telegram + HA push, whichever exist
+#   flint-notify "Desk" "Here is the desk" --photo /path.jpg    with a picture (Telegram)
+#   flint-notify "Timer" "The pasta" --say                      also spoken through the speakers
+#   flint-notify "Guard" "New device on the wifi" --quiet       log + Telegram + push only, no screen pop-up
+#   flint-notify --log [n]                                      the last n events
+#
+# Every event lands in ~/.local/state/flint/events.jsonl, which the agent reads when asked what happened.
+# Telegram: ~/.config/flint/telegram.env (flint-telegram setup). Phone push: HA_NOTIFY=notify.mobile_app_<phone>
+# in ~/.config/flint/ha.env (the Home Assistant Companion app on the phone).
+set -uo pipefail
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+for f in "$HOME"/.config/flint/*.env; do [ -f "$f" ] && { set -a; . "$f"; set +a; }; done
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/flint"; mkdir -p "$STATE"
+EVENTS="$STATE/events.jsonl"
+
+if [ "${1:-}" = "--log" ]; then tail -n "${2:-20}" "$EVENTS" 2>/dev/null | python3 -c '
+import json, sys, datetime
+for line in sys.stdin:
+    try: e = json.loads(line)
+    except ValueError: continue
+    print(datetime.datetime.fromtimestamp(e["ts"]).strftime("%Y-%m-%d %H:%M"), e["title"] + ":", e["message"])'; exit 0; fi
+
+TITLE="${1:-Flint}"; MSG="${2:-}"; shift 2 2>/dev/null || shift $#
+PHOTO=""; SAY=0; QUIET=0
+while [ $# -gt 0 ]; do case "$1" in --photo) PHOTO="$2"; shift 2 ;; --say) SAY=1; shift ;; --quiet) QUIET=1; shift ;; *) shift ;; esac; done
+[ -n "$MSG" ] || { echo "usage: flint-notify \"title\" \"message\" [--photo file] [--say] [--quiet]" >&2; exit 1; }
+
+python3 -c 'import json,sys,time; print(json.dumps({"ts": time.time(), "title": sys.argv[1], "message": sys.argv[2], "photo": sys.argv[3]}))' "$TITLE" "$MSG" "$PHOTO" >> "$EVENTS"
+sent=()
+if [ "$QUIET" = 0 ] && [ -n "${DISPLAY:-}" ] && command -v notify-send >/dev/null; then notify-send "$TITLE" "$MSG" 2>/dev/null && sent+=(screen); fi
+if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && command -v flint-telegram >/dev/null; then
+  if [ -n "$PHOTO" ] && [ -f "$PHOTO" ]; then flint-telegram send "$TITLE: $MSG" --photo "$PHOTO" >/dev/null 2>&1 && sent+=(telegram)
+  else flint-telegram send "$TITLE: $MSG" >/dev/null 2>&1 && sent+=(telegram); fi
+fi
+if [ -n "${HA_NOTIFY:-}" ] && [ -n "${HA_URL:-}" ] && [ -n "${HA_TOKEN:-}" ]; then
+  body="$(python3 -c 'import json,sys; print(json.dumps({"title": sys.argv[1], "message": sys.argv[2]}))' "$TITLE" "$MSG")"
+  curl -fsS -m 10 -o /dev/null -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json" -X POST "$HA_URL/api/services/${HA_NOTIFY/./\/}" -d "$body" 2>/dev/null && sent+=(phone)
+fi
+if [ "$SAY" = 1 ] && command -v flint-say >/dev/null; then flint-say "$MSG" >/dev/null 2>&1 && sent+=(voice); fi
+echo "notified: ${sent[*]:-log only}"

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!--
+Mockup lab: five design directions for Flint's screen, rendered by real canvas code so the
+chosen one can become a face. Open lab.html?v=1..5 (add &t=seconds to change the frame).
+Every variant draws the same situation: Flint SPEAKING, envelope 0.7, two agents working.
+-->
+<html lang="en"><head><meta charset="UTF-8"><title>Flint face mockups</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box} html,body{width:100%;height:100%;background:#000;overflow:hidden}
+  body{font-family:"SF Mono",Menlo,Consolas,monospace;color:#dfeeff}
+  canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+</style></head><body><canvas id="c"></canvas>
+<script>
+"use strict";
+const Q = new URLSearchParams(location.search), V = +(Q.get("v") || 1), T = +(Q.get("t") || 3.2);
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+const W = innerWidth, H = innerHeight, DPR = Math.min(2, devicePixelRatio || 1);
+cv.width = W * DPR; cv.height = H * DPR; g.setTransform(DPR, 0, 0, DPR, 0, 0);
+const CX = W / 2, CY = H / 2, M = Math.min(W, H);
+const NAME = Q.get("name") || "FLINT", STATE = "SPEAKING", ENV = 0.7;
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+const SAMPLES = Array.from({ length: 64 }, (_, i) => Math.abs(Math.sin(i * 0.55 + T * 9) * 0.6 + Math.sin(i * 1.7 - T * 13) * 0.4) * (0.35 + 0.65 * Math.abs(Math.sin(T * 2.6 + i * 0.1))));
+const TEAM = {
+  command: "FLINT",
+  departments: [
+    { id: "comms", name: "Comms", workers: ["comms-inbox-triage", "comms-reply-drafter", "comms-crm-pipeline"], tools: ["gmail", "vault", "sheets"] },
+    { id: "finance", name: "Finance", workers: ["finance-ledger", "finance-invoices", "finance-weekly-review"], tools: ["vault", "csv", "gmail"] },
+    { id: "content", name: "Content", workers: ["content-writer", "content-scheduler", "content-lead-magnets"], tools: ["marketing-skill", "vault", "calendar", "browser"] },
+    { id: "knowledge", name: "Knowledge", workers: ["knowledge-librarian", "knowledge-researcher"], tools: ["vault", "obsidian", "web-search"] },
+    { id: "automations", name: "Automations", workers: ["automations-home", "automations-machine", "automations-timers"], tools: ["home-assistant", "bash", "docker", "systemd"] },
+  ],
+};
+const ACTIVE = new Set(["comms-inbox-triage", "finance-ledger"]);
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const glows = {};
+function sprite(c, s = 64) { const k = c.join() + s; if (glows[k]) return glows[k]; const o = document.createElement("canvas"); o.width = o.height = s; const x = o.getContext("2d"); const gr = x.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2); gr.addColorStop(0, rgba(c, 1)); gr.addColorStop(.3, rgba(c, .5)); gr.addColorStop(1, rgba(c, 0)); x.fillStyle = gr; x.fillRect(0, 0, s, s); return glows[k] = o; }
+function dot(x, y, r, c, a = 1, halo = 2.4) { if (r > 1.2) { g.globalAlpha = a; g.drawImage(sprite(c), x - r * halo, y - r * halo, r * halo * 2, r * halo * 2); g.globalAlpha = 1; } g.fillStyle = rgba(c, Math.min(1, a * 1.2)); g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill(); }
+function fib(n, j = 0) { const p = [], ga = Math.PI * (3 - Math.sqrt(5)); for (let i = 0; i < n; i++) { const y = 1 - i / (n - 1) * 2, r = Math.sqrt(1 - y * y), a = ga * i + j * Math.sin(i * 12.9898) * .6; p.push([Math.cos(a) * r, y, Math.sin(a) * r]); } return p; }
+function rot(p, ay, ax) { const cy = Math.cos(ay), sy = Math.sin(ay), cx = Math.cos(ax), sx = Math.sin(ax); const x = p[0] * cy + p[2] * sy, z = -p[0] * sy + p[2] * cy; return [x, p[1] * cx - z * sx, p[1] * sx + z * cx]; }
+function proj(p, R, ox = CX, oy = CY) { const f = 1 / (1 - p[2] * .28); return { x: ox + p[0] * R * f, y: oy + p[1] * R * f, f, d: (p[2] + 1) / 2 }; }
+function knn(P, k) { const E = [], seen = new Set(); P.forEach((p, i) => { P.map((q, j) => [Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]), j]).sort((a, b) => a[0] - b[0]).slice(1, k + 1).forEach(([, j]) => { const key = i < j ? i + ":" + j : j + ":" + i; if (!seen.has(key)) { seen.add(key); E.push([i, j]); } }); }); return E; }
+function text(s, x, y, size, c, a = 1, align = "left", ls = 0) { g.font = `${size}px "SF Mono",Menlo,Consolas,monospace`; g.textAlign = align; g.textBaseline = "middle"; g.fillStyle = rgba(c, a); if (ls) { const chars = [...s]; let w = chars.reduce((t, ch) => t + g.measureText(ch).width + ls, 0); let x0 = align === "center" ? x - w / 2 : align === "right" ? x - w : x; g.textAlign = "left"; for (const ch of chars) { g.fillText(ch, x0, y); x0 += g.measureText(ch).width + ls; } } else g.fillText(s, x, y); }
+function stars(n, c, maxr = 1.6) { for (let i = 0; i < n; i++) { const x = rnd() * W, y = rnd() * H, r = rnd() * maxr; dot(x, y, r, c, .25 + rnd() * .6, 1.6); } }
+function corners(c, a = .5) { g.strokeStyle = rgba(c, a); g.lineWidth = 1; const s = 34, m = 20; [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]].forEach(([x, y, dx, dy]) => { g.beginPath(); g.moveTo(x, y + dy * s); g.lineTo(x, y); g.lineTo(x + dx * s, y); g.stroke(); }); }
+const CYAN = [57, 198, 255], BLUE = [64, 140, 255], WHITE = [230, 242, 255], GREEN = [61, 220, 132], AMBER = [255, 196, 107], TEAL = [40, 220, 200], VIOLET = [150, 90, 255], MAGENTA = [255, 80, 200], GOLD = [255, 214, 120], DIM = [70, 104, 138];
+g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+
+/* ================================================================ 1. NEBULA CORE */
+function v1() {
+  const C = CYAN;
+  // nebula wash
+  for (const [x, y, r, c, a] of [[CX - M * .3, CY - M * .2, M * .7, [30, 60, 160], .35], [CX + M * .35, CY + M * .25, M * .6, [90, 40, 160], .25], [CX, CY, M * .5, [20, 90, 140], .3]]) {
+    const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgba(c, a)); gr.addColorStop(1, rgba(c, 0)); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  }
+  stars(900, WHITE, 1.3); stars(60, BLUE, 2.8);
+  const Ro = M * .34;
+  // waveform ring
+  for (let i = 0; i < 128; i++) { const a = i / 128 * 6.2832 - 1.5708, s = SAMPLES[i % 64] * ENV, r0 = Ro * 1.1, len = 6 + s * 48; g.strokeStyle = rgba(i % 2 ? C : WHITE, .25 + s * .6); g.lineWidth = 2; g.beginPath(); g.moveTo(CX + Math.cos(a) * r0, CY + Math.sin(a) * r0); g.lineTo(CX + Math.cos(a) * (r0 + len), CY + Math.sin(a) * (r0 + len)); g.stroke(); }
+  // orbital rings with ticks and satellites
+  for (const [rx, tilt, spd, c] of [[Ro * 1.32, .35, .7, C], [Ro * 1.5, -.55, -.45, VIOLET]]) {
+    g.save(); g.translate(CX, CY); g.rotate(tilt); g.strokeStyle = rgba(c, .35); g.lineWidth = 1; g.beginPath(); g.ellipse(0, 0, rx, rx * .32, 0, 0, 6.2832); g.stroke();
+    for (let i = 0; i < 72; i++) { const a = i / 72 * 6.2832, l = i % 6 ? 3 : 8; g.strokeStyle = rgba(c, .5); g.beginPath(); g.moveTo(Math.cos(a) * rx, Math.sin(a) * rx * .32); g.lineTo(Math.cos(a) * (rx + l), Math.sin(a) * (rx + l) * .32); g.stroke(); }
+    const a = T * spd; dot(Math.cos(a) * rx, Math.sin(a) * rx * .32, 3.5, WHITE, 1); g.restore();
+  }
+  // outer wireframe with displaced vertices, plus an inner shell
+  for (const [n, R, k, ay, ax, base] of [[96, Ro, 4, T * .11, .42, .45], [40, Ro * .62, 3, -T * .2, .9, .2]]) {
+    const P = fib(n, .25).map((p, i) => { const d = 1 + .14 * ENV * SAMPLES[i % 64]; return proj(rot([p[0] * d, p[1] * d, p[2] * d], ay, ax), R); });
+    for (const [i, j] of knn(fib(n, .25), k)) { const a = base * (.25 + .75 * Math.min(P[i].d, P[j].d)); g.strokeStyle = rgba(C, a); g.lineWidth = R === Ro ? 1.1 : .8; g.beginPath(); g.moveTo(P[i].x, P[i].y); g.lineTo(P[j].x, P[j].y); g.stroke(); }
+    if (R === Ro) P.forEach((p, i) => dot(p.x, p.y, (1.5 + 2.6 * p.d + ENV * SAMPLES[i % 64] * 3) * p.f, p.d > .6 ? WHITE : C, .4 + .6 * p.d));
+  }
+  // core: dense particles, nucleus, leads with labels
+  const Rc = Ro * .36;
+  fib(700, .9).forEach((p, i) => { const q = proj(rot(p, -T * .15, .35), Rc * (.92 + rnd() * .1)); dot(q.x, q.y, (.5 + .9 * q.d) * q.f, C, .2 + .55 * q.d, 1.5); });
+  { const gr = g.createRadialGradient(CX, CY, 0, CX, CY, Rc * .9); gr.addColorStop(0, rgba(GREEN, .55)); gr.addColorStop(.4, rgba(C, .18)); gr.addColorStop(1, rgba(C, 0)); g.fillStyle = gr; g.beginPath(); g.arc(CX, CY, Rc * .9, 0, 6.2832); g.fill(); }
+  fib(80, 1.3).forEach(p => { const q = proj(rot(p, T * .3, .4), Rc * .3 * (.4 + rnd() * .6)); dot(q.x, q.y, 1 + 1.6 * q.d, WHITE, .5 + .5 * q.d); });
+  TEAM.departments.forEach((d, i) => { const a = -1.5708 + i / 5 * 6.2832, x = CX + Math.cos(a) * Rc * .72, y = CY + Math.sin(a) * Rc * .72; const on = d.workers.some(w => ACTIVE.has(w)); dot(x, y, 4, on ? GREEN : WHITE, 1); g.strokeStyle = rgba(on ? GREEN : C, .6); g.beginPath(); g.arc(x, y, 8, 0, 6.2832); g.stroke(); text(d.name.toUpperCase(), x, y + (Math.sin(a) < 0 ? -16 : 16), 10, on ? GREEN : C, .9, "center", 1.5); d.workers.forEach((w, j) => { const b = a + (j - 1) * .35, wx = x + Math.cos(b) * 20, wy = y + Math.sin(b) * 20; dot(wx, wy, ACTIVE.has(w) ? 2.6 : 1.6, ACTIVE.has(w) ? GREEN : C, .9); }); });
+  // HUD
+  corners(C, .5);
+  text(NAME.split("").join(".") + ".", 56, 46, 22, WHITE, 1, "left", 3); text("THE CORE  ·  CONNECTED  ·  NEURAL LINK", 56, 74, 10, DIM, 1, "left", 2);
+  text(STATE, W - 56, 46, 18, WHITE, 1, "right", 5); text("19:08:29   ·   5H 34%   7D 61%", W - 56, 74, 10, DIM, 1, "right", 2);
+  g.strokeStyle = rgba(C, .8); g.lineWidth = 1.5; g.beginPath(); SAMPLES.forEach((s, i) => { const x = 56 + i / 63 * 380, y = H - 56 - s * ENV * 34; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  text("AUDIO OUT", 56, H - 104, 9, DIM, 1, "left", 2); text("TEAM  5 LEADS · 14 WORKERS · 2 WORKING      Z  ZOOM INTO THE CORE", W - 56, H - 56, 10, DIM, 1, "right", 2);
+}
+
+/* ================================================================ 2. IRIS */
+function v2() {
+  const C = TEAL, A = AMBER, R = M * .33;
+  { const gr = g.createRadialGradient(CX, CY, R * .2, CX, CY, R * 2.2); gr.addColorStop(0, "rgba(0,40,45,.5)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  stars(400, C, 1.1);
+  // outer crosshair + big circle
+  g.strokeStyle = rgba(C, .18); g.lineWidth = 1; g.beginPath(); g.arc(CX, CY, R * 1.55, 0, 6.2832); g.stroke();
+  [[0, 1], [1, 0]].forEach(([dx, dy]) => { g.beginPath(); g.moveTo(CX - dx * W, CY - dy * H); g.lineTo(CX + dx * W, CY + dy * H); g.strokeStyle = rgba(C, .08); g.stroke(); });
+  // radial equaliser: 180 bars mirrored in and out, colour by amplitude
+  for (let i = 0; i < 180; i++) { const a = i / 180 * 6.2832 - 1.5708, s = SAMPLES[i % 64] * ENV, out = 10 + s * 70, inn = 4 + s * 26; const c = s > .45 ? A : C; g.strokeStyle = rgba(c, .35 + s * .65); g.lineWidth = 2.6; g.beginPath(); g.moveTo(CX + Math.cos(a) * (R + 4), CY + Math.sin(a) * (R + 4)); g.lineTo(CX + Math.cos(a) * (R + 4 + out), CY + Math.sin(a) * (R + 4 + out)); g.stroke(); g.strokeStyle = rgba(c, .25 + s * .4); g.lineWidth = 1.4; g.beginPath(); g.moveTo(CX + Math.cos(a) * (R - 4), CY + Math.sin(a) * (R - 4)); g.lineTo(CX + Math.cos(a) * (R - 4 - inn), CY + Math.sin(a) * (R - 4 - inn)); g.stroke(); }
+  g.strokeStyle = rgba(WHITE, .9); g.lineWidth = 1.5; g.beginPath(); g.arc(CX, CY, R, 0, 6.2832); g.stroke();
+  // bezel ticks and degree labels
+  for (let i = 0; i < 120; i++) { const a = i / 120 * 6.2832, l = i % 10 ? 4 : 10, r0 = R * 1.22; g.strokeStyle = rgba(C, i % 10 ? .4 : .9); g.lineWidth = 1; g.beginPath(); g.moveTo(CX + Math.cos(a) * r0, CY + Math.sin(a) * r0); g.lineTo(CX + Math.cos(a) * (r0 + l), CY + Math.sin(a) * (r0 + l)); g.stroke(); if (!(i % 10)) text(String(i * 3).padStart(3, "0"), CX + Math.cos(a) * (r0 + 24), CY + Math.sin(a) * (r0 + 24), 9, C, .8, "center"); }
+  // rotating segmented rings
+  [[R * .86, 6, .5, T * .4, C, 3], [R * .74, 3, .62, -T * .25, A, 1.5], [R * .62, 12, .7, T * .8, C, 1]].forEach(([r, seg, fill, off, c, w]) => { for (let i = 0; i < seg; i++) { const a0 = off + i / seg * 6.2832, a1 = a0 + 6.2832 / seg * fill; g.strokeStyle = rgba(c, .8); g.lineWidth = w; g.beginPath(); g.arc(CX, CY, r, a0, a1); g.stroke(); } });
+  // text on an arc
+  { const s = `  ${NAME} · OPERATING PARTNER · CHIEF OF STAFF · ALL SYSTEMS ONLINE · `; const r = R * .95; g.font = '10px "SF Mono",Menlo,Consolas,monospace'; g.fillStyle = rgba(WHITE, .85); let a = -T * .1 - 1.2; for (const ch of s) { const w = g.measureText(ch).width + 2; g.save(); g.translate(CX + Math.cos(a) * r, CY + Math.sin(a) * r); g.rotate(a + 1.5708); g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, 0, 0); g.restore(); a += w / r; } }
+  // the honeycomb core: command hex + 5 department hexes with worker dots
+  const hex = (x, y, r, c, a, fill) => { g.beginPath(); for (let i = 0; i < 6; i++) { const t = i * 1.0472 + .5236; g.lineTo(x + Math.cos(t) * r, y + Math.sin(t) * r); } g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } g.strokeStyle = rgba(c, a); g.lineWidth = 1.4; g.stroke(); };
+  const hr = R * .17;
+  { const gr = g.createRadialGradient(CX, CY, 0, CX, CY, hr * 1.4); gr.addColorStop(0, rgba(A, .55)); gr.addColorStop(1, rgba(A, 0)); g.fillStyle = gr; g.beginPath(); g.arc(CX, CY, hr * 1.4, 0, 6.2832); g.fill(); }
+  hex(CX, CY, hr, WHITE, .95, "rgba(0,8,10,.8)"); text(NAME, CX, CY - 6, 13, WHITE, 1, "center", 3); text("COMMAND", CX, CY + 12, 8, A, .9, "center", 2);
+  TEAM.departments.forEach((d, i) => { const t = -1.5708 + i / 5 * 6.2832, x = CX + Math.cos(t) * hr * 2.05, y = CY + Math.sin(t) * hr * 2.05, on = d.workers.some(w => ACTIVE.has(w)); hex(x, y, hr * .8, on ? GREEN : C, on ? 1 : .7, on ? "rgba(20,60,40,.55)" : "rgba(0,12,14,.7)"); text(d.name.toUpperCase(), x, y - hr * .32, 8, on ? GREEN : C, .95, "center", 1.5); d.workers.forEach((w, j) => dot(x + (j - (d.workers.length - 1) / 2) * 11, y + hr * .1, ACTIVE.has(w) ? 3.2 : 2.2, ACTIVE.has(w) ? GREEN : C, .9)); text(d.tools.length + " TOOLS", x, y + hr * .38, 7, DIM, 1, "center", 1); });
+  // HUD
+  corners(C, .5); text(NAME.split("").join(".") + ".", 56, 46, 22, WHITE, 1, "left", 3); text("IRIS  ·  CONNECTED", 56, 74, 10, DIM, 1, "left", 2);
+  text(STATE, W - 56, 46, 18, A, 1, "right", 5); text("19:08:29", W - 56, 74, 10, DIM, 1, "right", 2);
+  [["ENV", ENV, C], ["MIC", .1, DIM], ["LOAD", .34, A]].forEach(([l, v, c], i) => { const y = H - 84 + i * 16; text(l, 56, y, 9, DIM, 1, "left", 2); g.fillStyle = rgba(c, .25); g.fillRect(110, y - 3, 220, 6); g.fillStyle = rgba(c, .9); g.fillRect(110, y - 3, 220 * v, 6); });
+  text("TEAM  5 LEADS · 14 WORKERS · 2 WORKING      Z  OPEN THE IRIS", W - 56, H - 56, 10, DIM, 1, "right", 2);
+}
+
+/* ================================================================ 3. ORBITAL */
+function v3() {
+  stars(1400, WHITE, 1.2); stars(40, BLUE, 2.4);
+  { const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, "rgba(40,20,90,0)"); gr.addColorStop(.5, "rgba(60,40,140,.22)"); gr.addColorStop(1, "rgba(40,20,90,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  const Rs = M * .075;
+  // orbits (perspective ellipses) with planets = departments, moons = workers
+  const orbits = TEAM.departments.map((d, i) => ({ d, rx: M * (.19 + i * .062), tilt: -.25 + i * .07, ang: T * (.25 - i * .04) + i * 1.9 }));
+  // asteroid belt = tools, between orbits 2 and 3
+  for (let i = 0; i < 420; i++) { const a = rnd() * 6.2832, rr = M * (.32 + rnd() * .03); g.save(); g.translate(CX, CY); g.rotate(-.11); dot(Math.cos(a) * rr, Math.sin(a) * rr * .38, .8 + rnd() * 1.2, [160, 180, 210], .35 + rnd() * .4, 1.3); g.restore(); }
+  orbits.forEach(o => { g.save(); g.translate(CX, CY); g.rotate(o.tilt); g.strokeStyle = rgba(VIOLET, .45); g.lineWidth = 1; g.beginPath(); g.ellipse(0, 0, o.rx, o.rx * .38, 0, 0, 6.2832); g.stroke(); g.restore(); });
+  // sun corona (waveform rays) + sun
+  for (let i = 0; i < 96; i++) { const a = i / 96 * 6.2832 + T * .2, s = SAMPLES[i % 64] * ENV, len = Rs * (.3 + s * 1.6); const gr = g.createLinearGradient(CX + Math.cos(a) * Rs, CY + Math.sin(a) * Rs, CX + Math.cos(a) * (Rs + len), CY + Math.sin(a) * (Rs + len)); gr.addColorStop(0, rgba(GOLD, .8)); gr.addColorStop(1, rgba(GOLD, 0)); g.strokeStyle = gr; g.lineWidth = 3; g.beginPath(); g.moveTo(CX + Math.cos(a) * Rs, CY + Math.sin(a) * Rs); g.lineTo(CX + Math.cos(a) * (Rs + len), CY + Math.sin(a) * (Rs + len)); g.stroke(); }
+  { const gr = g.createRadialGradient(CX, CY, 0, CX, CY, Rs * 2.6); gr.addColorStop(0, rgba(WHITE, 1)); gr.addColorStop(.25, rgba(GOLD, .8)); gr.addColorStop(.5, rgba(GOLD, .25)); gr.addColorStop(1, rgba(GOLD, 0)); g.fillStyle = gr; g.beginPath(); g.arc(CX, CY, Rs * 2.6, 0, 6.2832); g.fill(); }
+  text(NAME, CX, CY - Rs * 2.4, 13, WHITE, 1, "center", 4); text("COMMAND", CX, CY - Rs * 2.4 - 16, 8, GOLD, .9, "center", 2);
+  orbits.forEach(o => {
+    const px = Math.cos(o.ang) * o.rx, py = Math.sin(o.ang) * o.rx * .38; g.save(); g.translate(CX, CY); g.rotate(o.tilt);
+    const on = o.d.workers.some(w => ACTIVE.has(w)), pr = 9 + o.d.workers.length * 2;
+    // planet + ring
+    { const gr = g.createRadialGradient(px - pr * .3, py - pr * .3, 0, px, py, pr); gr.addColorStop(0, rgba(on ? GREEN : CYAN, 1)); gr.addColorStop(1, rgba(on ? [10, 80, 50] : [10, 40, 110], 1)); g.fillStyle = gr; g.beginPath(); g.arc(px, py, pr, 0, 6.2832); g.fill(); }
+    g.strokeStyle = rgba(on ? GREEN : CYAN, .7); g.lineWidth = 1.2; g.beginPath(); g.ellipse(px, py, pr * 1.9, pr * .55, .3, 0, 6.2832); g.stroke();
+    g.rotate(-o.tilt); const lx = px * Math.cos(o.tilt) - py * Math.sin(o.tilt), ly = px * Math.sin(o.tilt) + py * Math.cos(o.tilt);
+    text(o.d.name.toUpperCase(), lx, ly + pr + 16, 10, on ? GREEN : CYAN, .95, "center", 2);
+    // moons
+    o.d.workers.forEach((w, j) => { const a = T * .9 + j * 2.1, mr = pr * 2.6 + j * 8, mx = lx + Math.cos(a) * mr, my = ly + Math.sin(a) * mr * .5; g.strokeStyle = rgba(CYAN, .18); g.beginPath(); g.ellipse(lx, ly, mr, mr * .5, 0, 0, 6.2832); g.stroke(); dot(mx, my, ACTIVE.has(w) ? 4 : 2.6, ACTIVE.has(w) ? GREEN : WHITE, 1); if (ACTIVE.has(w)) text(w, mx, my - 16, 9, GREEN, .95, "center", 1); });
+    g.restore();
+  });
+  corners(VIOLET, .5); text(NAME.split("").join(".") + ".", 56, 46, 22, WHITE, 1, "left", 3); text("ORBITAL  ·  CONNECTED", 56, 74, 10, DIM, 1, "left", 2);
+  text(STATE, W - 56, 46, 18, GOLD, 1, "right", 5); text("19:08:29", W - 56, 74, 10, DIM, 1, "right", 2);
+  text("5 SYSTEMS · 14 SATELLITES · 2 ACTIVE · BELT: 17 TOOLS", 56, H - 56, 10, DIM, 1, "left", 2); text("Z  FLY INTO A SYSTEM", W - 56, H - 56, 10, DIM, 1, "right", 2);
+}
+
+/* ================================================================ 4. GLASS HUD */
+function v4() {
+  const C = CYAN;
+  { const gr = g.createRadialGradient(CX, CY, 0, CX, CY, M * .8); gr.addColorStop(0, "rgba(0,30,60,.45)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  // fine grid
+  g.strokeStyle = rgba(C, .06); g.lineWidth = 1; for (let x = 0; x < W; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); } for (let y = 0; y < H; y += 40) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const panel = (x, y, w, h, title) => { g.fillStyle = "rgba(0,18,36,.42)"; g.fillRect(x, y, w, h); g.strokeStyle = rgba(C, .45); g.lineWidth = 1; g.strokeRect(x + .5, y + .5, w - 1, h - 1); g.fillStyle = rgba(C, .9); g.fillRect(x, y, 3, 22); text(title, x + 14, y + 12, 10, C, 1, "left", 2.5); };
+  // hologram globe
+  const R = M * .3, ay = T * .18, ax = .3;
+  for (let m = 0; m < 12; m++) { g.strokeStyle = rgba(C, .45); g.lineWidth = 1; g.beginPath(); for (let k = 0; k <= 64; k++) { const t = k / 64 * 6.2832, p = proj(rot([Math.cos(t) * Math.cos(m / 12 * 3.1416), Math.sin(t), Math.cos(t) * Math.sin(m / 12 * 3.1416)], ay, ax), R); k ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); } g.stroke(); }
+  for (let q = 1; q < 8; q++) { const y0 = -1 + q / 4, r0 = Math.sqrt(1 - y0 * y0); g.strokeStyle = rgba(C, q === 4 ? .9 : .4); g.lineWidth = q === 4 ? 1.6 : 1; g.beginPath(); for (let k = 0; k <= 72; k++) { const t = k / 72 * 6.2832, p = proj(rot([Math.cos(t) * r0, y0, Math.sin(t) * r0], ay, ax), R); k ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); } g.stroke(); }
+  // sound bands wrapped on the globe
+  for (const [y0, c] of [[-.25, WHITE], [0, C], [.25, WHITE]]) { const r0 = Math.sqrt(1 - y0 * y0); g.strokeStyle = rgba(c, .9); g.lineWidth = 2; g.beginPath(); for (let k = 0; k <= 128; k++) { const t = k / 128 * 6.2832, s = SAMPLES[k % 64] * ENV * .12, p = proj(rot([Math.cos(t) * r0 * (1 + s), y0 + s * Math.sin(k), Math.sin(t) * r0 * (1 + s)], ay, ax), R); if (p.d < .5) { g.moveTo(p.x, p.y); continue; } k ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); } g.stroke(); }
+  // scanlines over the globe
+  g.save(); g.beginPath(); g.arc(CX, CY, R * 1.02, 0, 6.2832); g.clip(); for (let y = CY - R; y < CY + R; y += 4) { g.fillStyle = "rgba(57,198,255,.05)"; g.fillRect(CX - R, y, R * 2, 1); } g.restore();
+  { const gr = g.createRadialGradient(CX, CY, R * .6, CX, CY, R * 1.05); gr.addColorStop(0, rgba(C, 0)); gr.addColorStop(1, rgba(C, .25)); g.fillStyle = gr; g.beginPath(); g.arc(CX, CY, R * 1.05, 0, 6.2832); g.fill(); }
+  // team inside the globe as a faint constellation
+  TEAM.departments.forEach((d, i) => { const t = i / 5 * 6.2832 + T * .18, p = proj(rot([Math.cos(t) * .55, (i % 2 ? .2 : -.2), Math.sin(t) * .55], 0, ax), R); const on = d.workers.some(w => ACTIVE.has(w)); dot(p.x, p.y, on ? 4 : 3, on ? GREEN : WHITE, .5 + .5 * p.d); text(d.name.toUpperCase(), p.x, p.y - 12, 8, on ? GREEN : C, .4 + .6 * p.d, "center", 1.5); });
+  // left panel: team tree
+  panel(48, 120, 330, 560, "TEAM  ·  COMMAND " + NAME);
+  let y = 165; TEAM.departments.forEach(d => { const on = d.workers.some(w => ACTIVE.has(w)); dot(70, y, 3.5, on ? GREEN : C, 1); text(d.name.toUpperCase(), 84, y, 11, WHITE, 1, "left", 2); text(d.workers.length + " WORKERS", 360, y, 9, DIM, 1, "right", 1); y += 22; d.workers.forEach(w => { const a = ACTIVE.has(w); g.strokeStyle = rgba(C, .3); g.beginPath(); g.moveTo(70, y - 11); g.lineTo(70, y); g.lineTo(84, y); g.stroke(); dot(92, y, 2.5, a ? GREEN : DIM, 1); text(w, 104, y, 10, a ? GREEN : [150, 180, 210], 1, "left", .5); text(a ? "RUNNING 02:14" : "idle", 360, y, 8, a ? GREEN : DIM, 1, "right", 1); y += 18; }); y += 10; });
+  // right panel: activity log, oscilloscope, gauges
+  panel(W - 378, 120, 330, 250, "ACTIVITY");
+  [["19:08:29", "finance-ledger", "reading Finance/exports/09.csv", GREEN], ["19:08:12", "comms-inbox-triage", "14 threads, 3 need reply", GREEN], ["19:07:40", NAME, "dispatched comms-lead, finance-lead", WHITE], ["19:07:38", "you", "\"get the inbox sorted and the ledger\"", AMBER], ["19:06:01", "automations-machine", "backup pushed · disk 61%", DIM], ["19:00:00", "timer", "morning brief written", DIM]].forEach(([t, who, what, c], i) => { const yy = 160 + i * 32; text(t, W - 362, yy, 9, DIM, 1); text(who, W - 290, yy, 9, c, 1); text(what, W - 290, yy + 12, 8, [150, 180, 210], .9); });
+  panel(W - 378, 390, 330, 150, "AUDIO OUT  ·  " + STATE);
+  g.strokeStyle = rgba(C, .9); g.lineWidth = 1.5; g.beginPath(); SAMPLES.forEach((s, i) => { const x = W - 360 + i / 63 * 294, yy = 470 - Math.sin(i * .7 + T * 9) * s * ENV * 40; i ? g.lineTo(x, yy) : g.moveTo(x, yy); }); g.stroke();
+  panel(W - 378, 560, 330, 120, "PLAN USAGE");
+  [["5H", .34, 0], ["7D", .61, 1]].forEach(([l, v, i]) => { const x = W - 300 + i * 160, yy = 630; g.strokeStyle = rgba(C, .2); g.lineWidth = 6; g.beginPath(); g.arc(x, yy, 26, 2.3, 7.1); g.stroke(); g.strokeStyle = rgba(v > .8 ? AMBER : C, .95); g.beginPath(); g.arc(x, yy, 26, 2.3, 2.3 + 4.8 * v); g.stroke(); text(Math.round(v * 100) + "%", x, yy, 11, WHITE, 1, "center"); text(l, x, yy + 40, 8, DIM, 1, "center", 2); });
+  // timeline
+  g.strokeStyle = rgba(C, .5); g.beginPath(); g.moveTo(48, H - 80); g.lineTo(W - 48, H - 80); g.stroke(); for (let i = 0; i <= 24; i++) { const x = 48 + i / 24 * (W - 96); g.beginPath(); g.moveTo(x, H - 80); g.lineTo(x, H - 80 - (i % 6 ? 5 : 12)); g.stroke(); if (!(i % 6)) text(String(i).padStart(2, "0") + ":00", x, H - 60, 9, DIM, 1, "center"); }
+  { const x = 48 + 19.14 / 24 * (W - 96); dot(x, H - 80, 4, WHITE, 1); text("NOW", x, H - 100, 8, WHITE, 1, "center", 2); }
+  // title bar
+  g.strokeStyle = rgba(C, .5); g.beginPath(); g.moveTo(48, 92); g.lineTo(W - 48, 92); g.stroke(); corners(C, .6);
+  text(NAME.split("").join(".") + ".", 56, 46, 22, WHITE, 1, "left", 3); text("GLASS  ·  CONNECTED  ·  UBUNTU 24.04  ·  THINKPAD", 56, 74, 10, DIM, 1, "left", 2);
+  text(STATE, W - 56, 46, 18, WHITE, 1, "right", 5); text("19:08:29", W - 56, 74, 10, DIM, 1, "right", 2);
+}
+
+/* ================================================================ 5. NEURAL BLOOM */
+function v5() {
+  { const gr = g.createRadialGradient(CX, CY, 0, CX, CY, M * .75); gr.addColorStop(0, "rgba(90,20,110,.55)"); gr.addColorStop(.5, "rgba(30,10,70,.35)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  stars(500, [200, 160, 255], 1.1);
+  const R = M * .36;
+  g.globalCompositeOperation = "lighter";
+  // flow field particles on a spherical shell, coloured by radius, streaming
+  for (let i = 0; i < 2600; i++) { const u = rnd(), v = rnd(), th = u * 6.2832, ph = Math.acos(2 * v - 1); const rr = .45 + Math.pow(rnd(), .6) * .55; const p = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)]; const q = proj(rot(p, T * .12 + rr * 1.5, .4), R * rr); const mix = rr; const c = [255 * (1 - mix) + 60 * mix, 80 * (1 - mix) + 200 * mix, 200 * (1 - mix) + 255 * mix]; dot(q.x, q.y, (.4 + 1.1 * q.d) * q.f * (rnd() < .06 ? 2.5 : 1), c, .12 + .45 * q.d, 1.8); }
+  // thought streams: curved arcs from the centre outward, brightness by waveform
+  for (let s = 0; s < 14; s++) { const a = s / 14 * 6.2832 + T * .3, amp = SAMPLES[(s * 5) % 64] * ENV; const x1 = CX + Math.cos(a + .8) * R * .5, y1 = CY + Math.sin(a + .8) * R * .5, x2 = CX + Math.cos(a) * R * (.9 + amp * .5), y2 = CY + Math.sin(a) * R * (.9 + amp * .5); for (let k = 0; k <= 40; k++) { const t = k / 40, x = (1 - t) * (1 - t) * CX + 2 * (1 - t) * t * x1 + t * t * x2, y = (1 - t) * (1 - t) * CY + 2 * (1 - t) * t * y1 + t * t * y2; dot(x, y, 1.2 + amp * 2.2 * (1 - t), t < .5 ? MAGENTA : CYAN, (.25 + amp * .7) * (1 - t * .6), 2.2); } }
+  // team: leads as orbs on an inner ring, workers around them, soft links to the centre
+  TEAM.departments.forEach((d, i) => { const a = -1.5708 + i / 5 * 6.2832 + T * .05, x = CX + Math.cos(a) * R * .48, y = CY + Math.sin(a) * R * .48 * .8, on = d.workers.some(w => ACTIVE.has(w)); for (let k = 0; k <= 30; k++) { const t = k / 30; dot(CX + (x - CX) * t + Math.sin(t * 6.28 + T) * 6, CY + (y - CY) * t, 1.2, on ? GREEN : VIOLET, .35 * (1 - t) + .1, 2); } dot(x, y, 7, on ? GREEN : WHITE, 1, 3); text(d.name.toUpperCase(), x, y - 18, 10, on ? GREEN : WHITE, .95, "center", 2); d.workers.forEach((w, j) => { const b = a + (j - (d.workers.length - 1) / 2) * .55 + 1.5708, wx = x + Math.cos(b) * 30, wy = y + Math.sin(b) * 30; const act = ACTIVE.has(w); dot(wx, wy, act ? 4 : 2.6, act ? GREEN : CYAN, 1, 2.6); if (act) text(w, wx, wy + 14, 8, GREEN, .95, "center", 1); }); });
+  // the nucleus
+  { const gr = g.createRadialGradient(CX, CY, 0, CX, CY, R * .22); gr.addColorStop(0, rgba(WHITE, .95)); gr.addColorStop(.2, rgba(MAGENTA, .6)); gr.addColorStop(.6, rgba(VIOLET, .2)); gr.addColorStop(1, rgba(VIOLET, 0)); g.fillStyle = gr; g.beginPath(); g.arc(CX, CY, R * .22, 0, 6.2832); g.fill(); }
+  g.globalCompositeOperation = "source-over";
+  text(NAME, CX, CY + R * .26, 12, WHITE, 1, "center", 4);
+  // spectrum at the bottom
+  SAMPLES.forEach((s, i) => { const x = CX - 32 * 9 + i * 9, h = 4 + s * ENV * 60; const gr = g.createLinearGradient(0, H - 60, 0, H - 60 - h); gr.addColorStop(0, rgba(MAGENTA, .9)); gr.addColorStop(1, rgba(CYAN, .9)); g.fillStyle = gr; g.fillRect(x, H - 60 - h, 6, h); });
+  g.strokeStyle = rgba(WHITE, .5); g.beginPath(); g.moveTo(56, 92); g.lineTo(300, 92); g.stroke();
+  text(NAME.split("").join(".") + ".", 56, 46, 22, WHITE, 1, "left", 3); text("NEURAL BLOOM  ·  CONNECTED", 56, 74, 10, [170, 150, 210], 1, "left", 2);
+  text(STATE, W - 56, 46, 18, MAGENTA, 1, "right", 5); text("19:08:29  ·  5 LEADS · 14 WORKERS · 2 WORKING", W - 56, 74, 10, [170, 150, 210], 1, "right", 2);
+}
+[v1, v2, v3, v4, v5][V - 1]();
+document.title = "ready";
+</script></body></html>
